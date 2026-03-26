@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserProfileHeader from "@/components/admin/UserProfileHeader";
 import UserOverviewCard from "@/components/admin/UserOverviewCard";
 import UserAuditTimeline from "@/components/admin/UserAuditTimeline";
+import UserLifecycleActionsCard from "@/components/admin/UserLifecycleActionsCard";
+import AccessGuard from "@/components/admin/AccessGuard";
 
 export default function OpsUserDetail() {
   const { id } = useParams();
+  const queryClient = useQueryClient();
 
   const { data } = useQuery({
     queryKey: ["ops-user-detail", id],
@@ -44,6 +47,15 @@ export default function OpsUserDetail() {
       notes: [],
       flags: [],
       audits: []
+    }
+  });
+
+  const lifecycleAction = useMutation({
+    mutationFn: async ({ action, reason }) => base44.functions.invoke("adminUserLifecycleAction", { targetUserId: id, action, reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ops-user-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["ops-users-registry"] });
+      queryClient.invalidateQueries({ queryKey: ["ops-audit-feed"] });
     }
   });
 
@@ -97,6 +109,10 @@ export default function OpsUserDetail() {
         flagCount={data.flags.length}
       />
 
+      <AccessGuard permission="users.security_actions">
+        <UserLifecycleActionsCard securityState={data.securityState} onAction={(action, reason) => lifecycleAction.mutateAsync({ action, reason })} />
+      </AccessGuard>
+
       <Tabs defaultValue="access" className="space-y-4">
         <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-2xl bg-muted/70 p-2">
           <TabsTrigger value="access">Access</TabsTrigger>
@@ -108,27 +124,39 @@ export default function OpsUserDetail() {
         </TabsList>
 
         <TabsContent value="access">
-          <UserOverviewCard title="Access assignments" items={accessItems} />
+          <AccessGuard permission="users.read">
+            <UserOverviewCard title="Access assignments" items={accessItems} />
+          </AccessGuard>
         </TabsContent>
 
         <TabsContent value="security">
-          <UserOverviewCard title="Security state" items={securityItems} />
+          <AccessGuard permission="users.read">
+            <UserOverviewCard title="Security state" items={securityItems} />
+          </AccessGuard>
         </TabsContent>
 
         <TabsContent value="memberships">
-          <UserOverviewCard title="Organisation memberships" items={membershipItems.length ? membershipItems : [{ label: "Memberships", value: "None assigned" }]} />
+          <AccessGuard permission="assignments.read">
+            <UserOverviewCard title="Organisation memberships" items={membershipItems.length ? membershipItems : [{ label: "Memberships", value: "None assigned" }]} />
+          </AccessGuard>
         </TabsContent>
 
         <TabsContent value="notes">
-          <UserOverviewCard title="Internal notes" items={noteItems.length ? noteItems : [{ label: "Notes", value: "No internal notes" }]} />
+          <AccessGuard permission="users.read">
+            <UserOverviewCard title="Internal notes" items={noteItems.length ? noteItems : [{ label: "Notes", value: "No internal notes" }]} />
+          </AccessGuard>
         </TabsContent>
 
         <TabsContent value="flags">
-          <UserOverviewCard title="Account flags" items={flagItems.length ? flagItems : [{ label: "Flags", value: "No active flags" }]} />
+          <AccessGuard permission="users.read">
+            <UserOverviewCard title="Account flags" items={flagItems.length ? flagItems : [{ label: "Flags", value: "No active flags" }]} />
+          </AccessGuard>
         </TabsContent>
 
         <TabsContent value="audit">
-          <UserAuditTimeline items={data.audits} />
+          <AccessGuard permission="audit.read">
+            <UserAuditTimeline items={data.audits} />
+          </AccessGuard>
         </TabsContent>
       </Tabs>
     </div>
