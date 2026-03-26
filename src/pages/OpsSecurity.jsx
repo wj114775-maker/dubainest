@@ -1,13 +1,16 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import RegistryTableCard from "@/components/admin/RegistryTableCard";
 import AccessGuard from "@/components/admin/AccessGuard";
 import SecurityStatesTableCard from "@/components/admin/SecurityStatesTableCard";
 import AdminMetricGrid from "@/components/admin/AdminMetricGrid";
+import SecurityActionPanel from "@/components/admin/SecurityActionPanel";
 
 export default function OpsSecurity() {
+  const queryClient = useQueryClient();
+  const [selectedUser, setSelectedUser] = useState(null);
   const { data } = useQuery({
     queryKey: ["ops-security-overview"],
     queryFn: async () => {
@@ -42,6 +45,18 @@ export default function OpsSecurity() {
     initialData: { securityStates: [], actionCounts: { suspend: 0, password_reset: 0, mfa_reset: 0, unlock: 0 }, userStates: [] }
   });
 
+  const securityAction = useMutation({
+    mutationFn: ({ action, reason }) => base44.functions.invoke("adminUserLifecycleAction", { targetUserId: selectedUser.user_id, action, reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ops-security-overview"] });
+    }
+  });
+
+  const selectedState = useMemo(() => {
+    if (!selectedUser) return null;
+    return data.userStates.find((item) => item.user_id === selectedUser.user_id) || selectedUser;
+  }, [data.userStates, selectedUser]);
+
   const rows = [
     { id: "suspend", name: "Suspension control", code: "users.security_actions", status: `${data.actionCounts.suspend} actions logged` },
     { id: "mfa", name: "MFA reset control", code: "security.mfa_reset", status: `${data.actionCounts.mfa_reset} actions logged` },
@@ -66,7 +81,12 @@ export default function OpsSecurity() {
         <RegistryTableCard title={`Security administration controls · ${data.securityStates.length} tracked user states`} columns={[{ key: "name", label: "Control" }, { key: "code", label: "Permission" }, { key: "status", label: "Status" }]} rows={rows} />
       </AccessGuard>
       <AccessGuard permission="users.read">
-        <SecurityStatesTableCard rows={data.userStates} />
+        <div className="grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
+          <SecurityStatesTableCard rows={data.userStates} onSelect={setSelectedUser} selectedUserId={selectedState?.user_id} />
+          <AccessGuard permission="users.manage">
+            <SecurityActionPanel selectedUser={selectedState} onAction={(action, reason) => securityAction.mutate({ action, reason })} />
+          </AccessGuard>
+        </div>
       </AccessGuard>
     </div>
   );
