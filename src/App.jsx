@@ -26,6 +26,14 @@ import OpsRevenue from '@/pages/OpsRevenue';
 import OpsContent from '@/pages/OpsContent';
 import OpsAudit from '@/pages/OpsAudit';
 import OpsSettings from '@/pages/OpsSettings';
+import OpsAdminConsole from '@/pages/OpsAdminConsole';
+import OpsUsers from '@/pages/OpsUsers';
+import OpsRolesPermissions from '@/pages/OpsRolesPermissions';
+import OpsPartnerAccess from '@/pages/OpsPartnerAccess';
+import OpsSecurity from '@/pages/OpsSecurity';
+import OpsLeadRules from '@/pages/OpsLeadRules';
+import OpsCommissionRules from '@/pages/OpsCommissionRules';
+import OpsComplianceRules from '@/pages/OpsComplianceRules';
 import AppHeader from '@/components/layout/AppHeader';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import SideRail from '@/components/layout/SideRail';
@@ -87,6 +95,14 @@ const AuthenticatedApp = () => {
       <Route path="/partner/payouts" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerPayouts /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/partner/disputes" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerDisputes /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsDashboard /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/admin" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsAdminConsole /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/users" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsUsers /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/roles-permissions" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsRolesPermissions /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/partner-access" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsPartnerAccess /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/security" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsSecurity /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/lead-rules" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsLeadRules /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/commission-rules" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsCommissionRules /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/compliance-rules" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsComplianceRules /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/compliance" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsCompliance /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/revenue" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsRevenue /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/content" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsContent /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
