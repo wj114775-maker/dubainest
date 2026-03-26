@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import RegistryTableCard from "@/components/admin/RegistryTableCard";
+import AccessGuard from "@/components/admin/AccessGuard";
 
 export default function OpsRolesPermissions() {
   const { data } = useQuery({
@@ -26,11 +27,13 @@ export default function OpsRolesPermissions() {
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Administration" title="Roles and permissions" description="Introduce granular permission bundles and scoped role assignments without breaking legacy role compatibility." />
-      <div className="grid gap-6 xl:grid-cols-3">
-        <RegistryTableCard title="Roles" columns={[{ key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "status", label: "Status" }]} rows={data.roles} />
-        <RegistryTableCard title="Permissions" columns={[{ key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "status", label: "Status" }]} rows={data.permissions} />
-        <RegistryTableCard title="Bundles" columns={[{ key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "status", label: "Status" }]} rows={data.bundles} />
-      </div>
+      <AccessGuard permission="roles.read">
+        <div className="grid gap-6 xl:grid-cols-3">
+          <RegistryTableCard title="Roles" columns={[{ key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "status", label: "Status" }]} rows={data.roles} />
+          <RegistryTableCard title="Permissions" columns={[{ key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "status", label: "Status" }]} rows={data.permissions} />
+          <RegistryTableCard title="Bundles" columns={[{ key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "status", label: "Status" }]} rows={data.bundles} />
+        </div>
+      </AccessGuard>
     </div>
   );
 }

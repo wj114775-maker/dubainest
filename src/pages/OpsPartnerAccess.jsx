@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import RegistryTableCard from "@/components/admin/RegistryTableCard";
+import AccessGuard from "@/components/admin/AccessGuard";
 
 export default function OpsPartnerAccess() {
   const { data: rows = [] } = useQuery({
@@ -22,7 +23,9 @@ export default function OpsPartnerAccess() {
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Administration" title="Partner access" description="Govern partner memberships, organisation access, verification state and scoped execution rights." />
-      <RegistryTableCard title="Partner access registry" columns={[{ key: "name", label: "Organisation" }, { key: "code", label: "Membership" }, { key: "status", label: "Status" }]} rows={rows} />
+      <AccessGuard permission="partners.read">
+        <RegistryTableCard title="Partner access registry" columns={[{ key: "name", label: "Organisation" }, { key: "code", label: "Membership" }, { key: "status", label: "Status" }]} rows={rows} />
+      </AccessGuard>
     </div>
   );
 }
