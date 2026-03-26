@@ -28,6 +28,7 @@ import OpsAudit from '@/pages/OpsAudit';
 import OpsSettings from '@/pages/OpsSettings';
 import OpsAdminConsole from '@/pages/OpsAdminConsole';
 import OpsUsers from '@/pages/OpsUsers';
+import OpsUserDetail from '@/pages/OpsUserDetail';
 import OpsRolesPermissions from '@/pages/OpsRolesPermissions';
 import OpsPartnerAccess from '@/pages/OpsPartnerAccess';
 import OpsSecurity from '@/pages/OpsSecurity';
@@ -97,6 +98,7 @@ const AuthenticatedApp = () => {
       <Route path="/ops" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsDashboard /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/admin" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsAdminConsole /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/users" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsUsers /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/users/:id" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsUserDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/roles-permissions" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsRolesPermissions /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/partner-access" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsPartnerAccess /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/security" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsSecurity /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -23,10 +24,10 @@ export default function UsersRegistryCard({ users }) {
             {users.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>
-                  <div>
+                  <Link to={`/ops/users/${user.id}`} className="block hover:opacity-80">
                     <p className="font-medium">{user.name}</p>
                     <p className="text-xs text-muted-foreground">{user.email}</p>
-                  </div>
+                  </Link>
                 </TableCell>
                 <TableCell><Badge variant="outline">{user.legacyRole}</Badge></TableCell>
                 <TableCell><Badge className="bg-primary/10 text-primary hover:bg-primary/10">{user.status}</Badge></TableCell>
