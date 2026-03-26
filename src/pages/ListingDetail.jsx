@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import TrustBadge from "@/components/common/TrustBadge";
+import BuyerIntentSheet from '@/components/leads/BuyerIntentSheet';
 
 const fallbackListing = {
   id: "fallback",
@@ -22,9 +23,12 @@ const fallbackListing = {
 
 export default function ListingDetail() {
   const { id } = useParams();
+  const [intentType, setIntentType] = useState('request_callback');
+  const [open, setOpen] = useState(false);
   const { data: listing = fallbackListing } = useQuery({ queryKey: ["listing", id], queryFn: async () => base44.entities.Listing.get(id), initialData: fallbackListing });
 
   return (
+    <>
     <div className="space-y-6 pb-28">
       <div className="overflow-hidden rounded-[2rem] border border-white/10">
         <img src={listing.hero_image_url} alt={listing.title} className="h-[320px] w-full object-cover md:h-[480px]" />
@@ -44,11 +48,13 @@ export default function ListingDetail() {
           <p className="text-sm text-muted-foreground">Guide price</p>
           <p className="mt-2 text-3xl font-semibold">AED {listing.price?.toLocaleString()}</p>
           <div className="mt-4 grid gap-2">
-            <Button className="rounded-2xl">Request broker callback</Button>
-            <Button variant="outline" className="rounded-2xl">Request private inventory access</Button>
+            <Button className="rounded-2xl" onClick={() => { setIntentType('request_callback'); setOpen(true); }}>Request broker callback</Button>
+            <Button variant="outline" className="rounded-2xl" onClick={() => { setIntentType('request_private_inventory'); setOpen(true); }}>Request private inventory access</Button>
           </div>
         </div>
       </div>
     </div>
+    <BuyerIntentSheet open={open} onOpenChange={setOpen} intentType={intentType} listingId={listing.id} title={listing.title} />
+    </>
   );
 }

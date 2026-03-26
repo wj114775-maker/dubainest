@@ -5,8 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BedDouble, Building2, Heart, MapPin, Scale } from "lucide-react";
 import TrustBadge from "@/components/common/TrustBadge";
+import { useToast } from '@/components/ui/use-toast';
+import { saveListingToShortlist, saveListingToCompare } from '@/components/leads/buyerLeadActions';
 
 export default function ListingCard({ listing }) {
+  const { toast } = useToast();
+
   return (
     <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-card/80 shadow-xl shadow-black/5">
       <div className="aspect-[4/3] bg-muted">
@@ -33,8 +37,8 @@ export default function ListingCard({ listing }) {
           <Badge variant="outline" className="rounded-full">{listing.listing_type === "private_inventory" ? "Private" : "Published"}</Badge>
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <Button variant="outline" className="rounded-2xl"><Heart className="mr-2 h-4 w-4" /> Save</Button>
-          <Button variant="outline" className="rounded-2xl"><Scale className="mr-2 h-4 w-4" /> Compare</Button>
+          <Button variant="outline" className="rounded-2xl" onClick={async () => { await saveListingToShortlist(listing); toast({ title: 'Saved to shortlist' }); }}><Heart className="mr-2 h-4 w-4" /> Save</Button>
+          <Button variant="outline" className="rounded-2xl" onClick={async () => { await saveListingToCompare(listing); toast({ title: 'Added to compare' }); }}><Scale className="mr-2 h-4 w-4" /> Compare</Button>
           <Button asChild className="rounded-2xl"><Link to={`/listing/${listing.id}`}>View</Link></Button>
         </div>
       </CardContent>
