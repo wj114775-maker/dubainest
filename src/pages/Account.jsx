@@ -1,12 +1,35 @@
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { base44 } from "@/api/base44Client";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import SectionHeading from "@/components/common/SectionHeading";
+import BuyerProfileCard from "@/components/account/BuyerProfileCard";
 
 export default function Account() {
   const { data } = useCurrentUserRole();
+  const { data: profile } = useQuery({
+    queryKey: ["buyer-profile", data.user?.id],
+    enabled: !!data.user?.id,
+    queryFn: async () => {
+      const profiles = await base44.entities.BuyerProfile.filter({ user_id: data.user.id });
+      return profiles[0] || {
+        mode: "investor",
+        lifecycle_stage: "new lead",
+        currency: "AED",
+        concierge_interest: false,
+        golden_visa_interest: false
+      };
+    },
+    initialData: {
+      mode: "investor",
+      lifecycle_stage: "new lead",
+      currency: "AED",
+      concierge_interest: false,
+      golden_visa_interest: false
+    }
+  });
 
   return (
     <div className="space-y-6 pb-28">
@@ -20,6 +43,7 @@ export default function Account() {
           </div>
         </CardContent>
       </Card>
+      {data.isAuthenticated ? <BuyerProfileCard profile={profile} /> : null}
     </div>
   );
 }
