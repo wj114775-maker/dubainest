@@ -25,10 +25,11 @@ Deno.serve(async (req) => {
     const event = await base44.entities.LeadEvent.create({
       lead_id,
       event_type,
-      actor_id: user.id,
+      actor_user_id: user.id,
+      actor_type: 'internal',
       summary,
       immutable: true,
-      payload: event_payload
+      event_payload_json: event_payload
     });
 
     const audit = await base44.entities.AuditLog.create({
