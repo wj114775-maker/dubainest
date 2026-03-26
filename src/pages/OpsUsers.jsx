@@ -1,10 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import UsersRegistryCard from "@/components/admin/UsersRegistryCard";
+import UserRegistryFilters from "@/components/admin/UserRegistryFilters";
+import AccessGuard from "@/components/admin/AccessGuard";
 
 export default function OpsUsers() {
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+
   const { data: registry = [] } = useQuery({
     queryKey: ["ops-users-registry"],
     queryFn: async () => {
@@ -30,10 +35,21 @@ export default function OpsUsers() {
     initialData: []
   });
 
+  const filteredRegistry = registry.filter((user) => {
+    const matchesSearch = !search || [user.name, user.email].join(" ").toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = status === "all" || user.status === status;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Administration" title="Users and access control" description="Manage identity status, legacy roles, role assignments, security state and future permission bundles from one registry." />
-      <UsersRegistryCard users={registry} />
+      <AccessGuard permission="users.read">
+        <div className="space-y-6">
+          <UserRegistryFilters search={search} onSearchChange={setSearch} status={status} onStatusChange={setStatus} />
+          <UsersRegistryCard users={filteredRegistry} />
+        </div>
+      </AccessGuard>
     </div>
   );
 }
