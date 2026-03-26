@@ -113,23 +113,37 @@ export async function createOrEnrichLeadFromIntent(payload) {
         ...payload,
       });
 
-  await base44.entities.LeadIdentity.create({
-    lead_id: leadRecord.id,
-    email_normalised: normaliseEmail(payload.email),
-    mobile_normalised: normalisePhone(payload.mobile),
-    whatsapp_normalised: normalisePhone(payload.whatsapp),
-    full_name: payload.full_name,
-    country: payload.country,
-    identity_confidence: existingLead ? 0.95 : 0.8,
-    identity_source: payload.identity_source || 'form_submission',
-    is_primary_identity: true,
-  });
+  const leadIdentities = await base44.entities.LeadIdentity.list('-updated_date', 200);
+  const existingIdentity = leadIdentities.find((item) => item.lead_id === leadRecord.id && (
+    item.email_normalised === normaliseEmail(payload.email) ||
+    item.mobile_normalised === normalisePhone(payload.mobile) ||
+    item.whatsapp_normalised === normalisePhone(payload.whatsapp)
+  ));
 
-  await base44.entities.LeadAttribution.create({
-    lead_id: leadRecord.id,
-    ...attribution,
-    is_locked: false,
-  });
+  if (!existingIdentity) {
+    await base44.entities.LeadIdentity.create({
+      lead_id: leadRecord.id,
+      email_normalised: normaliseEmail(payload.email),
+      mobile_normalised: normalisePhone(payload.mobile),
+      whatsapp_normalised: normalisePhone(payload.whatsapp),
+      full_name: payload.full_name,
+      country: payload.country,
+      identity_confidence: existingLead ? 0.95 : 0.8,
+      identity_source: payload.identity_source || 'form_submission',
+      is_primary_identity: true,
+    });
+  }
+
+  const leadAttributions = await base44.entities.LeadAttribution.list('-updated_date', 200);
+  const existingAttribution = leadAttributions.find((item) => item.lead_id === leadRecord.id && item.session_id === attribution.session_id);
+
+  if (!existingAttribution) {
+    await base44.entities.LeadAttribution.create({
+      lead_id: leadRecord.id,
+      ...attribution,
+      is_locked: false,
+    });
+  }
 
   await base44.entities.LeadEvent.create({
     lead_id: leadRecord.id,
