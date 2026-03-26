@@ -1,15 +1,17 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
-import RegistryTableCard from "@/components/admin/RegistryTableCard";
 import AccessGuard from "@/components/admin/AccessGuard";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
-import AdminRecordFormCard from "@/components/admin/AdminRecordFormCard";
+import GovernanceRegistryTableCard from "@/components/admin/GovernanceRegistryTableCard";
+import GovernanceRuleFormCard from "@/components/admin/GovernanceRuleFormCard";
 
 export default function OpsComplianceRules() {
   const queryClient = useQueryClient();
-  const [ruleForm, setRuleForm] = useState({ name: "", rule_type: "publishing_gate", status: "active", conditions: "{}", actions: "{}" });
+  const [editingRule, setEditingRule] = useState(null);
+  const initialValues = useMemo(() => ({ name: "", rule_type: "publishing_gate", status: "active", conditions: "{}", actions: "{}" }), []);
+  const fields = useMemo(() => ([{ key: "name", label: "Rule name" }, { key: "rule_type", label: "Rule type" }, { key: "status", label: "Status" }, { key: "conditions", label: "Conditions JSON", multiline: true, json: true }, { key: "actions", label: "Actions JSON", multiline: true, json: true }]), []);
 
   const { data: rows = [] } = useQuery({
     queryKey: ["ops-compliance-rules"],
@@ -19,35 +21,37 @@ export default function OpsComplianceRules() {
         id: item.id,
         name: item.name,
         code: item.rule_type,
-        status: item.status || "draft"
+        status: item.status || "draft",
+        source: item
       }));
     },
     initialData: []
   });
 
   const manageRule = useMutation({
-    mutationFn: (payload) => base44.functions.invoke("adminManageGovernanceRecord", { entityName: "ComplianceRule", action: "create", payload, summary: "Compliance rule created", scope: "compliance" }),
+    mutationFn: ({ action, recordId, payload, summary }) => base44.functions.invoke("adminManageGovernanceRecord", { entityName: "ComplianceRule", action, recordId, payload, summary, scope: "compliance" }),
     onSuccess: () => {
+      setEditingRule(null);
       queryClient.invalidateQueries({ queryKey: ["ops-compliance-rules"] });
       queryClient.invalidateQueries({ queryKey: ["ops-audit-feed"] });
     }
+  });
+
+  const submitRule = (form) => manageRule.mutate({
+    action: editingRule ? "update" : "create",
+    recordId: editingRule?.id,
+    payload: { ...form, conditions: JSON.parse(form.conditions || "{}"), actions: JSON.parse(form.actions || "{}") },
+    summary: editingRule ? "Compliance rule updated" : "Compliance rule created"
   });
 
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Governance" title="Compliance rules" description="Define case triggers, freeze controls and SLA policy from a dedicated compliance rulebook." />
       <AccessGuard permission="compliance_rules.read">
-        {rows.length ? <RegistryTableCard title="Compliance rulebook" columns={[{ key: "name", label: "Rule" }, { key: "code", label: "Type" }, { key: "status", label: "Status" }]} rows={rows} /> : <EmptyStateCard title="No compliance rules yet" description="Compliance rules will appear here once they are configured." />}
+        {rows.length ? <GovernanceRegistryTableCard title="Compliance rulebook" columns={[{ key: "name", label: "Rule" }, { key: "code", label: "Type" }, { key: "status", label: "Status" }]} rows={rows} onEdit={setEditingRule} /> : <EmptyStateCard title="No compliance rules yet" description="Compliance rules will appear here once they are configured." />}
       </AccessGuard>
       <AccessGuard permission="compliance_rules.manage">
-        <AdminRecordFormCard
-          title="Create compliance rule"
-          values={ruleForm}
-          onChange={(key, value) => setRuleForm((current) => ({ ...current, [key]: value }))}
-          fields={[{ key: "name", label: "Rule name" }, { key: "rule_type", label: "Rule type" }, { key: "status", label: "Status" }, { key: "conditions", label: "Conditions JSON", multiline: true }, { key: "actions", label: "Actions JSON", multiline: true }]}
-          onSubmit={() => manageRule.mutate({ ...ruleForm, conditions: JSON.parse(ruleForm.conditions || "{}"), actions: JSON.parse(ruleForm.actions || "{}") })}
-          submitLabel="Create rule"
-        />
+        <GovernanceRuleFormCard title="Create compliance rule" fields={fields} initialValues={initialValues} record={editingRule} onSubmit={submitRule} submitLabel="Create rule" onCancel={() => setEditingRule(null)} />
       </AccessGuard>
     </div>
   );
