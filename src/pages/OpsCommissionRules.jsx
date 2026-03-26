@@ -1,17 +1,17 @@
 import React from "react";
 import SectionHeading from "@/components/common/SectionHeading";
-import RuleTable from "@/components/admin/RuleTable";
+import RegistryTableCard from "@/components/admin/RegistryTableCard";
 
-const items = [
-  { id: "1", name: "Default referral split", description: "Global commission policy for standard partner-led transactions.", type: "global", status: "active" },
-  { id: "2", name: "Private inventory override", description: "Premium commission structure for protected inventory workflows.", type: "listing", status: "active" }
+const rows = [
+  { id: "1", name: "Default referral split", code: "global", status: "active" },
+  { id: "2", name: "Private inventory override", code: "listing", status: "active" }
 ];
 
 export default function OpsCommissionRules() {
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Governance" title="Commission rules" description="Centralise commission policies so payouts and disputes trace back to explicit governed rules." />
-      <RuleTable title="Commission policy registry" items={items} />
+      <RegistryTableCard title="Commission policy registry" columns={[{ key: "name", label: "Rule" }, { key: "code", label: "Scope" }, { key: "status", label: "Status" }]} rows={rows} />
     </div>
   );
 }

@@ -1,18 +1,39 @@
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
-import UserAccessTable from "@/components/admin/UserAccessTable";
-
-const users = [
-  { id: "1", name: "Layla Mansoor", email: "layla@nestdubai.com", legacyRole: "admin", status: "active", assignmentCount: 5 },
-  { id: "2", name: "Omar Saif", email: "omar@partner.ae", legacyRole: "partner_admin", status: "pending_verification", assignmentCount: 2 },
-  { id: "3", name: "Maya Noor", email: "maya@nestdubai.com", legacyRole: "compliance", status: "suspended", assignmentCount: 3 }
-];
+import UsersRegistryCard from "@/components/admin/UsersRegistryCard";
 
 export default function OpsUsers() {
+  const { data: registry = [] } = useQuery({
+    queryKey: ["ops-users-registry"],
+    queryFn: async () => {
+      const [users, assignments, securityStates] = await Promise.all([
+        base44.entities.User.list(),
+        base44.entities.UserRoleAssignment.list(),
+        base44.entities.UserSecurityState.list()
+      ]);
+
+      return users.map((user) => {
+        const userAssignments = assignments.filter((assignment) => assignment.user_id === user.id && assignment.status === "active");
+        const security = securityStates.find((item) => item.user_id === user.id);
+        return {
+          id: user.id,
+          name: user.full_name || user.email,
+          email: user.email,
+          legacyRole: user.role || "buyer",
+          status: security?.security_status || "active",
+          assignmentCount: userAssignments.length
+        };
+      });
+    },
+    initialData: []
+  });
+
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Administration" title="Users and access control" description="Manage identity status, legacy roles, role assignments, security state and future permission bundles from one registry." />
-      <UserAccessTable users={users} />
+      <UsersRegistryCard users={registry} />
     </div>
   );
 }

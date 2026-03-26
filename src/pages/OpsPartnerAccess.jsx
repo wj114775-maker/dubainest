@@ -1,17 +1,28 @@
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
-import RuleTable from "@/components/admin/RuleTable";
-
-const items = [
-  { id: "1", name: "Prime Estates LLC", description: "Agency owner, broker, finance and coordinator memberships under managed access.", type: "partner_agency", status: "active" },
-  { id: "2", name: "Harbour Front Realty", description: "Suspended access pending verification evidence and commercial review.", type: "partner_agency", status: "pending_review" }
-];
+import RegistryTableCard from "@/components/admin/RegistryTableCard";
 
 export default function OpsPartnerAccess() {
+  const { data: rows = [] } = useQuery({
+    queryKey: ["ops-partner-access"],
+    queryFn: async () => {
+      const memberships = await base44.entities.OrganisationMembership.filter({ organisation_type: "partner_agency" });
+      return memberships.map((item) => ({
+        id: item.id,
+        name: item.organisation_id,
+        code: item.membership_type,
+        status: item.status || "invited"
+      }));
+    },
+    initialData: []
+  });
+
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Administration" title="Partner access" description="Govern partner memberships, organisation access, verification state and scoped execution rights." />
-      <RuleTable title="Partner access registry" items={items} />
+      <RegistryTableCard title="Partner access registry" columns={[{ key: "name", label: "Organisation" }, { key: "code", label: "Membership" }, { key: "status", label: "Status" }]} rows={rows} />
     </div>
   );
 }
