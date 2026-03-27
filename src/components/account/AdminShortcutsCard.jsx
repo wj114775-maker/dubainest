@@ -1,9 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, Users, Briefcase, Lock, ScrollText } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ShieldCheck, Users, Briefcase, Lock, ScrollText, LayoutDashboard } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const shortcuts = [
+  { label: "Open Internal OS", path: "/ops", icon: LayoutDashboard },
   { label: "Open Admin Console", path: "/ops/admin", icon: ShieldCheck },
   { label: "Open Leads", path: "/ops/leads", icon: Briefcase },
   { label: "Open Users", path: "/ops/users", icon: Users },
@@ -13,11 +14,12 @@ const shortcuts = [
 
 export default function AdminShortcutsCard() {
   return (
-    <Card className="rounded-[2rem] border-white/10 bg-card/80">
+    <Card className="rounded-[2rem] border-primary/15 bg-card/80 shadow-lg shadow-primary/5">
       <CardHeader>
-        <CardTitle>Admin access</CardTitle>
+        <CardTitle>Internal admin workspace</CardTitle>
+        <CardDescription>You are signed in with admin access. Open the control area below.</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-3 sm:grid-cols-2">
+      <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {shortcuts.map((item) => {
           const Icon = item.icon;
           return (
