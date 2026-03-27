@@ -4,6 +4,8 @@ import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import ComplianceQueue from "@/components/ops/ComplianceQueue";
 import ComplianceCaseCard from "@/components/ops/ComplianceCaseCard";
+import ComplianceHealthSummary from "@/components/ops/ComplianceHealthSummary";
+import ListingGovernanceQueue from "@/components/ops/ListingGovernanceQueue";
 import AccessGuard from "@/components/admin/AccessGuard";
 import AdminRecordFormCard from "@/components/admin/AdminRecordFormCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -48,12 +50,10 @@ export default function OpsCompliance() {
         <ComplianceQueue items={queueItems} />
       </AccessGuard>
       <AccessGuard permission="compliance_cases.read">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[2rem] border border-white/10 bg-card/80 p-5"><p className="text-sm text-muted-foreground">Flagged listings</p><p className="mt-2 text-3xl font-semibold">{listings.filter((item) => item.status === 'flagged').length}</p></div>
-          <div className="rounded-[2rem] border border-white/10 bg-card/80 p-5"><p className="text-sm text-muted-foreground">Frozen listings</p><p className="mt-2 text-3xl font-semibold">{listings.filter((item) => item.status === 'frozen').length}</p></div>
-          <div className="rounded-[2rem] border border-white/10 bg-card/80 p-5"><p className="text-sm text-muted-foreground">Stale supply</p><p className="mt-2 text-3xl font-semibold">{listings.filter((item) => item.freshness_status === 'stale' || item.freshness_status === 'expired').length}</p></div>
-          <div className="rounded-[2rem] border border-white/10 bg-card/80 p-5"><p className="text-sm text-muted-foreground">Low trust band</p><p className="mt-2 text-3xl font-semibold">{listings.filter((item) => item.trust_band === 'low').length}</p></div>
-        </div>
+        <ComplianceHealthSummary listings={listings} cases={cases} />
+      </AccessGuard>
+      <AccessGuard permission="compliance_cases.read">
+        <ListingGovernanceQueue listings={listings.filter((item) => ["flagged", "frozen", "stale", "verification_pending", "under_review"].includes(item.status)).slice(0, 8)} />
       </AccessGuard>
       <AccessGuard permission="compliance_cases.read">
         <div className="grid gap-4 md:grid-cols-2">

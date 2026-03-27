@@ -48,22 +48,24 @@ export default function PartnerOverview() {
           medianResponseMinutes,
           activeListings: activeListings.length,
           disputes: openDisputes.length,
+          blockedListings: listings.filter((listing) => listing.partner_agency_id === profile.partner_agency_id && ["suppressed", "frozen", "rejected"].includes(listing.publication_status)).length,
         },
       };
     },
     initialData: {
       profile: { membership_type: "broker", status: "active" },
-      metrics: { openLeads: 0, medianResponseMinutes: 0, activeListings: 0, disputes: 0 },
+      metrics: { openLeads: 0, medianResponseMinutes: 0, activeListings: 0, disputes: 0, blockedListings: 0 },
     }
   });
 
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Partner OS" title="Execution workspace for licensed agencies" description="Partners operate lead response, listing readiness, deal progress and payouts inside controlled rules set by the platform." />
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <MetricCard label="Open leads" value={String(dashboard.metrics.openLeads)} />
         <MetricCard label="Median response" value={`${dashboard.metrics.medianResponseMinutes} min`} />
         <MetricCard label="Active listings" value={String(dashboard.metrics.activeListings)} />
+        <MetricCard label="Blocked listings" value={String(dashboard.metrics.blockedListings)} />
         <MetricCard label="Disputes" value={String(dashboard.metrics.disputes)} />
       </div>
       <PartnerProfileCard profile={dashboard.profile} />

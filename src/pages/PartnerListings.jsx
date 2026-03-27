@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import PartnerListingsTable from "@/components/partner/PartnerListingsTable";
+import PartnerListingsHealthCard from "@/components/partner/PartnerListingsHealthCard";
 import AdminSummaryStrip from "@/components/admin/AdminSummaryStrip";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 
@@ -41,6 +42,7 @@ export default function PartnerListings() {
     <div className="space-y-6">
       <SectionHeading eyebrow="Listings" title="Permit, duplicate and stale controls before publishing" description="Partners can only operate published inventory once compliance and verification gates have been satisfied." />
       <AdminSummaryStrip items={summary} />
+      <PartnerListingsHealthCard listings={listings} />
       <PartnerListingsTable listings={listings} onEvaluate={evaluateListing.mutate} evaluatingId={evaluateListing.isPending ? evaluateListing.variables : null} />
     </div>
   );
