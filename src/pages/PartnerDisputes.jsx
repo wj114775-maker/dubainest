@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AdminSummaryStrip from "@/components/admin/AdminSummaryStrip";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 
 export default function PartnerDisputes() {
@@ -24,9 +25,17 @@ export default function PartnerDisputes() {
     initialData: [],
   });
 
+  const summary = [
+    { label: "Disputes", value: String(disputes.length) },
+    { label: "Open", value: String(disputes.filter((item) => !["resolved", "dismissed", "closed"].includes(item.status)).length) },
+    { label: "Critical", value: String(disputes.filter((item) => item.severity === "critical").length) },
+    { label: "Payout-related", value: String(disputes.filter((item) => item.category === "payout").length) }
+  ];
+
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Disputes" title="Ownership and payout disputes under formal workflow" description="This layer is reserved for evidence-backed escalation and internal resolution paths." />
+      <AdminSummaryStrip items={summary} />
       {disputes.length ? (
         <Card className="rounded-[2rem] border-white/10 bg-card/80">
           <CardHeader><CardTitle>Open dispute registry</CardTitle></CardHeader>

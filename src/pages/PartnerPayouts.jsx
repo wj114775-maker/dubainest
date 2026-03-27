@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import PayoutLedgerTable from "@/components/partner/PayoutLedgerTable";
+import AdminSummaryStrip from "@/components/admin/AdminSummaryStrip";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 
 export default function PartnerPayouts() {
@@ -36,9 +37,17 @@ export default function PartnerPayouts() {
     initialData: [],
   });
 
+  const summary = [
+    { label: "Ledger entries", value: String(entries.length) },
+    { label: "Processing", value: String(entries.filter((item) => item.status === "processing").length) },
+    { label: "Paid", value: String(entries.filter((item) => item.status === "paid").length) },
+    { label: "Total", value: `AED ${entries.reduce((sum, item) => sum + Number(item.amount || 0), 0).toLocaleString()}` }
+  ];
+
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Payouts" title="Commission accrual, invoice and payout visibility" description="The ledger is designed for enterprise payout control, dispute handling and immutable references." />
+      <AdminSummaryStrip items={summary} />
       <PayoutLedgerTable entries={entries} />
     </div>
   );
