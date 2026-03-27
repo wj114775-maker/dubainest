@@ -7,6 +7,7 @@ import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import SectionHeading from "@/components/common/SectionHeading";
 import BuyerProfileCard from "@/components/account/BuyerProfileCard";
 import AdminShortcutsCard from "@/components/account/AdminShortcutsCard";
+import AdminDebugCard from "@/components/account/AdminDebugCard";
 import { roleGroups } from "@/lib/appShell";
 
 export default function Account() {
@@ -46,7 +47,7 @@ export default function Account() {
           </div>
         </CardContent>
       </Card>
-      {isInternal ? <AdminShortcutsCard /> : null}
+      {isInternal ? <><AdminDebugCard data={data} internalFromPage={isInternal} /><AdminShortcutsCard /></> : null}
       {data.isAuthenticated ? <BuyerProfileCard profile={profile} /> : null}
     </div>
   );
