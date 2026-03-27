@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import LeadOwnershipTable from "@/components/ops/LeadOwnershipTable";
 import PartnerLeadActionPanel from "@/components/leads/PartnerLeadActionPanel";
+import PartnerLeadHistoryPanel from "@/components/leads/PartnerLeadHistoryPanel";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -32,10 +33,13 @@ export default function PartnerLeads() {
     queryKey: ["partner-leads", current.user?.id],
     enabled: !!current.user?.id,
     queryFn: async () => {
-      const [profiles, leadsData, assignments] = await Promise.all([
+      const [profiles, leadsData, assignments, events, attempts, viewings] = await Promise.all([
         base44.entities.PartnerUserProfile.filter({ user_id: current.user.id }),
         base44.entities.Lead.list("-updated_date", 200),
         base44.entities.LeadAssignment.list("-updated_date", 200),
+        base44.entities.LeadEvent.list("-updated_date", 300),
+        base44.entities.LeadContactAttempt.list("-updated_date", 300),
+        base44.entities.Viewing.list("-updated_date", 300),
       ]);
 
       const partnerAgencyId = profiles[0]?.partner_agency_id;
@@ -50,6 +54,11 @@ export default function PartnerLeads() {
         .map((lead) => {
           const assignment = assignments.find((item) => item.lead_id === lead.id && item.partner_id === partnerAgencyId);
           const overdue = assignment?.sla_due_at ? new Date(assignment.sla_due_at) < new Date() : false;
+          const history = [
+            ...events.filter((item) => item.lead_id === lead.id).map((item) => ({ id: `event-${item.id}`, label: item.event_type || 'event', value: item.summary || '—' })),
+            ...attempts.filter((item) => item.lead_id === lead.id).map((item) => ({ id: `attempt-${item.id}`, label: item.channel || 'contact', value: [item.outcome, item.attempt_at].filter(Boolean).join(' · ') || '—' })),
+            ...viewings.filter((item) => item.lead_id === lead.id).map((item) => ({ id: `viewing-${item.id}`, label: item.status || 'viewing', value: [item.scheduled_at, item.completion_notes].filter(Boolean).join(' · ') || '—' }))
+          ].slice(0, 6);
           return {
             id: lead.id,
             assignment_id: assignment?.id,
@@ -59,7 +68,8 @@ export default function PartnerLeads() {
             ownership_status: lead.ownership_status || "unowned",
             anti_circumvention_flag: lead.is_circumvention_flagged || lead.ownership_status === "protected",
             assignment,
-            timeline: [assignment?.assignment_reason, assignment?.sla_due_at, lead.notes_summary].filter(Boolean).join(" · ")
+            timeline: [assignment?.assignment_reason, assignment?.sla_due_at, lead.notes_summary].filter(Boolean).join(" · "),
+            history
           };
         });
     },
@@ -80,7 +90,10 @@ export default function PartnerLeads() {
           ];
         }}
       />
-      {selectedLead ? <PartnerLeadActionPanel lead={selectedLead} assignment={selectedLead.assignment} loading={assignmentMutation.isPending} onSubmit={(payload) => assignmentMutation.mutate({ leadId: selectedLead.id, assignmentId: selectedLead.assignment_id, ...payload })} /> : null}
+      {selectedLead ? <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <PartnerLeadActionPanel lead={selectedLead} assignment={selectedLead.assignment} loading={assignmentMutation.isPending} onSubmit={(payload) => assignmentMutation.mutate({ leadId: selectedLead.id, assignmentId: selectedLead.assignment_id, ...payload })} />
+        <PartnerLeadHistoryPanel items={selectedLead.history || []} />
+      </div> : null}
     </div>
   );
 }

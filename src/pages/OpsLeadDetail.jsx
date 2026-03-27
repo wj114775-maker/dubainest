@@ -10,6 +10,7 @@ import InternalLeadActionPanel from "@/components/leads/InternalLeadActionPanel"
 import LeadNotesCard from "@/components/leads/LeadNotesCard";
 import LeadTimelinePanel from "@/components/leads/LeadTimelinePanel";
 import LeadRuleEvaluationPanel from "@/components/leads/LeadRuleEvaluationPanel";
+import ProtectionReviewPanel from "@/components/leads/ProtectionReviewPanel";
 import useAccessControl from "@/hooks/useAccessControl";
 
 export default function OpsLeadDetail() {
@@ -108,6 +109,7 @@ export default function OpsLeadDetail() {
             canManage={access.can("assignments.manage")}
             onSubmit={(payload) => manageLead.mutate(payload)}
           />
+          <ProtectionReviewPanel windows={data.windows} alerts={data.alerts} />
           <LeadNotesCard leadId={id} />
         </div>
       </div>

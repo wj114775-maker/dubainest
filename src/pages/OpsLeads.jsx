@@ -5,6 +5,7 @@ import SectionHeading from "@/components/common/SectionHeading";
 import AccessGuard from "@/components/admin/AccessGuard";
 import LeadFilterBar from "@/components/leads/LeadFilterBar";
 import InternalLeadTable from "@/components/leads/InternalLeadTable";
+import DuplicateQueueCard from "@/components/leads/DuplicateQueueCard";
 
 export default function OpsLeads() {
   const [filters, setFilters] = useState({ search: "", stage: "all", ownership: "all", priority: "all", source: "all", duplicate: "all", sla: "all" });
@@ -38,8 +39,11 @@ export default function OpsLeads() {
     meta: `${lead.country || "Unknown market"} · ${lead.priority || "standard"} · ${lead.assigned_partner_id || "Unassigned"}`,
     status: lead.status || "new",
     ownership_status: lead.ownership_status || "unowned",
-    badges: [lead.source, lead.is_private_inventory ? "Private inventory" : null, lead.is_high_value ? "High value" : null, lead.is_duplicate_candidate ? "Duplicate" : null, lead.sla_due_at && new Date(lead.sla_due_at) < new Date() ? "SLA overdue" : lead.sla_status].filter(Boolean)
+    badges: [lead.source, lead.is_private_inventory ? "Private inventory" : null, lead.is_high_value ? "High value" : null, lead.is_duplicate_candidate ? "Duplicate" : null, lead.sla_due_at && new Date(lead.sla_due_at) < new Date() ? "SLA overdue" : lead.sla_status].filter(Boolean),
+    duplicate_summary: [lead.lead_code, lead.country, lead.last_touch_at].filter(Boolean).join(" · ")
   })), [leads, filters]);
+
+  const duplicateQueue = filtered.filter((lead) => lead.badges.includes("Duplicate")).slice(0, 8).map((lead) => ({ id: lead.id, title: lead.title, summary: lead.duplicate_summary || lead.meta }));
 
   return (
     <div className="space-y-6">
@@ -47,6 +51,7 @@ export default function OpsLeads() {
       <AccessGuard permission="leads.read">
         <div className="space-y-6">
           <LeadFilterBar filters={filters} onChange={setFilters} />
+          <DuplicateQueueCard items={duplicateQueue} />
           <InternalLeadTable leads={filtered} />
         </div>
       </AccessGuard>
