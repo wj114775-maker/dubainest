@@ -42,6 +42,13 @@ function getTrustBand(score) {
   return 'low';
 }
 
+function listingFingerprint(listing) {
+  return [listing.title, listing.price, listing.area_id, listing.project_id, listing.property_type]
+    .filter(Boolean)
+    .join('|')
+    .toLowerCase();
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -61,28 +68,49 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Listing not found' }, { status: 404 });
     }
 
-    const [permits, verifications, evidence, cases, authorityRecords, projectVerifications, brokerVerifications] = await Promise.all([
+    const [permits, verifications, evidence, cases, authorityRecords, projectVerifications, brokerVerifications, allListings] = await Promise.all([
       base44.entities.ListingPermit.filter({ listing_id }),
       base44.entities.ListingVerification.filter({ listing_id }),
       base44.entities.ComplianceEvidence.filter({ listing_id }),
       base44.entities.ComplianceCase.filter({ listing_id }),
       base44.entities.ListingAuthorityRecord.filter({ listing_id }),
       listing.project_id ? base44.entities.ProjectVerification.filter({ project_id: listing.project_id }) : Promise.resolve([]),
-      listing.broker_id ? base44.entities.BrokerVerification.filter({ broker_id: listing.broker_id }) : Promise.resolve([])
+      listing.broker_id ? base44.entities.BrokerVerification.filter({ broker_id: listing.broker_id }) : Promise.resolve([]),
+      base44.entities.Listing.list('-updated_date', 200)
     ]);
 
     const latestPermit = permits.sort((a, b) => new Date(b.updated_date).getTime() - new Date(a.updated_date).getTime())[0];
+    const permitExpired = latestPermit?.expiry_date ? new Date(latestPermit.expiry_date) < new Date() : false;
     const permitValid = latestPermit?.status === 'verified' && latestPermit?.expiry_date && new Date(latestPermit.expiry_date) >= new Date();
     const authorityValid = authorityRecords.some((item) => item.status === 'valid');
     const brokerVerified = brokerVerifications.some((item) => item.status === 'passed');
     const projectVerified = projectVerifications.some((item) => item.status === 'passed');
     const openCases = cases.filter((item) => !['resolved', 'closed', 'approved'].includes(item.status));
-    const duplicateCase = openCases.find((item) => item.category === 'duplicate');
     const evidenceCount = evidence.length;
     const completenessScore = calculateCompleteness(listing);
     const freshness = calculateFreshness(listing.last_refreshed_at, Number(listing.stale_after_days || 30));
-    const duplicateRiskScore = duplicateCase || listing.duplicate_status === 'candidate' ? 80 : 15;
 
+    const currentFingerprint = listingFingerprint(listing);
+    const duplicateCandidates = allListings.filter((item) => item.id !== listing_id && listingFingerprint(item) === currentFingerprint);
+    const primaryListing = [listing, ...duplicateCandidates]
+      .sort((a, b) => (Number(b.trust_score || 0) - Number(a.trust_score || 0)) || new Date(a.created_date).getTime() - new Date(b.created_date).getTime())[0];
+    const duplicateRiskScore = duplicateCandidates.length ? 80 : 15;
+
+    for (const candidate of duplicateCandidates) {
+      const existing = await base44.entities.ListingDuplicateReview.filter({ listing_id: listing_id, matched_listing_id: candidate.id });
+      if (!existing.length) {
+        await base44.entities.ListingDuplicateReview.create({
+          listing_id,
+          matched_listing_id: candidate.id,
+          status: 'candidate',
+          confidence_score: 92,
+          primary_listing_id: primaryListing.id,
+          decision_reason: 'Automated duplicate fingerprint match'
+        });
+      }
+    }
+
+    const duplicateBlocked = duplicateCandidates.length > 0 && primaryListing.id !== listing_id;
     const trustScore = clamp(
       (permitValid ? 25 : 0) +
       (brokerVerified ? 15 : 0) +
@@ -105,15 +133,24 @@ Deno.serve(async (req) => {
       !projectVerified && listing.project_id ? 'project_verification' : null,
       completenessScore < 70 ? 'listing_completeness' : null,
       freshness.status !== 'fresh' && freshness.status !== 'aging' ? 'listing_refresh' : null,
-      evidenceCount === 0 ? 'evidence' : null
+      evidenceCount === 0 ? 'evidence' : null,
+      duplicateBlocked ? 'duplicate_review' : null
     ].filter(Boolean);
 
-    const openIssueCodes = openCases.map((item) => item.category);
-    const canPublish = permitValid && authorityValid && brokerVerified && freshness.status !== 'expired' && trustScore >= 70 && !duplicateCase;
-    const publicationStatus = canPublish ? (listing.publication_status === 'published' ? 'published' : 'eligible') : (latestPermit?.status === 'expired' || freshness.status === 'expired' ? 'frozen' : 'suppressed');
+    const openIssueCodes = [
+      ...openCases.map((item) => item.category),
+      ...(permitExpired ? ['permit_expired'] : []),
+      ...(duplicateBlocked ? ['duplicate'] : []),
+      ...(freshness.status === 'expired' ? ['stale_expired'] : [])
+    ];
+
+    const canPublish = permitValid && authorityValid && brokerVerified && freshness.status !== 'expired' && trustScore >= 70 && !duplicateBlocked;
+    const publicationStatus = canPublish
+      ? (listing.publication_status === 'published' ? 'published' : 'eligible')
+      : (permitExpired || freshness.status === 'expired' || duplicateBlocked ? 'frozen' : 'suppressed');
     const status = canPublish
       ? (listing.status === 'published' ? 'published' : 'verified')
-      : (latestPermit?.status === 'expired' ? 'frozen' : freshness.status === 'stale' || freshness.status === 'expired' ? 'stale' : openCases.length ? 'flagged' : 'verification_pending');
+      : (permitExpired ? 'frozen' : duplicateBlocked ? 'flagged' : freshness.status === 'stale' || freshness.status === 'expired' ? 'stale' : openCases.length ? 'flagged' : 'verification_pending');
 
     const updatedListing = await base44.entities.Listing.update(listing_id, {
       permit_verified: permitValid,
@@ -127,13 +164,17 @@ Deno.serve(async (req) => {
       freshness_score: freshness.score,
       freshness_status: freshness.status,
       duplicate_risk_score: duplicateRiskScore,
-      issue_count: openCases.length,
+      duplicate_status: duplicateCandidates.length ? (duplicateBlocked ? 'suppressed' : 'candidate') : 'clear',
+      primary_listing_id: duplicateCandidates.length ? primaryListing.id : '',
+      duplicate_group_key: duplicateCandidates.length ? currentFingerprint : '',
+      issue_count: openIssueCodes.length,
       evidence_count: evidenceCount,
       missing_requirements: missingRequirements,
       open_issue_codes: openIssueCodes,
       publication_status: publicationStatus,
       status,
       publish_block_reason: canPublish ? '' : missingRequirements.join(', '),
+      freeze_reason: permitExpired ? 'permit_expired' : duplicateBlocked ? 'duplicate_detected' : freshness.status === 'expired' ? 'freshness_expired' : '',
       frozen_at: publicationStatus === 'frozen' ? new Date().toISOString() : null,
       last_checked_at: new Date().toISOString()
     });
@@ -150,6 +191,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (duplicateBlocked && !openCases.find((item) => item.category === 'duplicate')) {
+      await base44.entities.ComplianceCase.create({
+        listing_id,
+        partner_agency_id: listing.partner_agency_id,
+        severity: 'high',
+        category: 'duplicate',
+        summary: `Duplicate review required for ${listing.title}`,
+        status: 'triage',
+        trust_impact: 15
+      });
+    }
+
+    const notifications = [];
+    if (status === 'verified') notifications.push({ title: 'Listing verified', body: `${listing.title} passed verification and is eligible for publication.` });
+    if (publicationStatus === 'frozen') notifications.push({ title: 'Listing frozen', body: `${listing.title} was frozen due to permit, authority, freshness, or duplicate issues.` });
+    if (freshness.status === 'stale' || freshness.status === 'expired') notifications.push({ title: 'Stale-stock reminder', body: `${listing.title} needs a refresh to remain publishable.` });
+    if (permitExpired) notifications.push({ title: 'Permit expiry alert', body: `${listing.title} has an expired permit and requires action.` });
+    if (missingRequirements.includes('evidence')) notifications.push({ title: 'Evidence requested', body: `${listing.title} needs supporting evidence before publication.` });
+    if (listing.status === 'submitted') notifications.push({ title: 'Listing submitted', body: `${listing.title} is now in the internal review queue.` });
+
+    for (const item of notifications) {
+      await base44.entities.Notification.create({
+        title: item.title,
+        body: item.body,
+        channel: 'in_app',
+        status: 'queued'
+      });
+    }
+
     await base44.entities.AuditLog.create({
       entity_name: 'Listing',
       entity_id: listing_id,
@@ -163,7 +233,8 @@ Deno.serve(async (req) => {
         trust_band: trustBand,
         freshness_status: freshness.status,
         publication_status: publicationStatus,
-        missing_requirements: missingRequirements
+        missing_requirements: missingRequirements,
+        duplicate_candidates: duplicateCandidates.map((item) => item.id)
       }
     });
 
