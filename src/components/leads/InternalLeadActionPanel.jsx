@@ -47,6 +47,7 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
     if (form.action === "lock" && lead?.status === "merged") return "Merged leads cannot be locked.";
     if (form.action === "merge" && lead?.status === "merged") return "This lead is already merged.";
     if (form.action === "merge" && !lead?.is_duplicate_candidate) return "Mark this lead as a duplicate candidate before merging.";
+    if (form.action === "merge" && form.target_lead_id === lead?.id) return "A lead cannot be merged into itself.";
     if (form.action === "mark_duplicate" && lead?.status === "merged") return "Merged leads cannot be marked as duplicate.";
     if (form.action === "mark_duplicate" && lead?.is_duplicate_candidate) return "This lead is already in duplicate review.";
     if (form.action === "escalate" && isClosed) return "Closed leads cannot be escalated.";

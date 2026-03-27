@@ -10,6 +10,7 @@ export default function LeadComparisonReviewCard({ currentLead, selectedCandidat
     { label: "Stage", current: currentLead?.current_stage || "—", target: compareLead?.current_stage || "—" },
     { label: "Assigned partner", current: currentLead?.assigned_partner_id || "—", target: compareLead?.assigned_partner_id || "—" },
     { label: "Country", current: currentLead?.country || "—", target: compareLead?.country || "—" },
+    { label: "Priority", current: currentLead?.priority || "—", target: compareLead?.priority || "—" },
     { label: "Last touch", current: currentLead?.last_touch_at || "—", target: compareLead?.last_touch_at || "—" }
   ];
 
@@ -19,6 +20,7 @@ export default function LeadComparisonReviewCard({ currentLead, selectedCandidat
         <CardTitle>Merge review</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {compareLead ? <div className="rounded-2xl border border-dashed border-white/10 bg-muted/20 p-3 text-sm text-muted-foreground">Post-merge consolidation keeps the target lead as the surviving record, keeps the highest priority, keeps the latest touch date, and appends merge notes.</div> : null}
         {compareLead ? rows.map((row) => (
           <div key={row.label} className="grid gap-2 rounded-2xl border border-white/10 p-3 text-sm md:grid-cols-3">
             <p className="font-medium text-foreground">{row.label}</p>

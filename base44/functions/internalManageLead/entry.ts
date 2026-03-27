@@ -258,7 +258,7 @@ Deno.serve(async (req) => {
         rule_id: 'duplicate_merge_review',
         trigger_event: action,
         matched: true,
-        evaluation_payload_json: { source_lead_id: lead_id, target_lead_id },
+        evaluation_payload_json: { source_lead_id: lead_id, target_lead_id, merge_confidence: 0.9 },
         result_payload_json: {
           result: 'merged_after_review',
           target_lead_id,
@@ -272,7 +272,11 @@ Deno.serve(async (req) => {
       });
 
       await base44.entities.Lead.update(lead_id, {
-        is_duplicate_candidate: false
+        is_duplicate_candidate: false,
+        ownership_status: 'released',
+        protected_until: null,
+        assigned_partner_id: null,
+        notes_summary: consolidatedNotes
       });
     }
 
@@ -313,7 +317,7 @@ Deno.serve(async (req) => {
       summary: selected.summary,
       immutable: true,
       scope: 'lead',
-      metadata: { notes: notes || '', partner_id: partner_id || '', target_lead_id: target_lead_id || '', severity: severity || '' }
+      metadata: { notes: notes || '', partner_id: partner_id || '', target_lead_id: target_lead_id || '', severity: severity || '', merge_confidence: action === 'merge' ? 0.9 : null }
     });
 
     return Response.json({ lead: updatedLead, event, audit });
