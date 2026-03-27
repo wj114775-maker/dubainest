@@ -25,7 +25,7 @@ export default function Notifications() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Inbox" title="Operational notifications" description="Review alerts, reminders and workflow notices linked to lead operations." />
+      <SectionHeading eyebrow="Inbox" title="Operational notifications" description="Review alerts, reminders and workflow notices linked to lead and supply operations." />
       <Card className="rounded-[2rem] border-white/10 bg-card/80">
         <CardHeader><CardTitle>Notification centre</CardTitle></CardHeader>
         <CardContent className="space-y-3">
@@ -38,6 +38,7 @@ export default function Notifications() {
               </div>
               <div className="flex gap-2">
                 {item.lead_id ? <Button variant="outline" asChild><Link to={`/ops/leads/${item.lead_id}`}>Open lead</Link></Button> : null}
+                {item.body?.includes("listing") && item.user_id ? <Button variant="outline" asChild><Link to="/partner/listings">Open listings</Link></Button> : null}
                 {item.status !== "read" ? <Button variant="ghost" onClick={() => markRead.mutate(item.id)}>Mark read</Button> : null}
               </div>
             </div>

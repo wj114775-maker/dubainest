@@ -5,6 +5,7 @@ import SectionHeading from "@/components/common/SectionHeading";
 import ComplianceQueue from "@/components/ops/ComplianceQueue";
 import ComplianceCaseCard from "@/components/ops/ComplianceCaseCard";
 import ComplianceHealthSummary from "@/components/ops/ComplianceHealthSummary";
+import ComplianceFilters from "@/components/ops/ComplianceFilters";
 import ListingGovernanceQueue from "@/components/ops/ListingGovernanceQueue";
 import AccessGuard from "@/components/admin/AccessGuard";
 import AdminRecordFormCard from "@/components/admin/AdminRecordFormCard";
@@ -14,6 +15,7 @@ export default function OpsCompliance() {
   const queryClient = useQueryClient();
   const [caseForm, setCaseForm] = useState({ summary: "", category: "permit", severity: "low", status: "open" });
   const [ruleForm, setRuleForm] = useState({ name: "", rule_type: "publishing_gate", status: "active", conditions: "{}", actions: "{}" });
+  const [filters, setFilters] = useState({ severity: "all", trustBand: "all", freshness: "all", permit: "all", partner: "all", scope: "all" });
 
   const { data: cases = [] } = useQuery({
     queryKey: ["ops-compliance-cases"],
@@ -26,7 +28,26 @@ export default function OpsCompliance() {
     initialData: []
   });
 
-  const queueItems = cases.map((item) => ({
+  const filteredListings = listings.filter((item) => {
+    const severityMatch = filters.severity === "all" || cases.some((entry) => entry.listing_id === item.id && entry.severity === filters.severity);
+    const trustMatch = filters.trustBand === "all" || item.trust_band === filters.trustBand;
+    const freshnessMatch = filters.freshness === "all" || item.freshness_status === filters.freshness;
+    const permitMatch = filters.permit === "all" || (filters.permit === "verified" ? item.permit_verified : !item.permit_verified);
+    const partnerMatch = filters.partner === "all" || (filters.partner === "assigned" ? !!item.partner_agency_id : !item.partner_agency_id);
+    return severityMatch && trustMatch && freshnessMatch && permitMatch && partnerMatch;
+  });
+
+  const filteredCases = cases.filter((item) => {
+    const listing = listings.find((entry) => entry.id === item.listing_id);
+    const severityMatch = filters.severity === "all" || item.severity === filters.severity;
+    const trustMatch = filters.trustBand === "all" || !listing || listing.trust_band === filters.trustBand;
+    const freshnessMatch = filters.freshness === "all" || !listing || listing.freshness_status === filters.freshness;
+    const permitMatch = filters.permit === "all" || !listing || (filters.permit === "verified" ? listing.permit_verified : !listing.permit_verified);
+    const partnerMatch = filters.partner === "all" || !listing || (filters.partner === "assigned" ? !!listing.partner_agency_id : !listing.partner_agency_id);
+    return severityMatch && trustMatch && freshnessMatch && permitMatch && partnerMatch;
+  });
+
+  const queueItems = filteredCases.map((item) => ({
     id: item.id,
     summary: item.summary,
     category: item.category,
@@ -47,17 +68,20 @@ export default function OpsCompliance() {
     <div className="space-y-6">
       <SectionHeading eyebrow="Compliance" title="Verification, permit and publishing controls" description="Compliance teams control what can go live, what is flagged, and what needs evidence before partner execution continues." />
       <AccessGuard permission="compliance_cases.read">
-        <ComplianceQueue items={queueItems} />
+        <ComplianceFilters filters={filters} onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))} />
+      </AccessGuard>
+      <AccessGuard permission="compliance_cases.read">
+        {filters.scope !== "listings" ? <ComplianceQueue items={queueItems} /> : null}
       </AccessGuard>
       <AccessGuard permission="compliance_cases.read">
         <ComplianceHealthSummary listings={listings} cases={cases} />
       </AccessGuard>
       <AccessGuard permission="compliance_cases.read">
-        <ListingGovernanceQueue listings={listings.filter((item) => ["flagged", "frozen", "stale", "verification_pending", "under_review"].includes(item.status)).slice(0, 8)} />
+        {filters.scope !== "cases" ? <ListingGovernanceQueue listings={filteredListings.filter((item) => ["flagged", "frozen", "stale", "verification_pending", "under_review"].includes(item.status)).slice(0, 8)} /> : null}
       </AccessGuard>
       <AccessGuard permission="compliance_cases.read">
         <div className="grid gap-4 md:grid-cols-2">
-          {cases.map((item) => <ComplianceCaseCard key={item.id} item={item} />)}
+          {filteredCases.map((item) => <ComplianceCaseCard key={item.id} item={item} />)}
         </div>
       </AccessGuard>
       <AccessGuard permission="compliance_cases.manage">

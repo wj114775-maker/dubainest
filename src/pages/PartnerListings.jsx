@@ -31,6 +31,43 @@ export default function PartnerListings() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["partner-listings", current.user?.id] })
   });
 
+  const listingAction = useMutation({
+    mutationFn: async ({ listing, action }) => {
+      if (action === "refresh") {
+        return base44.entities.Listing.update(listing.id, { last_refreshed_at: new Date().toISOString(), status: "submitted" });
+      }
+      if (action === "submit") {
+        return base44.entities.Listing.update(listing.id, { status: "submitted" });
+      }
+      if (action === "republish") {
+        await base44.entities.ListingPublicationDecision.create({
+          listing_id: listing.id,
+          decision_type: "republish",
+          decision_status: "pending",
+          reason: "Partner requested republish",
+          snapshot: { status: listing.status, publication_status: listing.publication_status }
+        });
+        return base44.entities.Listing.update(listing.id, { status: "under_review", publication_status: "suppressed" });
+      }
+      if (action === "evidence") {
+        await base44.entities.ComplianceEvidence.create({
+          listing_id: listing.id,
+          compliance_case_id: "manual_partner_submission",
+          file_url: listing.hero_image_url || "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1600&q=80",
+          evidence_type: "note",
+          notes: "Partner submitted additional evidence for review.",
+          status: "submitted"
+        });
+        return base44.entities.Listing.update(listing.id, { status: "under_review" });
+      }
+      return null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["partner-listings", current.user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-inbox"] });
+    }
+  });
+
   const summary = [
     { label: "Listings", value: String(listings.length) },
     { label: "Published", value: String(listings.filter((item) => item.publication_status === "published").length) },
@@ -43,7 +80,7 @@ export default function PartnerListings() {
       <SectionHeading eyebrow="Listings" title="Permit, duplicate and stale controls before publishing" description="Partners can only operate published inventory once compliance and verification gates have been satisfied." />
       <AdminSummaryStrip items={summary} />
       <PartnerListingsHealthCard listings={listings} />
-      <PartnerListingsTable listings={listings} onEvaluate={evaluateListing.mutate} evaluatingId={evaluateListing.isPending ? evaluateListing.variables : null} />
+      <PartnerListingsTable listings={listings} onEvaluate={evaluateListing.mutate} evaluatingId={evaluateListing.isPending ? evaluateListing.variables : null} onAction={(listing, action) => listingAction.mutate({ listing, action })} actionLoading={listingAction.isPending ? listingAction.variables?.listing?.id : null} />
     </div>
   );
 }
