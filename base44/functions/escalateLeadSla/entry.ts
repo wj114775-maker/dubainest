@@ -13,11 +13,43 @@ Deno.serve(async (req) => {
     const now = new Date();
     const expired = assignments.filter((item) => item.assignment_status === 'pending' && item.sla_due_at && new Date(item.sla_due_at) < now);
 
+    const agencies = await base44.asServiceRole.entities.PartnerAgency.list('-updated_date', 200);
+
     for (const assignment of expired) {
-      await base44.asServiceRole.entities.LeadAssignment.update(assignment.id, { assignment_status: 'expired' });
+      await base44.asServiceRole.entities.LeadAssignment.update(assignment.id, { assignment_status: 'expired', sla_status: 'breached' });
+
+      const candidates = agencies
+        .filter((item) => item.status === 'active' && item.id !== assignment.partner_id)
+        .map((item) => ({
+          partner: item,
+          score: Number(item.partner_trust_score || 0) - assignments.filter((row) => row.partner_id === item.id && row.assignment_status === 'pending').length * 10
+        }))
+        .sort((a, b) => b.score - a.score);
+
+      const reassignedPartnerId = candidates[0]?.partner?.id || null;
+
+      if (reassignedPartnerId) {
+        await base44.asServiceRole.entities.LeadAssignment.create({
+          lead_id: assignment.lead_id,
+          partner_id: reassignedPartnerId,
+          assignment_type: 'rule_based',
+          assigned_at: new Date().toISOString(),
+          assignment_status: 'pending',
+          assignment_reason: 'Auto-reassigned after SLA breach',
+          assigned_by: 'system',
+          sla_due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        });
+        await base44.asServiceRole.entities.Lead.update(assignment.lead_id, {
+          assigned_partner_id: reassignedPartnerId,
+          status: 'assigned',
+          current_stage: 'assigned',
+          ownership_status: 'released'
+        });
+      }
+
       await base44.asServiceRole.entities.Notification.create({
         title: 'Lead SLA breached',
-        body: `Lead assignment ${assignment.id} has passed its SLA window.`,
+        body: `Lead assignment ${assignment.id} has passed its SLA window.${reassignedPartnerId ? ' The lead was auto-reassigned.' : ''}`,
         channel: 'in_app',
         status: 'queued',
       });
@@ -25,8 +57,9 @@ Deno.serve(async (req) => {
         lead_id: assignment.lead_id,
         event_type: 'sla_breached',
         actor_type: 'system',
-        summary: 'Lead assignment expired without partner action.',
-        event_payload_json: { assignment_id: assignment.id },
+        summary: reassignedPartnerId ? 'Lead assignment expired and was auto-reassigned.' : 'Lead assignment expired without partner action.',
+        reason: reassignedPartnerId ? 'Auto-reassigned after SLA breach' : 'SLA breach without eligible reassignment target',
+        event_payload_json: { assignment_id: assignment.id, reassigned_partner_id: reassignedPartnerId },
       });
     }
 

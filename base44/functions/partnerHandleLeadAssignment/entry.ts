@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       },
       reject: {
         assignment_updates: { assignment_status: 'rejected', accepted_at: assignment.accepted_at, rejected_at: now },
-        lead_updates: { status: 'qualified', current_stage: 'qualified', ownership_status: 'released' },
+        lead_updates: { status: 'qualified', current_stage: 'qualified', ownership_status: 'released', assigned_partner_id: null },
         event_type: 'partner_assignment_rejected',
         summary: 'Partner rejected lead assignment.'
       },
@@ -154,6 +154,42 @@ Deno.serve(async (req) => {
       immutable: true,
     });
 
+    let reassignment = null;
+    if (action === 'reject' || action === 'request_reassignment') {
+      const agencies = await base44.entities.PartnerAgency.list('-updated_date', 200);
+      const assignments = await base44.entities.LeadAssignment.list('-updated_date', 500);
+      const candidates = agencies.filter((item) => item.status === 'active' && item.id !== partnerAgencyId);
+      const ranked = candidates
+        .map((item) => ({
+          partner: item,
+          score: Number(item.partner_trust_score || 0) - assignments.filter((row) => row.partner_id === item.id && row.assignment_status === 'pending').length * 10
+        }))
+        .sort((a, b) => b.score - a.score);
+
+      if (ranked[0]?.partner?.id) {
+        reassignment = await base44.entities.LeadAssignment.create({
+          lead_id,
+          partner_id: ranked[0].partner.id,
+          assignment_type: 'rule_based',
+          assigned_at: now,
+          assignment_status: 'pending',
+          assignment_reason: `Auto-reassigned after ${action}${notes ? `: ${notes}` : ''}`,
+          assigned_by: 'system',
+          sla_due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        });
+        await base44.entities.Lead.update(lead_id, { assigned_partner_id: ranked[0].partner.id, status: 'assigned', current_stage: 'assigned' });
+        await base44.entities.LeadEvent.create({
+          lead_id,
+          event_type: 'lead_auto_reassigned',
+          actor_type: 'system',
+          summary: 'Lead auto-reassigned after partner rejection/request.',
+          reason: notes || action,
+          event_payload_json: { previous_partner_id: partnerAgencyId, new_partner_id: ranked[0].partner.id, previous_assignment_id: assignment_id },
+          immutable: true,
+        });
+      }
+    }
+
     await base44.entities.Notification.create({
       title: selected.summary,
       body: `${updatedLead.lead_code || updatedLead.id} changed to ${updatedLead.status || 'updated'} by the assigned partner.`,
@@ -162,7 +198,7 @@ Deno.serve(async (req) => {
       status: 'queued',
     });
 
-    return Response.json({ lead: updatedLead, assignment: updatedAssignment, event });
+    return Response.json({ lead: updatedLead, assignment: updatedAssignment, event, reassignment });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

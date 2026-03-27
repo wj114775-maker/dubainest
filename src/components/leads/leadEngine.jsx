@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { rankEligiblePartners, summariseRoutingReason } from '@/lib/partnerRouting';
 
 function getComparableValue(record, path) {
   return path.split('.').reduce((acc, key) => (acc == null ? undefined : acc[key]), record);
@@ -105,7 +106,7 @@ function buildDefaultRule(record, preferredPartnerId) {
     assignment: preferredPartnerId ? {
       partner_id: preferredPartnerId,
       assignment_type: record.is_private_inventory || record.is_concierge ? 'rule_based' : 'round_robin',
-      assignment_reason: record.is_private_inventory ? 'Private inventory routing' : record.is_concierge ? 'Concierge routing' : record.buying_purpose === 'investor' ? 'Investor routing' : 'Buyer intent routing',
+      assignment_reason: record.routing_reason || (record.is_private_inventory ? 'Private inventory routing' : record.is_concierge ? 'Concierge routing' : record.buying_purpose === 'investor' ? 'Investor routing' : 'Buyer intent routing'),
       sla_due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
     } : null,
     window: record.is_private_inventory || record.is_high_value ? {
@@ -293,20 +294,33 @@ export async function createOrEnrichLeadFromIntent(payload) {
     event_payload_json: { compare_set_id: item.id, listing_ids: item.listing_ids },
   })));
 
-  const partnerAgencies = await base44.entities.PartnerAgency.list('-updated_date', 200);
-  const preferredPartner = partnerAgencies.find((item) => {
-    const geographyMatch = payload.country && item.country ? item.country === payload.country : true;
-    const privateMatch = payload.is_private_inventory ? item.status === 'active' : true;
-    const conciergeMatch = payload.is_concierge ? item.status === 'active' : true;
-    const investorMatch = payload.buying_purpose === 'investor' ? (item.specialties || '').toLowerCase().includes('invest') || true : true;
-    return geographyMatch && privateMatch && conciergeMatch && investorMatch;
-  });
+  const [partnerAgencies, assignments] = await Promise.all([
+    base44.entities.PartnerAgency.list('-updated_date', 200),
+    base44.entities.LeadAssignment.list('-updated_date', 500)
+  ]);
+  const partnerMetrics = partnerAgencies.reduce((acc, partner) => {
+    const partnerAssignments = assignments.filter((item) => item.partner_id === partner.id);
+    const pendingCount = partnerAssignments.filter((item) => item.assignment_status === 'pending').length;
+    const acceptedCount = partnerAssignments.filter((item) => item.assignment_status === 'accepted').length;
+    const rejectedCount = partnerAssignments.filter((item) => item.assignment_status === 'rejected').length;
+    const breachedCount = partnerAssignments.filter((item) => item.sla_status === 'breached' || item.assignment_status === 'expired').length;
+    acc[partner.id] = {
+      capacityScore: Math.max(0, 100 - pendingCount * 15),
+      performanceScore: Math.max(0, 60 + acceptedCount * 8 - rejectedCount * 12 - breachedCount * 15),
+      responsivenessScore: Math.max(0, 100 - breachedCount * 20)
+    };
+    return acc;
+  }, {});
+  const rankedPartners = rankEligiblePartners(partnerAgencies, { ...leadRecord, ...payload }, partnerMetrics);
+  const preferredPartner = rankedPartners[0]?.partner || null;
+  const routingReason = rankedPartners[0]?.routingReason || summariseRoutingReason({ partner: preferredPartner || partnerAgencies[0] || {}, lead: { ...leadRecord, ...payload }, metrics: partnerMetrics[preferredPartner?.id] || {}, mode: 'fallback_routing' });
   const preferredPartnerId = payload.assigned_partner_id || leadRecord.assigned_partner_id || preferredPartner?.id || partnerAgencies[0]?.id;
   const runtimeRecord = {
     ...leadRecord,
     ...payload,
     trigger_event: existingLead ? 'lead_updated' : 'lead_created',
     preferred_partner_id: preferredPartnerId,
+    routing_reason: routingReason,
     is_existing_lead: Boolean(existingLead)
   };
 
@@ -441,6 +455,7 @@ export async function createOrEnrichLeadFromIntent(payload) {
     action: 'lead_rules_executed',
     actor_id: 'system',
     summary: matchedRules.length ? `Lead rules executed: ${matchedRules.map((item) => item.rule.name).join(', ')}` : 'Lead rules executed with fallback routing',
+    reason: routingReason,
     immutable: true,
     scope: 'lead',
     metadata: {
