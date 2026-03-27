@@ -12,6 +12,9 @@ Deno.serve(async (req) => {
     const { lead_id, action, notes, partner_id, target_lead_id, severity } = await req.json();
     const runtimeRuleMatches = [];
 
+    const requireNotes = ['escalate', 'flag_circumvention', 'merge', 'release'];
+    const restrictedByOwnership = ['assign', 'merge'];
+
     if (!lead_id || !action) {
       return Response.json({ error: 'lead_id and action are required' }, { status: 400 });
     }
@@ -67,7 +70,8 @@ Deno.serve(async (req) => {
       },
       escalate: {
         updates: {
-          priority: 'critical'
+          priority: 'critical',
+          ownership_status: lead.ownership_status === 'unowned' ? 'soft_owned' : lead.ownership_status
         },
         event_type: 'lead_escalated',
         summary: 'Internal ops escalated the lead.'
@@ -94,6 +98,21 @@ Deno.serve(async (req) => {
 
     if (action === 'merge' && !target_lead_id) {
       return Response.json({ error: 'target_lead_id is required for merge' }, { status: 400 });
+    }
+
+    if (requireNotes.includes(action) && !notes?.trim()) {
+      return Response.json({ error: 'notes are required for this action' }, { status: 400 });
+    }
+
+    if (restrictedByOwnership.includes(action) && lead.ownership_status === 'protected' && action !== 'merge') {
+      return Response.json({ error: 'Lead is protected and cannot be reassigned without release' }, { status: 400 });
+    }
+
+    if (action === 'merge') {
+      const targetLead = await base44.entities.Lead.get(target_lead_id);
+      if (!targetLead || targetLead.id === lead_id) {
+        return Response.json({ error: 'Select a valid duplicate target lead' }, { status: 400 });
+      }
     }
 
     if (lead.is_private_inventory) {
@@ -137,8 +156,8 @@ Deno.serve(async (req) => {
         alert_type: 'bypass_risk',
         severity: severity || 'high',
         summary: notes || 'Circumvention risk detected by internal ops.',
-        evidence_json: { lead_id, source: lead.source, ownership_status: lead.ownership_status },
-        status: 'open',
+        evidence_json: { lead_id, source: lead.source, ownership_status: lead.ownership_status, evidence_note: notes || '' },
+        status: 'reviewing',
         opened_by: user.id,
         assigned_reviewer_id: user.id,
       });

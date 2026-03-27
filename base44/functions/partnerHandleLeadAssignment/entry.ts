@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
     }
 
     const { lead_id, assignment_id, action, notes, outcome, scheduled_at } = await req.json();
+    const noteRequiredActions = ['reject', 'request_reassignment', 'mark_lost', 'mark_invalid', 'log_contact_attempt', 'log_viewing_completed'];
 
     if (!lead_id || !assignment_id || !action) {
       return Response.json({ error: 'lead_id, assignment_id and action are required' }, { status: 400 });
@@ -48,7 +49,7 @@ Deno.serve(async (req) => {
         summary: 'Partner rejected lead assignment.'
       },
       request_reassignment: {
-        assignment_updates: { assignment_status: 'reassigned', rejected_at: now },
+        assignment_updates: { assignment_status: 'reassigned', rejected_at: now, assignment_reason: notes || 'Partner requested reassignment' },
         lead_updates: { status: 'assigned', current_stage: 'assigned', ownership_status: 'released', assigned_partner_id: null },
         event_type: 'partner_reassignment_requested',
         summary: 'Partner requested reassignment.'
@@ -102,6 +103,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unsupported action' }, { status: 400 });
     }
 
+    if (assignment.assignment_status === 'rejected' || assignment.assignment_status === 'expired') {
+      return Response.json({ error: 'This assignment is no longer actionable' }, { status: 400 });
+    }
+
+    if (noteRequiredActions.includes(action) && !notes?.trim()) {
+      return Response.json({ error: 'notes are required for this action' }, { status: 400 });
+    }
+
+    if ((action === 'log_callback_booked' || action === 'log_viewing_booked' || action === 'log_viewing_completed') && !scheduled_at) {
+      return Response.json({ error: 'scheduled_at is required for this action' }, { status: 400 });
+    }
+
     const updatedAssignment = await base44.entities.LeadAssignment.update(assignment_id, { ...selected.assignment_updates, sla_status: slaStatus });
     const updatedLead = await base44.entities.Lead.update(lead_id, selected.lead_updates);
 
@@ -125,7 +138,7 @@ Deno.serve(async (req) => {
         status: action === 'log_viewing_completed' ? 'completed' : 'confirmed',
         broker_id: lead.assigned_broker_id || '',
         completion_notes: notes || '',
-        lost_reason: action === 'mark_lost' ? (notes || 'Lost by partner') : ''
+        lost_reason: ''
       });
     }
 

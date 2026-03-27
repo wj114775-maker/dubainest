@@ -6,12 +6,15 @@ import SectionHeading from "@/components/common/SectionHeading";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LeadRecordPanel from "@/components/leads/LeadRecordPanel";
-import InternalLeadActionsCard from "@/components/leads/InternalLeadActionsCard";
+import InternalLeadActionPanel from "@/components/leads/InternalLeadActionPanel";
 import LeadNotesCard from "@/components/leads/LeadNotesCard";
+import LeadTimelinePanel from "@/components/leads/LeadTimelinePanel";
+import useAccessControl from "@/hooks/useAccessControl";
 
 export default function OpsLeadDetail() {
   const { id } = useParams();
   const queryClient = useQueryClient();
+  const { data: access } = useAccessControl();
   const manageLead = useMutation({
     mutationFn: ({ action, notes, partner_id, target_lead_id, severity }) => base44.functions.invoke("internalManageLead", { lead_id: id, action, notes, partner_id, target_lead_id, severity }),
     onSuccess: () => {
@@ -24,7 +27,7 @@ export default function OpsLeadDetail() {
   const { data } = useQuery({
     queryKey: ["ops-lead-detail", id],
     queryFn: async () => {
-      const [lead, attributions, identities, assignments, events, attempts, viewings, windows, alerts, audits] = await Promise.all([
+      const [lead, attributions, identities, assignments, events, attempts, viewings, windows, alerts, audits, partners, leads] = await Promise.all([
         base44.entities.Lead.get(id),
         base44.entities.LeadAttribution.filter({ lead_id: id }),
         base44.entities.LeadIdentity.filter({ lead_id: id }),
@@ -34,11 +37,13 @@ export default function OpsLeadDetail() {
         base44.entities.Viewing.filter({ lead_id: id }),
         base44.entities.LeadProtectionWindow.filter({ lead_id: id }),
         base44.entities.CircumventionAlert.filter({ lead_id: id }),
-        base44.entities.AuditLog.filter({ entity_id: id })
+        base44.entities.AuditLog.filter({ entity_id: id }),
+        base44.entities.PartnerAgency.list("-updated_date", 100),
+        base44.entities.Lead.list("-updated_date", 200)
       ]);
-      return { lead, attributions, identities, assignments, events, attempts, viewings, windows, alerts, audits };
+      return { lead, attributions, identities, assignments, events, attempts, viewings, windows, alerts, audits, partners, leads };
     },
-    initialData: { lead: null, attributions: [], identities: [], assignments: [], events: [], attempts: [], viewings: [], windows: [], alerts: [], audits: [] }
+    initialData: { lead: null, attributions: [], identities: [], assignments: [], events: [], attempts: [], viewings: [], windows: [], alerts: [], audits: [], partners: [], leads: [] }
   });
 
   const overviewItems = [
@@ -47,6 +52,18 @@ export default function OpsLeadDetail() {
     { label: "Ownership", value: data.lead?.ownership_status || "unowned" },
     { label: "Source", value: data.lead?.source || "organic" }
   ];
+
+  const duplicateCandidates = data.leads
+    .filter((item) => item.id !== id && (item.is_duplicate_candidate || item.lead_code === data.lead?.lead_code))
+    .map((item) => ({
+      id: item.id,
+      label: `${item.lead_code || item.id} · ${item.intent_type || item.source || "Lead"}`,
+      summary: [item.country, item.assigned_partner_id, item.status].filter(Boolean).join(" · ") || "Candidate lead",
+      confidence: item.lead_code && item.lead_code === data.lead?.lead_code ? 95 : 72
+    }));
+
+  const timelineItems = [...data.events.map((item) => ({ id: `event-${item.id}`, label: item.event_type || "event", value: item.summary || "—" })), ...data.audits.map((item) => ({ id: `audit-${item.id}`, label: item.action || "audit", value: item.summary || "—" }))]
+    .sort((a, b) => String(b.id).localeCompare(String(a.id)));
 
   return (
     <div className="space-y-6">
@@ -70,7 +87,7 @@ export default function OpsLeadDetail() {
         <TabsContent value="attribution"><LeadRecordPanel title="Attribution" items={data.attributions.map((item) => ({ id: item.id, label: item.utm_source || item.first_referrer || "Attribution", value: item.landing_page || "—" }))} /></TabsContent>
         <TabsContent value="identity"><LeadRecordPanel title="Identity" items={data.identities.map((item) => ({ id: item.id, label: item.full_name || item.email_normalised || "Identity", value: [item.mobile_normalised, item.whatsapp_normalised, item.country].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
         <TabsContent value="assignments"><LeadRecordPanel title="Assignments" items={data.assignments.map((item) => ({ id: item.id, label: item.assignment_status || "pending", value: [item.partner_id, item.assignment_reason, item.sla_due_at].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
-        <TabsContent value="events"><LeadRecordPanel title="Lead events" items={data.events.map((item) => ({ id: item.id, label: item.event_type || "event", value: item.summary || "—" }))} /></TabsContent>
+        <TabsContent value="events"><LeadTimelinePanel title="Lead activity timeline" items={timelineItems} /></TabsContent>
         <TabsContent value="attempts"><LeadRecordPanel title="Contact attempts" items={data.attempts.map((item) => ({ id: item.id, label: item.channel || "contact", value: [item.outcome, item.notes, item.attempt_at].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
         <TabsContent value="viewings"><LeadRecordPanel title="Viewings" items={data.viewings.map((item) => ({ id: item.id, label: item.status || "requested", value: [item.listing_id, item.scheduled_at].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
         <TabsContent value="protection"><LeadRecordPanel title="Protection windows" items={data.windows.map((item) => ({ id: item.id, label: item.status || "active", value: [item.lock_reason, item.protected_until, item.override_reason].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
@@ -79,7 +96,14 @@ export default function OpsLeadDetail() {
         </Tabs>
         </div>
         <div className="space-y-6">
-          <InternalLeadActionsCard loading={manageLead.isPending} onSubmit={(payload) => manageLead.mutate(payload)} />
+          <InternalLeadActionPanel
+            lead={data.lead}
+            partners={data.partners.filter((item) => item.status === "active").map((item) => ({ id: item.id, name: item.name, partner_trust_score: item.partner_trust_score, sla_response_minutes: item.sla_response_minutes }))}
+            duplicates={duplicateCandidates}
+            loading={manageLead.isPending}
+            canManage={access.can("assignments.manage")}
+            onSubmit={(payload) => manageLead.mutate(payload)}
+          />
           <LeadNotesCard leadId={id} />
         </div>
       </div>

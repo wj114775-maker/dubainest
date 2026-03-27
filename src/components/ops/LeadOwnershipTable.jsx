@@ -20,6 +20,7 @@ export default function LeadOwnershipTable({ leads, getActions }) {
                 <Badge className="bg-primary/10 text-primary hover:bg-primary/10">{lead.ownership_status}</Badge>
                 {lead.anti_circumvention_flag ? <Badge className="bg-destructive/10 text-destructive hover:bg-destructive/10">Protected</Badge> : null}
               </div>
+              <p className="max-w-md text-right text-xs text-muted-foreground">{lead.timeline || "No recent timeline yet."}</p>
               <LeadActionBar actions={getActions ? getActions(lead) : []} />
             </div>
           </div>

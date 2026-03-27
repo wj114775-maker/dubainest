@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import LeadOwnershipTable from "@/components/ops/LeadOwnershipTable";
-import LeadActionComposer from "@/components/leads/LeadActionComposer";
+import PartnerLeadActionPanel from "@/components/leads/PartnerLeadActionPanel";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -58,6 +58,8 @@ export default function PartnerLeads() {
             status: lead.status || "new",
             ownership_status: lead.ownership_status || "unowned",
             anti_circumvention_flag: lead.is_circumvention_flagged || lead.ownership_status === "protected",
+            assignment,
+            timeline: [assignment?.assignment_reason, assignment?.sla_due_at, lead.notes_summary].filter(Boolean).join(" · ")
           };
         });
     },
@@ -78,7 +80,7 @@ export default function PartnerLeads() {
           ];
         }}
       />
-      {selectedLead ? <LeadActionComposer loading={assignmentMutation.isPending} onSubmit={(payload) => assignmentMutation.mutate({ leadId: selectedLead.id, assignmentId: selectedLead.assignment_id, ...payload })} /> : null}
+      {selectedLead ? <PartnerLeadActionPanel lead={selectedLead} assignment={selectedLead.assignment} loading={assignmentMutation.isPending} onSubmit={(payload) => assignmentMutation.mutate({ leadId: selectedLead.id, assignmentId: selectedLead.assignment_id, ...payload })} /> : null}
     </div>
   );
 }
