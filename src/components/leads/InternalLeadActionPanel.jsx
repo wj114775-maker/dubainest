@@ -8,6 +8,7 @@ import InternalLeadActionSelector, { actionOptions } from "@/components/leads/In
 import InternalLeadWorkflowHint from "@/components/leads/InternalLeadWorkflowHint";
 import InternalLeadSearchableSelector from "@/components/leads/InternalLeadSearchableSelector";
 import LeadComparisonReviewCard from "@/components/leads/LeadComparisonReviewCard";
+import InternalMergeImpactCard from "@/components/leads/InternalMergeImpactCard";
 
 export default function InternalLeadActionPanel({ lead, partners = [], duplicates = [], loading, canManage, onSubmit }) {
   const [form, setForm] = useState({ action: "assign", notes: "", partner_id: "", target_lead_id: "", severity: "high", approval: "pending" });
@@ -118,6 +119,7 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
                 helper={selectedDuplicateOption?.helper}
               />
               <LeadComparisonReviewCard currentLead={lead} selectedCandidate={form.target_lead_id} candidates={duplicates} />
+              <InternalMergeImpactCard />
             </>
           ) : null}
 

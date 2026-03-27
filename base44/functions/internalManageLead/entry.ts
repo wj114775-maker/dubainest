@@ -278,6 +278,16 @@ Deno.serve(async (req) => {
       const consolidatedPriority = targetLead?.priority === 'critical' || lead.priority === 'critical' ? 'critical' : (targetLead?.priority || lead.priority || 'standard');
       const consolidatedLastTouch = [targetLead?.last_touch_at, lead.last_touch_at].filter(Boolean).sort().slice(-1)[0] || null;
 
+      const [sourceIdentities, sourceAttributions, sourceAssignments, sourceAttempts, sourceAlerts, sourceWindows, sourceViewings] = await Promise.all([
+        base44.entities.LeadIdentity.filter({ lead_id }),
+        base44.entities.LeadAttribution.filter({ lead_id }),
+        base44.entities.LeadAssignment.filter({ lead_id }),
+        base44.entities.LeadContactAttempt.filter({ lead_id }),
+        base44.entities.CircumventionAlert.filter({ lead_id }),
+        base44.entities.LeadProtectionWindow.filter({ lead_id }),
+        base44.entities.Viewing.filter({ lead_id })
+      ]);
+
       await base44.entities.LeadMergeLog.create({
         source_lead_id: lead_id,
         target_lead_id,
@@ -285,6 +295,44 @@ Deno.serve(async (req) => {
         merged_by: user.id,
         merge_confidence: 0.9,
       });
+
+      await Promise.all([
+        ...sourceIdentities.map((item) => base44.entities.LeadIdentity.create({
+          ...item,
+          lead_id: target_lead_id,
+          is_primary_identity: false
+        })),
+        ...sourceAttributions.map((item) => base44.entities.LeadAttribution.create({
+          ...item,
+          lead_id: target_lead_id,
+          is_locked: item.is_locked ?? false
+        })),
+        ...sourceAssignments.map((item) => base44.entities.LeadAssignment.create({
+          ...item,
+          lead_id: target_lead_id,
+          assignment_reason: [item.assignment_reason, `Merged from ${lead.lead_code || lead.id}`].filter(Boolean).join(' · ')
+        })),
+        ...sourceAttempts.map((item) => base44.entities.LeadContactAttempt.create({
+          ...item,
+          lead_id: target_lead_id,
+          notes: [item.notes, `Merged from ${lead.lead_code || lead.id}`].filter(Boolean).join(' · ')
+        })),
+        ...sourceAlerts.map((item) => base44.entities.CircumventionAlert.create({
+          ...item,
+          lead_id: target_lead_id,
+          summary: [item.summary, `Merged from ${lead.lead_code || lead.id}`].filter(Boolean).join(' · ')
+        })),
+        ...sourceWindows.map((item) => base44.entities.LeadProtectionWindow.create({
+          ...item,
+          lead_id: target_lead_id,
+          lock_reason: [item.lock_reason, `Merged from ${lead.lead_code || lead.id}`].filter(Boolean).join(' · ')
+        })),
+        ...sourceViewings.map((item) => base44.entities.Viewing.create({
+          ...item,
+          lead_id: target_lead_id,
+          completion_notes: [item.completion_notes, `Merged from ${lead.lead_code || lead.id}`].filter(Boolean).join(' · ')
+        }))
+      ]);
 
       await base44.entities.Lead.update(target_lead_id, {
         is_duplicate_candidate: false,
@@ -304,6 +352,13 @@ Deno.serve(async (req) => {
           result: 'merged_after_review',
           target_lead_id,
           consolidation_rules: {
+            identities: 'copied_to_target',
+            attribution: 'copied_to_target',
+            assignments: 'copied_to_target',
+            attempts: 'copied_to_target',
+            alerts: 'copied_to_target',
+            protection_windows: 'copied_to_target',
+            viewings: 'copied_to_target',
             assigned_partner_id: 'prefer_target_then_source',
             priority: 'keep_highest_severity',
             last_touch_at: 'keep_latest',
