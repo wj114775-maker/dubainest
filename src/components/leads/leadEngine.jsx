@@ -1,5 +1,96 @@
 import { base44 } from '@/api/base44Client';
 
+function getComparableValue(record, path) {
+  return path.split('.').reduce((acc, key) => (acc == null ? undefined : acc[key]), record);
+}
+
+function matchesCondition(record, condition = {}) {
+  const { field, operator = 'equals', value } = condition;
+  const current = getComparableValue(record, field || '');
+
+  if (operator === 'exists') return current !== undefined && current !== null && current !== '';
+  if (operator === 'not_exists') return current === undefined || current === null || current === '';
+  if (operator === 'contains') return Array.isArray(current) ? current.includes(value) : String(current || '').toLowerCase().includes(String(value || '').toLowerCase());
+  if (operator === 'in') return Array.isArray(value) ? value.includes(current) : false;
+  if (operator === 'gte') return Number(current || 0) >= Number(value || 0);
+  if (operator === 'lte') return Number(current || 0) <= Number(value || 0);
+  if (operator === 'gt') return Number(current || 0) > Number(value || 0);
+  if (operator === 'lt') return Number(current || 0) < Number(value || 0);
+  if (operator === 'not_equals') return current !== value;
+  return String(current ?? '') === String(value ?? '');
+}
+
+function evaluateRuleConditions(record, conditions = {}) {
+  const conditionList = Array.isArray(conditions.conditions) ? conditions.conditions : [];
+  if (!conditionList.length) return true;
+  const logic = conditions.logic === 'or' ? 'or' : 'and';
+  const results = conditionList.map((condition) => matchesCondition(record, condition));
+  return logic === 'or' ? results.some(Boolean) : results.every(Boolean);
+}
+
+function applyRuleActions(lead, actions = {}, context = {}) {
+  const updates = {};
+  const sideEffects = { createWindow: null, createAlert: null, assignment: null, notifications: [] };
+
+  if (actions.set_priority) updates.priority = actions.set_priority;
+  if (actions.set_stage) updates.current_stage = actions.set_stage;
+  if (actions.set_status) updates.status = actions.set_status;
+  if (actions.set_ownership_status) updates.ownership_status = actions.set_ownership_status;
+  if (actions.assign_partner_id) updates.assigned_partner_id = actions.assign_partner_id;
+  if (actions.lock_hours) {
+    const protectedUntil = new Date(Date.now() + Number(actions.lock_hours) * 60 * 60 * 1000).toISOString();
+    updates.protected_until = protectedUntil;
+    updates.ownership_status = actions.set_ownership_status || 'protected';
+    sideEffects.createWindow = {
+      protected_until: protectedUntil,
+      lock_reason: actions.lock_reason || context.rule?.name || 'Rule lock applied'
+    };
+  }
+  if (actions.sla_minutes) {
+    sideEffects.assignment = {
+      sla_due_at: new Date(Date.now() + Number(actions.sla_minutes) * 60 * 1000).toISOString(),
+      assignment_reason: actions.assignment_reason || context.rule?.name || 'Rule-based routing'
+    };
+  }
+  if (actions.open_circumvention_alert) {
+    updates.is_circumvention_flagged = true;
+    sideEffects.createAlert = {
+      severity: actions.alert_severity || 'high',
+      summary: actions.alert_summary || `${context.rule?.name || 'Rule'} opened a circumvention review.`
+    };
+  }
+  if (actions.notify_title) {
+    sideEffects.notifications.push({
+      title: actions.notify_title,
+      body: actions.notify_body || `Lead ${lead.lead_code || lead.id} was updated by rule execution.`
+    });
+  }
+
+  return { updates, sideEffects };
+}
+
+function buildDefaultRule(record, preferredPartnerId) {
+  return {
+    updates: {
+      assigned_partner_id: preferredPartnerId,
+      ownership_status: record.is_private_inventory || record.is_high_value ? 'protected' : 'soft_owned',
+      current_stage: 'assigned',
+      status: 'assigned',
+      protected_until: record.is_private_inventory || record.is_high_value ? new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString() : record.protected_until,
+    },
+    assignment: preferredPartnerId ? {
+      partner_id: preferredPartnerId,
+      assignment_type: record.is_private_inventory || record.is_concierge ? 'rule_based' : 'round_robin',
+      assignment_reason: record.is_private_inventory ? 'Private inventory routing' : record.is_concierge ? 'Concierge routing' : record.buying_purpose === 'investor' ? 'Investor routing' : 'Buyer intent routing',
+      sla_due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    } : null,
+    window: record.is_private_inventory || record.is_high_value ? {
+      protected_until: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+      lock_reason: record.is_private_inventory ? 'Private inventory protected window' : 'High value lead protected window'
+    } : null
+  };
+}
+
 export function normaliseEmail(value) {
   return value?.trim().toLowerCase() || '';
 }
@@ -186,56 +277,126 @@ export async function createOrEnrichLeadFromIntent(payload) {
     const investorMatch = payload.buying_purpose === 'investor' ? (item.specialties || '').toLowerCase().includes('invest') || true : true;
     return geographyMatch && privateMatch && conciergeMatch && investorMatch;
   });
-  const matchedPartnerId = payload.assigned_partner_id || leadRecord.assigned_partner_id || preferredPartner?.id || partnerAgencies[0]?.id;
-  const protectedWindowUntil = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+  const preferredPartnerId = payload.assigned_partner_id || leadRecord.assigned_partner_id || preferredPartner?.id || partnerAgencies[0]?.id;
+  const runtimeRecord = {
+    ...leadRecord,
+    ...payload,
+    trigger_event: existingLead ? 'lead_updated' : 'lead_created',
+    preferred_partner_id: preferredPartnerId,
+    is_existing_lead: Boolean(existingLead)
+  };
 
-  if (matchedPartnerId) {
-    leadRecord.assigned_partner_id = matchedPartnerId;
-    await base44.entities.Lead.update(leadRecord.id, {
-      assigned_partner_id: matchedPartnerId,
-      ownership_status: payload.is_private_inventory || payload.is_high_value ? 'protected' : 'soft_owned',
-      current_stage: 'assigned',
-      status: 'assigned',
-      protected_until: payload.is_private_inventory || payload.is_high_value ? protectedWindowUntil : leadRecord.protected_until,
-    });
+  const activeRules = rules.filter((rule) => rule.status === 'active').sort((a, b) => Number(a.priority || 999) - Number(b.priority || 999));
+  const evaluationResults = activeRules.map((rule) => {
+    const matched = evaluateRuleConditions(runtimeRecord, rule.conditions || {});
+    const execution = matched ? applyRuleActions(leadRecord, rule.actions || {}, { rule, payload, preferredPartnerId }) : { updates: {}, sideEffects: { createWindow: null, createAlert: null, assignment: null, notifications: [] } };
+    return {
+      rule,
+      matched,
+      updates: execution.updates,
+      sideEffects: execution.sideEffects
+    };
+  });
+
+  const matchedRules = evaluationResults.filter((item) => item.matched);
+  const matchedRuleIds = matchedRules.map((item) => item.rule.id);
+  const finalUpdates = {};
+  let finalAssignment = null;
+  let finalWindow = null;
+  let finalAlert = null;
+  const finalNotifications = [];
+
+  matchedRules.forEach((item) => {
+    Object.assign(finalUpdates, item.updates);
+    if (item.sideEffects.assignment && !finalAssignment) {
+      finalAssignment = {
+        partner_id: item.updates.assigned_partner_id || preferredPartnerId,
+        assignment_type: 'rule_based',
+        ...item.sideEffects.assignment
+      };
+    }
+    if (item.sideEffects.createWindow && !finalWindow) finalWindow = item.sideEffects.createWindow;
+    if (item.sideEffects.createAlert && !finalAlert) finalAlert = item.sideEffects.createAlert;
+    if (item.sideEffects.notifications?.length) finalNotifications.push(...item.sideEffects.notifications);
+  });
+
+  if (!matchedRules.length) {
+    const fallback = buildDefaultRule(runtimeRecord, preferredPartnerId);
+    Object.assign(finalUpdates, fallback.updates);
+    finalAssignment = fallback.assignment;
+    finalWindow = fallback.window;
+    finalNotifications.push({ title: 'New lead assigned', body: `Lead ${leadRecord.lead_code} is ready for partner action.` });
+  }
+
+  if (finalUpdates.assigned_partner_id) leadRecord.assigned_partner_id = finalUpdates.assigned_partner_id;
+  const updatedLead = Object.keys(finalUpdates).length ? await base44.entities.Lead.update(leadRecord.id, finalUpdates) : leadRecord;
+
+  if (finalAssignment?.partner_id) {
     await base44.entities.LeadAssignment.create({
       lead_id: leadRecord.id,
-      assignment_type: payload.is_private_inventory || payload.is_concierge ? 'rule_based' : 'round_robin',
-      partner_id: matchedPartnerId,
+      partner_id: finalAssignment.partner_id,
+      assignment_type: finalAssignment.assignment_type || 'rule_based',
       assigned_at: now,
       assignment_status: 'pending',
-      assignment_reason: payload.is_private_inventory ? 'Private inventory routing' : payload.is_concierge ? 'Concierge routing' : payload.buying_purpose === 'investor' ? 'Investor routing' : 'Buyer intent routing',
+      assignment_reason: finalAssignment.assignment_reason,
       assigned_by: 'system',
-      sla_due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-    });
-    await createNotification({
-      title: 'New lead assigned',
-      body: `Lead ${leadRecord.lead_code} is ready for partner action.`,
-      lead_id: leadRecord.id
+      sla_due_at: finalAssignment.sla_due_at,
     });
   }
 
-  await Promise.all(rules.map((rule) => base44.entities.LeadRuleEvaluation.create({
-    lead_id: leadRecord.id,
-    rule_id: rule.id,
-    trigger_event: existingLead ? 'lead_updated' : 'lead_created',
-    matched: rule.status === 'active',
-    evaluation_payload_json: { source: payload.source, priority: payload.priority, budget_max: payload.budget_max, country: payload.country },
-    result_payload_json: { rule_type: rule.rule_type, actions: rule.actions || {}, matched_partner_id: matchedPartnerId || '', result: matchedPartnerId ? 'routing_applied' : 'observed_only' },
-  })));
-
-  if (payload.is_private_inventory || payload.is_high_value) {
+  if (finalWindow?.protected_until) {
     await base44.entities.LeadProtectionWindow.create({
       lead_id: leadRecord.id,
-      rule_id: rules.find((item) => item.rule_type === 'ownership_lock')?.id,
-      lock_reason: payload.is_private_inventory ? 'Private inventory protected window' : 'High value lead protected window',
+      rule_id: matchedRules.find((item) => item.sideEffects.createWindow)?.rule.id,
+      lock_reason: finalWindow.lock_reason,
       locked_at: now,
-      protected_until: protectedWindowUntil,
+      protected_until: finalWindow.protected_until,
       status: 'active',
     });
   }
 
-  if (payload.is_high_value) {
+  if (finalAlert) {
+    await base44.entities.CircumventionAlert.create({
+      lead_id: leadRecord.id,
+      partner_id: updatedLead.assigned_partner_id,
+      alert_type: 'rule_triggered_review',
+      severity: finalAlert.severity,
+      summary: finalAlert.summary,
+      evidence_json: { source: payload.source, trigger_event: runtimeRecord.trigger_event },
+      status: 'reviewing'
+    });
+  }
+
+  await Promise.all(activeRules.map((rule) => {
+    const result = evaluationResults.find((item) => item.rule.id === rule.id);
+    return base44.entities.LeadRuleEvaluation.create({
+      lead_id: leadRecord.id,
+      rule_id: rule.id,
+      trigger_event: runtimeRecord.trigger_event,
+      matched: result?.matched || false,
+      evaluation_payload_json: { source: payload.source, priority: payload.priority, budget_max: payload.budget_max, country: payload.country, preferred_partner_id: preferredPartnerId },
+      result_payload_json: {
+        rule_type: rule.rule_type,
+        actions: rule.actions || {},
+        applied_updates: result?.updates || {},
+        matched_partner_id: (result?.updates.assigned_partner_id || finalAssignment?.partner_id || ''),
+        result: result?.matched ? 'executed' : 'not_matched',
+        execution_order: activeRules.findIndex((item) => item.id === rule.id) + 1,
+        won_priority: matchedRules[0]?.rule.id === rule.id,
+        matched_rule_ids: matchedRuleIds,
+        chained_after_rule_id: result?.matched ? matchedRules[matchedRules.findIndex((item) => item.rule.id === rule.id) - 1]?.rule.id || null : null,
+        conflict_resolution: result?.matched ? (matchedRules[0]?.rule.id === rule.id ? 'won_by_priority' : 'applied_after_higher_priority_rule') : 'not_applicable'
+      },
+    });
+  }));
+
+  await Promise.all(finalNotifications.map((item) => createNotification({
+    title: item.title,
+    body: item.body,
+    lead_id: leadRecord.id
+  })));
+
+  if (payload.is_high_value && !finalNotifications.find((item) => item.title === 'High-value lead')) {
     await createNotification({
       title: 'High-value lead',
       body: `Lead ${leadRecord.lead_code} requires priority handling.`,
@@ -243,7 +404,26 @@ export async function createOrEnrichLeadFromIntent(payload) {
     });
   }
 
-  return leadRecord;
+  await base44.entities.AuditLog.create({
+    organisation_id: updatedLead.organisation_id,
+    entity_name: 'Lead',
+    entity_id: leadRecord.id,
+    action: 'lead_rules_executed',
+    actor_id: 'system',
+    summary: matchedRules.length ? `Lead rules executed: ${matchedRules.map((item) => item.rule.name).join(', ')}` : 'Lead rules executed with fallback routing',
+    immutable: true,
+    scope: 'lead',
+    metadata: {
+      trigger_event: runtimeRecord.trigger_event,
+      matched_rule_ids: matchedRuleIds,
+      applied_updates: finalUpdates,
+      assignment_partner_id: finalAssignment?.partner_id || null,
+      priority_winner_rule_id: matchedRules[0]?.rule.id || null,
+      rule_chain: matchedRules.map((item) => item.rule.id)
+    }
+  });
+
+  return updatedLead;
 }
 
 export async function mergeLeads(sourceLead, targetLead, reason) {
