@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const runtimeRuleMatches = [];
 
-    const requireNotes = ['escalate', 'flag_circumvention', 'merge', 'release'];
+    const requireNotes = ['escalate', 'flag_circumvention', 'merge', 'release', 'mark_duplicate'];
     const restrictedByOwnership = ['assign', 'merge'];
 
     if (!lead_id || !action) {
@@ -65,10 +65,12 @@ Deno.serve(async (req) => {
       },
       mark_duplicate: {
         updates: {
-          is_duplicate_candidate: true
+          is_duplicate_candidate: true,
+          status: lead.status === 'new' ? 'duplicate' : lead.status,
+          current_stage: lead.current_stage === 'new' ? 'duplicate' : lead.current_stage
         },
         event_type: 'lead_marked_duplicate',
-        summary: 'Internal ops marked the lead as duplicate candidate.'
+        summary: 'Internal ops started duplicate review for the lead.'
       },
       escalate: {
         updates: {
@@ -116,6 +118,22 @@ Deno.serve(async (req) => {
 
     if ((action === 'lock' || action === 'mark_duplicate' || action === 'merge') && lead.status === 'merged') {
       return Response.json({ error: 'Merged leads cannot use this action' }, { status: 400 });
+    }
+
+    if (action === 'assign' && ['won', 'lost', 'merged', 'blocked'].includes(lead.status || '')) {
+      return Response.json({ error: 'Closed leads cannot be reassigned' }, { status: 400 });
+    }
+
+    if (action === 'mark_duplicate' && lead.is_duplicate_candidate) {
+      return Response.json({ error: 'This lead is already in duplicate review' }, { status: 400 });
+    }
+
+    if (action === 'merge' && !lead.is_duplicate_candidate) {
+      return Response.json({ error: 'Lead must be in duplicate review before merging' }, { status: 400 });
+    }
+
+    if (action === 'flag_circumvention' && !['assigned', 'accepted', 'contact_in_progress', 'callback_booked', 'viewing_booked', 'viewing_completed', 'offer_in_discussion', 'reserved'].includes(lead.status || '')) {
+      return Response.json({ error: 'Circumvention review is only available for actively handled leads' }, { status: 400 });
     }
 
     if (action === 'escalate' && ['won', 'lost', 'merged', 'blocked'].includes(lead.status || '')) {
@@ -259,7 +277,7 @@ Deno.serve(async (req) => {
       summary: selected.summary,
       immutable: true,
       scope: 'lead',
-      metadata: { notes: notes || '', partner_id: partner_id || '', target_lead_id: target_lead_id || '' }
+      metadata: { notes: notes || '', partner_id: partner_id || '', target_lead_id: target_lead_id || '', severity: severity || '' }
     });
 
     return Response.json({ lead: updatedLead, event, audit });
