@@ -7,6 +7,8 @@ const actionOptions = [
   { value: "mark_duplicate", label: "Start duplicate review" },
   { value: "merge", label: "Merge lead" },
   { value: "lock", label: "Lock protection" },
+  { value: "renew_protection", label: "Renew protection" },
+  { value: "request_override", label: "Request override" },
   { value: "release", label: "Release protection" },
   { value: "flag_circumvention", label: "Open circumvention case" },
   { value: "escalate", label: "Escalate lead" }

@@ -10,7 +10,7 @@ import InternalLeadSearchableSelector from "@/components/leads/InternalLeadSearc
 import LeadComparisonReviewCard from "@/components/leads/LeadComparisonReviewCard";
 
 export default function InternalLeadActionPanel({ lead, partners = [], duplicates = [], loading, canManage, onSubmit }) {
-  const [form, setForm] = useState({ action: "assign", notes: "", partner_id: "", target_lead_id: "", severity: "high" });
+  const [form, setForm] = useState({ action: "assign", notes: "", partner_id: "", target_lead_id: "", severity: "high", approval: "pending" });
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
@@ -38,12 +38,15 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
   const blockedReason = useMemo(() => {
     if (["assign", "reassign"].includes(form.action) && !form.partner_id) return "Choose a partner first.";
     if (form.action === "merge" && !form.target_lead_id) return "Choose a duplicate target first.";
-    if (["release", "merge", "escalate", "flag_circumvention", "mark_duplicate", "reassign"].includes(form.action) && !form.notes.trim()) return "A reason is required for this action.";
+    if (["release", "merge", "escalate", "flag_circumvention", "mark_duplicate", "reassign", "renew_protection", "request_override"].includes(form.action) && !form.notes.trim()) return "A reason is required for this action.";
     if (form.action === "assign" && lead?.assigned_partner_id) return "This lead already has a partner. Use reassign instead.";
     if (form.action === "reassign" && !lead?.assigned_partner_id) return "This lead has no current partner yet. Use assign instead.";
     if (["assign", "reassign"].includes(form.action) && lead?.ownership_status === "protected") return "Protected leads must be released before changing partner ownership.";
     if (["assign", "reassign"].includes(form.action) && isClosed) return "Closed leads cannot be assigned.";
-    if (form.action === "release" && !["locked", "protected"].includes(lead?.ownership_status)) return "Only locked or protected leads can be released.";
+    if (form.action === "release" && !["locked", "protected", "override_pending"].includes(lead?.ownership_status)) return "Only protected leads in override flow can be released.";
+    if (form.action === "renew_protection" && !["locked", "protected"].includes(lead?.ownership_status)) return "Only active protected leads can be renewed.";
+    if (form.action === "request_override" && !["locked", "protected"].includes(lead?.ownership_status)) return "Override can only be requested on protected leads.";
+    if (["release", "request_override"].includes(form.action) && form.approval !== "approved") return "Approved override is required first.";
     if (form.action === "lock" && lead?.status === "merged") return "Merged leads cannot be locked.";
     if (form.action === "merge" && lead?.status === "merged") return "This lead is already merged.";
     if (form.action === "merge" && !lead?.is_duplicate_candidate) return "Mark this lead as a duplicate candidate before merging.";
@@ -63,7 +66,8 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
     form.target_lead_id && selectedDuplicateOption ? `Target lead: ${selectedDuplicateOption.label}` : null,
     form.action === "mark_duplicate" ? "Workflow: duplicate review" : null,
     form.action === "reassign" && lead?.assigned_partner_id ? `Previous partner: ${lead.assigned_partner_id}` : null,
-    form.severity && ["flag_circumvention", "escalate"].includes(form.action) ? `Severity: ${form.severity}` : null,
+    form.severity && ["flag_circumvention", "escalate", "request_override"].includes(form.action) ? `Severity: ${form.severity}` : null,
+    ["release", "request_override"].includes(form.action) ? `Approval: ${form.approval}` : null,
     form.notes.trim() ? `Reason: ${form.notes.trim()}` : `Reason: none provided`
   ].filter(Boolean).join(" · ");
 
@@ -129,7 +133,7 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
             </div>
           ) : null}
 
-          {form.action === "flag_circumvention" || form.action === "escalate" ? (
+          {form.action === "flag_circumvention" || form.action === "escalate" || form.action === "request_override" ? (
             <Select value={form.severity} onValueChange={(value) => setForm((current) => ({ ...current, severity: value }))}>
               <SelectTrigger><SelectValue placeholder="Severity" /></SelectTrigger>
               <SelectContent>
@@ -137,6 +141,16 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="high">High</SelectItem>
                 <SelectItem value="critical">Critical</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : null}
+
+          {["release", "request_override"].includes(form.action) ? (
+            <Select value={form.approval} onValueChange={(value) => setForm((current) => ({ ...current, approval: value }))}>
+              <SelectTrigger><SelectValue placeholder="Approval status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending approval</SelectItem>
+                <SelectItem value="approved">Approved override</SelectItem>
               </SelectContent>
             </Select>
           ) : null}

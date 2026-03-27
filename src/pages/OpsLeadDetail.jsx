@@ -22,7 +22,7 @@ export default function OpsLeadDetail() {
   const queryClient = useQueryClient();
   const { data: access } = useAccessControl();
   const manageLead = useMutation({
-    mutationFn: ({ action, notes, partner_id, target_lead_id, severity }) => base44.functions.invoke("internalManageLead", { lead_id: id, action, notes, partner_id, target_lead_id, severity }),
+    mutationFn: ({ action, notes, partner_id, target_lead_id, severity, approval }) => base44.functions.invoke("internalManageLead", { lead_id: id, action, notes, partner_id, target_lead_id, severity, approval }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ops-lead-detail", id] });
       queryClient.invalidateQueries({ queryKey: ["ops-leads-registry"] });

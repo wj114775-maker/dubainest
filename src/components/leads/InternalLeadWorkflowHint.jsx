@@ -6,6 +6,8 @@ const helperText = {
   mark_duplicate: "Start duplicate review and capture why this lead needs review.",
   merge: "Choose the reviewed target lead, then confirm the merge reason.",
   lock: "Lock or extend protection for this lead.",
+  renew_protection: "Renew the current protection window with a reason.",
+  request_override: "Request an approved override before releasing a protected lead.",
   release: "Release protection and record why it is safe to do so.",
   flag_circumvention: "Open a circumvention case with severity and evidence.",
   escalate: "Escalate this lead for urgent internal handling."

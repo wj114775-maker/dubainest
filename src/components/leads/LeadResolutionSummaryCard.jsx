@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function LeadResolutionSummaryCard({ lead, latestAssignment, latestAlert, latestWindow }) {
   const items = [
     { label: "Latest assignment", value: latestAssignment ? [latestAssignment.assignment_status, latestAssignment.partner_id, latestAssignment.sla_due_at].filter(Boolean).join(" · ") : "No assignment yet." },
-    { label: "Protection state", value: latestWindow ? [latestWindow.status, latestWindow.lock_reason, latestWindow.protected_until].filter(Boolean).join(" · ") : lead?.ownership_status || "unowned" },
+    { label: "Protection state", value: latestWindow ? [lead?.ownership_status, latestWindow.status, latestWindow.lock_reason, latestWindow.protected_until].filter(Boolean).join(" · ") : lead?.ownership_status || "unowned" },
     { label: "Alert state", value: latestAlert ? [latestAlert.status, latestAlert.severity, latestAlert.summary].filter(Boolean).join(" · ") : "No active alert." }
   ];
 

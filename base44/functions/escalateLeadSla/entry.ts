@@ -42,6 +42,17 @@ Deno.serve(async (req) => {
           assigned_by: 'system',
           sla_due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
         });
+        const lead = await base44.asServiceRole.entities.Lead.get(assignment.lead_id);
+        if (['locked', 'protected', 'override_pending'].includes(lead.ownership_status || '') || (lead.protected_until && new Date(lead.protected_until) > now)) {
+          await base44.asServiceRole.entities.Notification.create({
+            title: 'SLA breach blocked by protection',
+            body: `Lead ${lead.lead_code || lead.id} breached SLA but was not reassigned because protection is still active.`,
+            lead_id: lead.id,
+            channel: 'in_app',
+            status: 'queued',
+          });
+          continue;
+        }
         await base44.asServiceRole.entities.Lead.update(assignment.lead_id, {
           assigned_partner_id: reassignedPartnerId,
           status: 'assigned',

@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { lead_id, action, notes, partner_id, target_lead_id, severity } = await req.json();
+    const { lead_id, action, notes, partner_id, target_lead_id, severity, approval } = await req.json();
     const now = new Date().toISOString();
     const runtimeRuleMatches = [];
 
@@ -43,6 +43,21 @@ Deno.serve(async (req) => {
         },
         event_type: 'lead_released',
         summary: 'Internal ops released the lead.'
+      },
+      renew_protection: {
+        updates: {
+          ownership_status: 'locked',
+          protected_until: protectedUntil,
+        },
+        event_type: 'lead_protection_renewed',
+        summary: 'Internal ops renewed the protection window.'
+      },
+      request_override: {
+        updates: {
+          ownership_status: 'override_pending'
+        },
+        event_type: 'lead_override_requested',
+        summary: 'Internal ops requested a protection override.'
       },
       flag_circumvention: {
         updates: {
@@ -114,16 +129,28 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'target_lead_id is required for merge' }, { status: 400 });
     }
 
-    if (requireNotes.includes(action) && !notes?.trim()) {
+    if ([...requireNotes, 'renew_protection', 'request_override'].includes(action) && !notes?.trim()) {
       return Response.json({ error: 'notes are required for this action' }, { status: 400 });
+    }
+
+    if ((action === 'release' || action === 'request_override') && approval !== 'approved') {
+      return Response.json({ error: 'Approved override is required for this action' }, { status: 400 });
     }
 
     if (restrictedByOwnership.includes(action) && lead.ownership_status === 'protected' && action !== 'merge') {
       return Response.json({ error: 'Lead is protected and cannot be reassigned without release' }, { status: 400 });
     }
 
-    if (action === 'release' && !['locked', 'protected'].includes(lead.ownership_status || '')) {
-      return Response.json({ error: 'Only locked or protected leads can be released' }, { status: 400 });
+    if (action === 'release' && !['locked', 'protected', 'override_pending'].includes(lead.ownership_status || '')) {
+      return Response.json({ error: 'Only protected leads in an active override flow can be released' }, { status: 400 });
+    }
+
+    if (action === 'renew_protection' && !['locked', 'protected'].includes(lead.ownership_status || '')) {
+      return Response.json({ error: 'Only active protected leads can be renewed' }, { status: 400 });
+    }
+
+    if (action === 'request_override' && !['locked', 'protected'].includes(lead.ownership_status || '')) {
+      return Response.json({ error: 'Override can only be requested on protected leads' }, { status: 400 });
     }
 
     if ((action === 'lock' || action === 'mark_duplicate' || action === 'merge') && lead.status === 'merged') {
@@ -174,15 +201,29 @@ Deno.serve(async (req) => {
 
     const updatedLead = await base44.entities.Lead.update(lead_id, selected.updates);
 
-    if (action === 'lock' || action === 'flag_circumvention') {
+    if (action === 'lock' || action === 'flag_circumvention' || action === 'renew_protection') {
       await base44.entities.LeadProtectionWindow.create({
         lead_id,
         locked_at: now,
         protected_until: updatedLead.protected_until,
-        status: action === 'lock' ? 'active' : 'overridden',
+        status: action === 'flag_circumvention' ? 'overridden' : 'active',
         lock_reason: notes || selected.summary,
         overridden_by: action === 'flag_circumvention' ? user.id : undefined,
         override_reason: action === 'flag_circumvention' ? (notes || 'Circumvention review opened') : undefined,
+      });
+    }
+
+    if (action === 'request_override') {
+      await base44.entities.CircumventionAlert.create({
+        lead_id,
+        partner_id: lead.assigned_partner_id,
+        alert_type: 'override_request',
+        severity: severity || 'high',
+        summary: notes || 'Protection override requested by internal ops.',
+        evidence_json: { lead_id, approval, requested_at: now, ownership_status: lead.ownership_status },
+        status: 'escalated',
+        opened_by: user.id,
+        assigned_reviewer_id: user.id,
       });
     }
 
