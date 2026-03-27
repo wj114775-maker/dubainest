@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const initialForm = { title: "", slug: "", category: "investing", status: "draft", excerpt: "", body: "" };
 
@@ -25,10 +26,25 @@ export default function AdminGuideFormCard({ guide, onSubmit, onCancel }) {
       <CardHeader><CardTitle>{guide ? "Edit guide" : "Create guide"}</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
-          <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Guide title" />
+          <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value, slug: form.slug || e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") })} placeholder="Guide title" />
           <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="Slug" />
-          <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Category" />
-          <Input value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} placeholder="Status" />
+          <Select value={form.category} onValueChange={(value) => setForm({ ...form, category: value })}>
+            <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="investing">Investing</SelectItem>
+              <SelectItem value="relocation">Relocation</SelectItem>
+              <SelectItem value="golden_visa">Golden Visa</SelectItem>
+              <SelectItem value="schools">Schools</SelectItem>
+              <SelectItem value="tax">Tax</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value })}>
+            <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="md:col-span-2">
             <Textarea value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} placeholder="Excerpt" />
           </div>

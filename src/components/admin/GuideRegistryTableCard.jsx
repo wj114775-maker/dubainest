@@ -25,9 +25,13 @@ export default function GuideRegistryTableCard({ guides, onEdit }) {
                   <p className="font-medium">{guide.title}</p>
                   <p className="text-xs text-muted-foreground">{guide.slug}</p>
                 </TableCell>
-                <TableCell>{guide.category}</TableCell>
+                <TableCell className="capitalize">{guide.category?.replace(/_/g, " ")}</TableCell>
                 <TableCell><Badge className="bg-primary/10 text-primary hover:bg-primary/10">{guide.status}</Badge></TableCell>
-                <TableCell><Button variant="outline" size="sm" onClick={() => onEdit(guide)}>Edit</Button></TableCell>
+                <TableCell>
+                  <div className="flex justify-end">
+                    <Button variant="outline" size="sm" onClick={() => onEdit(guide)}>Edit</Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

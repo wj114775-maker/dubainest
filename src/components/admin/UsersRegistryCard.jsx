@@ -36,6 +36,7 @@ export default function UsersRegistryCard({ users }) {
             ))}
           </TableBody>
         </Table>
+        {!users.length ? <p className="pt-4 text-sm text-muted-foreground">No users match the current filters.</p> : null}
       </CardContent>
     </Card>
   );
