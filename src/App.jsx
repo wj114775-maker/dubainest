@@ -79,7 +79,7 @@ const AuthenticatedApp = () => {
 
   const role = current?.role || 'buyer';
   const permissions = current?.permissions || [];
-  const isInternal = roleGroups.internal.includes(role) || permissions.length > 0;
+  const isInternal = current?.isInternal || roleGroups.internal.includes(role) || permissions.length > 0;
   const isPartner = roleGroups.partner.includes(role) || permissions.includes('listings.read') || permissions.includes('leads.read');
   const headerInternalAccess = isInternal;
 
