@@ -1,12 +1,27 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
 import ListingCard from "@/components/buyer/ListingCard";
+import ShortlistActionsCard from "@/components/buyer/ShortlistActionsCard";
+import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import { getSessionId } from "@/components/leads/leadEngine";
 
 export default function Shortlist() {
+  const [openIntent, setOpenIntent] = useState(false);
+  const queryClient = useQueryClient();
+  const shareMutation = useMutation({
+    mutationFn: async () => {
+      const sessionId = getSessionId();
+      const shortlists = await base44.entities.Shortlist.list("-updated_date", 50);
+      const shortlist = shortlists.find((item) => item.session_id === sessionId);
+      if (!shortlist) return null;
+      return base44.entities.Shortlist.update(shortlist.id, { share_token: shortlist.share_token || `share_${Date.now()}` });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shortlist-page"] })
+  });
+
   const { data: listings = [] } = useQuery({
     queryKey: ["shortlist-page"],
     queryFn: async () => {
@@ -24,7 +39,11 @@ export default function Shortlist() {
   return (
     <div className="space-y-6 pb-28">
       <SectionHeading eyebrow="Saved" title="Shortlists stay anonymous until you share or request access" description="This is designed for mobile-first saving, later sharing, and controlled sign-up only when trust has been earned." />
-      {listings.length ? <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{listings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div> : <EmptyStateCard title="Your shortlist is empty" description="Save any listing and it will appear here with attribution-ready tracking." />}
+      {listings.length ? <>
+        <ShortlistActionsCard onShare={() => shareMutation.mutate()} onConsult={() => setOpenIntent(true)} />
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{listings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div>
+        <BuyerIntentSheet open={openIntent} onOpenChange={setOpenIntent} intentType="request_shortlist_consultation" title="Request shortlist consultation" />
+      </> : <EmptyStateCard title="Your shortlist is empty" description="Save any listing and it will appear here with attribution-ready tracking." />}
     </div>
   );
 }

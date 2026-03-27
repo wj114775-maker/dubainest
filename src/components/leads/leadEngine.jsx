@@ -56,18 +56,23 @@ export function captureAnonymousAttribution(partial = {}) {
   return next;
 }
 
-export async function findExistingLead({ email, mobile, whatsapp }) {
+export async function findExistingLead({ email, mobile, whatsapp, full_name }) {
   const identities = await base44.entities.LeadIdentity.list('-updated_date', 200);
   const emailNormalised = normaliseEmail(email);
   const mobileNormalised = normalisePhone(mobile);
   const whatsappNormalised = normalisePhone(whatsapp);
+  const nameNormalised = full_name?.trim().toLowerCase() || '';
 
-  const matched = identities.find((item) =>
-    (emailNormalised && item.email_normalised === emailNormalised) ||
-    (mobileNormalised && item.mobile_normalised === mobileNormalised) ||
-    (whatsappNormalised && item.whatsapp_normalised === whatsappNormalised)
-  );
+  const scored = identities.map((item) => {
+    let score = 0;
+    if (emailNormalised && item.email_normalised === emailNormalised) score += 0.55;
+    if (mobileNormalised && item.mobile_normalised === mobileNormalised) score += 0.3;
+    if (whatsappNormalised && item.whatsapp_normalised === whatsappNormalised) score += 0.3;
+    if (nameNormalised && item.full_name?.trim().toLowerCase() === nameNormalised) score += 0.15;
+    return { item, score };
+  }).filter((item) => item.score >= 0.3).sort((a, b) => b.score - a.score);
 
+  const matched = scored[0]?.item;
   if (!matched) return null;
   const leads = await base44.entities.Lead.list('-updated_date', 200);
   return leads.find((lead) => lead.id === matched.lead_id) || null;
@@ -174,7 +179,12 @@ export async function createOrEnrichLeadFromIntent(payload) {
   })));
 
   const partnerAgencies = await base44.entities.PartnerAgency.list('-updated_date', 200);
-  const matchedPartnerId = payload.assigned_partner_id || leadRecord.assigned_partner_id || partnerAgencies[0]?.id;
+  const preferredPartner = partnerAgencies.find((item) => {
+    const geographyMatch = payload.country && item.country ? item.country === payload.country : true;
+    const privateMatch = payload.is_private_inventory ? item.status === 'active' : true;
+    return geographyMatch && privateMatch;
+  });
+  const matchedPartnerId = payload.assigned_partner_id || leadRecord.assigned_partner_id || preferredPartner?.id || partnerAgencies[0]?.id;
   const protectedWindowUntil = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
 
   if (matchedPartnerId) {
@@ -199,6 +209,7 @@ export async function createOrEnrichLeadFromIntent(payload) {
     await createNotification({
       title: 'New lead assigned',
       body: `Lead ${leadRecord.lead_code} is ready for partner action.`,
+      lead_id: leadRecord.id
     });
   }
 
@@ -226,6 +237,7 @@ export async function createOrEnrichLeadFromIntent(payload) {
     await createNotification({
       title: 'High-value lead',
       body: `Lead ${leadRecord.lead_code} requires priority handling.`,
+      lead_id: leadRecord.id
     });
   }
 
