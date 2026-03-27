@@ -29,7 +29,7 @@ export default function ProjectDetail() {
   return (
     <>
     <div className="space-y-6 pb-28">
-      <SectionHeading eyebrow="Project intelligence" title={project?.name || slug?.replace(/-/g, " ") || "Project"} description={`Status: ${project?.status || 'planned'}${project?.handover_date ? ` · Handover ${project.handover_date}` : ''}`} actions={<Button onClick={() => setOpen(true)}>Request brochure</Button>} />
+      <SectionHeading eyebrow="Project intelligence" title={project?.name || slug?.replace(/-/g, " ") || "Project"} description={`Status: ${project?.status || 'planned'}${project?.handover_date ? ` · Handover ${project.handover_date}` : ''}`} action={<Button onClick={() => setOpen(true)}>Request brochure</Button>} />
       <div className="grid gap-4 md:grid-cols-4">
         <MetricCard label="Project trust" value={`${trustScore}/100`} />
         <MetricCard label="Construction status" value={constructionValue} />

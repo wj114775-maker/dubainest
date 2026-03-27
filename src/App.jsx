@@ -75,8 +75,9 @@ const AuthenticatedApp = () => {
   }
 
   const role = current?.role || 'buyer';
-  const isInternal = roleGroups.internal.includes(role);
-  const isPartner = roleGroups.partner.includes(role);
+  const permissions = current?.permissions || [];
+  const isInternal = roleGroups.internal.includes(role) || permissions.length > 0;
+  const isPartner = roleGroups.partner.includes(role) || permissions.includes('listings.read') || permissions.includes('leads.read');
 
   return (
     <Routes>

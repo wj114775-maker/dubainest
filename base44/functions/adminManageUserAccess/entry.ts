@@ -9,8 +9,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    const assignments = await base44.entities.UserRoleAssignment.filter({ user_id: user.id, status: 'active' });
+    const activeAssignments = assignments.filter((assignment) => !assignment.end_date || new Date(assignment.end_date) >= new Date());
+    const permissionCodes = new Set(activeAssignments.flatMap((assignment) => [...(assignment.permission_codes || []), ...(assignment.bundle_codes || [])]));
+
+    if (user.role !== 'admin' && !permissionCodes.has('users.invite') && !permissionCodes.has('assignments.manage') && !permissionCodes.has('partners.manage')) {
+      return Response.json({ error: 'Forbidden: Access denied' }, { status: 403 });
     }
 
     const { action, email, inviteRole, assignmentId, assignmentPayload, membershipId, membershipPayload } = await req.json();

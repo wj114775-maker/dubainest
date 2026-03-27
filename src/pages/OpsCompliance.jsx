@@ -6,6 +6,7 @@ import ComplianceQueue from "@/components/ops/ComplianceQueue";
 import ComplianceCaseCard from "@/components/ops/ComplianceCaseCard";
 import AccessGuard from "@/components/admin/AccessGuard";
 import AdminRecordFormCard from "@/components/admin/AdminRecordFormCard";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function OpsCompliance() {
   const queryClient = useQueryClient();

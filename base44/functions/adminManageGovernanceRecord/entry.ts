@@ -9,11 +9,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-    }
-
     const { entityName, action, recordId, payload, summary, scope } = await req.json();
+    const assignments = await base44.entities.UserRoleAssignment.filter({ user_id: user.id, status: 'active' });
+    const activeAssignments = assignments.filter((assignment) => !assignment.end_date || new Date(assignment.end_date) >= new Date());
+    const permissionCodes = new Set(activeAssignments.flatMap((assignment) => [...(assignment.permission_codes || []), ...(assignment.bundle_codes || [])]));
+    const scopePermissionMap = {
+      compliance: ['admin', 'compliance_rules.manage', 'compliance_cases.manage'],
+      finance: ['admin', 'commission_rules.manage', 'payouts.manage'],
+      lead: ['admin', 'assignments.manage'],
+      settings: ['admin', 'settings.manage']
+    };
+    const allowedPermissions = scopePermissionMap[scope || 'settings'] || ['admin'];
+    const hasScopedAccess = user.role === 'admin' || allowedPermissions.some((permission) => permissionCodes.has(permission));
+
+    if (!hasScopedAccess) {
+      return Response.json({ error: 'Forbidden: Access denied' }, { status: 403 });
+    }
     const allowed = ['ComplianceRule', 'CommissionRule', 'LeadProtectionRule', 'Payout', 'ComplianceCase'];
 
     if (!allowed.includes(entityName) || !action) {
