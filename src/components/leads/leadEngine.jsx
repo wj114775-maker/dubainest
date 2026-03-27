@@ -477,25 +477,103 @@ export async function createOrEnrichLeadFromIntent(payload) {
 }
 
 export async function mergeLeads(sourceLead, targetLead, reason) {
-  await base44.entities.Lead.update(sourceLead.id, {
-    status: 'merged',
-    current_stage: 'merged',
-    merged_into_lead_id: targetLead.id,
-  });
+  const mergeReason = reason || 'Internal merge';
+  const consolidatedNotes = [targetLead?.notes_summary, sourceLead?.notes_summary, mergeReason].filter(Boolean).join(' · ');
+  const consolidatedPartner = targetLead?.assigned_partner_id || sourceLead?.assigned_partner_id || null;
+  const consolidatedPriority = targetLead?.priority === 'critical' || sourceLead?.priority === 'critical'
+    ? 'critical'
+    : (targetLead?.priority || sourceLead?.priority || 'standard');
+  const consolidatedLastTouch = [targetLead?.last_touch_at, sourceLead?.last_touch_at].filter(Boolean).sort().slice(-1)[0] || null;
+
+  const [sourceIdentities, sourceAttributions, sourceAssignments, sourceAttempts, sourceAlerts, sourceWindows, sourceViewings] = await Promise.all([
+    base44.entities.LeadIdentity.filter({ lead_id: sourceLead.id }),
+    base44.entities.LeadAttribution.filter({ lead_id: sourceLead.id }),
+    base44.entities.LeadAssignment.filter({ lead_id: sourceLead.id }),
+    base44.entities.LeadContactAttempt.filter({ lead_id: sourceLead.id }),
+    base44.entities.CircumventionAlert.filter({ lead_id: sourceLead.id }),
+    base44.entities.LeadProtectionWindow.filter({ lead_id: sourceLead.id }),
+    base44.entities.Viewing.filter({ lead_id: sourceLead.id })
+  ]);
 
   await base44.entities.LeadMergeLog.create({
     source_lead_id: sourceLead.id,
     target_lead_id: targetLead.id,
-    merge_reason: reason,
+    merge_reason: mergeReason,
     merged_by: 'internal_ops',
     merge_confidence: 0.9,
   });
 
-  await base44.entities.LeadEvent.create({
-    lead_id: sourceLead.id,
-    event_type: 'identity_merged',
-    actor_type: 'internal',
-    summary: reason,
-    event_payload_json: { target_lead_id: targetLead.id },
+  await Promise.all([
+    ...sourceIdentities.map((item) => base44.entities.LeadIdentity.create({
+      ...item,
+      lead_id: targetLead.id,
+      is_primary_identity: false
+    })),
+    ...sourceAttributions.map((item) => base44.entities.LeadAttribution.create({
+      ...item,
+      lead_id: targetLead.id,
+      is_locked: item.is_locked ?? false
+    })),
+    ...sourceAssignments.map((item) => base44.entities.LeadAssignment.create({
+      ...item,
+      lead_id: targetLead.id,
+      assignment_reason: [item.assignment_reason, `Merged from ${sourceLead.lead_code || sourceLead.id}`].filter(Boolean).join(' · ')
+    })),
+    ...sourceAttempts.map((item) => base44.entities.LeadContactAttempt.create({
+      ...item,
+      lead_id: targetLead.id,
+      notes: [item.notes, `Merged from ${sourceLead.lead_code || sourceLead.id}`].filter(Boolean).join(' · ')
+    })),
+    ...sourceAlerts.map((item) => base44.entities.CircumventionAlert.create({
+      ...item,
+      lead_id: targetLead.id,
+      summary: [item.summary, `Merged from ${sourceLead.lead_code || sourceLead.id}`].filter(Boolean).join(' · ')
+    })),
+    ...sourceWindows.map((item) => base44.entities.LeadProtectionWindow.create({
+      ...item,
+      lead_id: targetLead.id,
+      lock_reason: [item.lock_reason, `Merged from ${sourceLead.lead_code || sourceLead.id}`].filter(Boolean).join(' · ')
+    })),
+    ...sourceViewings.map((item) => base44.entities.Viewing.create({
+      ...item,
+      lead_id: targetLead.id,
+      completion_notes: [item.completion_notes, `Merged from ${sourceLead.lead_code || sourceLead.id}`].filter(Boolean).join(' · ')
+    }))
+  ]);
+
+  await base44.entities.Lead.update(targetLead.id, {
+    is_duplicate_candidate: false,
+    assigned_partner_id: consolidatedPartner,
+    priority: consolidatedPriority,
+    last_touch_at: consolidatedLastTouch,
+    notes_summary: consolidatedNotes
   });
+
+  await base44.entities.Lead.update(sourceLead.id, {
+    status: 'merged',
+    current_stage: 'merged',
+    merged_into_lead_id: targetLead.id,
+    is_duplicate_candidate: false,
+    ownership_status: 'released',
+    protected_until: null,
+    assigned_partner_id: null,
+    notes_summary: consolidatedNotes
+  });
+
+  await Promise.all([
+    base44.entities.LeadEvent.create({
+      lead_id: sourceLead.id,
+      event_type: 'identity_merged',
+      actor_type: 'internal',
+      summary: mergeReason,
+      event_payload_json: { target_lead_id: targetLead.id, consolidation: 'source_to_target' },
+    }),
+    base44.entities.LeadEvent.create({
+      lead_id: targetLead.id,
+      event_type: 'merge_consolidated',
+      actor_type: 'internal',
+      summary: `Merged lead ${sourceLead.lead_code || sourceLead.id} into this record.`,
+      event_payload_json: { source_lead_id: sourceLead.id },
+    })
+  ]);
 }
