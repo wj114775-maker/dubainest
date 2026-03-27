@@ -115,6 +115,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'scheduled_at is required for this action' }, { status: 400 });
     }
 
+    if ((action === 'mark_lost' || action === 'mark_invalid') && !outcome) {
+      return Response.json({ error: 'outcome is required for this action' }, { status: 400 });
+    }
+
     const updatedAssignment = await base44.entities.LeadAssignment.update(assignment_id, { ...selected.assignment_updates, sla_status: slaStatus });
     const updatedLead = await base44.entities.Lead.update(lead_id, selected.lead_updates);
 
@@ -150,7 +154,20 @@ Deno.serve(async (req) => {
       partner_id: partnerAgencyId,
       summary: selected.summary,
       reason: notes || '',
-      event_payload_json: { assignment_id, action, notes: notes || '', outcome: outcome || '', scheduled_at: scheduled_at || '' },
+      event_payload_json: {
+        assignment_id,
+        action,
+        notes: notes || '',
+        outcome: outcome || '',
+        scheduled_at: scheduled_at || '',
+        workflow_type: ['accept', 'reject', 'request_reassignment'].includes(action)
+          ? 'assignment'
+          : ['log_contact_attempt', 'log_callback_booked'].includes(action)
+            ? 'contact'
+            : ['log_viewing_booked', 'log_viewing_completed'].includes(action)
+              ? 'viewing'
+              : 'outcome'
+      },
       immutable: true,
     });
 
