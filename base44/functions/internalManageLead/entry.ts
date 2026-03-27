@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { lead_id, action, notes } = await req.json();
+    const { lead_id, action, notes, partner_id, target_lead_id, severity } = await req.json();
 
     if (!lead_id || !action) {
       return Response.json({ error: 'lead_id and action are required' }, { status: 400 });
@@ -20,11 +20,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lead not found' }, { status: 404 });
     }
 
+    const protectedUntil = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
     const actionMap = {
       lock: {
         updates: {
           ownership_status: 'locked',
-          protected_until: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+          protected_until: protectedUntil,
         },
         event_type: 'lead_locked',
         summary: 'Internal ops locked the lead.'
@@ -41,9 +42,43 @@ Deno.serve(async (req) => {
         updates: {
           is_circumvention_flagged: true,
           ownership_status: 'protected',
+          protected_until: protectedUntil,
         },
         event_type: 'circumvention_flagged',
         summary: 'Internal ops flagged circumvention risk.'
+      },
+      assign: {
+        updates: {
+          assigned_partner_id: partner_id,
+          ownership_status: 'soft_owned',
+          status: 'assigned',
+          current_stage: 'assigned'
+        },
+        event_type: 'lead_assigned',
+        summary: 'Internal ops assigned the lead.'
+      },
+      mark_duplicate: {
+        updates: {
+          is_duplicate_candidate: true
+        },
+        event_type: 'lead_marked_duplicate',
+        summary: 'Internal ops marked the lead as duplicate candidate.'
+      },
+      escalate: {
+        updates: {
+          priority: 'critical'
+        },
+        event_type: 'lead_escalated',
+        summary: 'Internal ops escalated the lead.'
+      },
+      merge: {
+        updates: {
+          status: 'merged',
+          current_stage: 'merged',
+          merged_into_lead_id: target_lead_id
+        },
+        event_type: 'lead_merged',
+        summary: 'Internal ops merged the lead.'
       }
     };
 
@@ -54,6 +89,55 @@ Deno.serve(async (req) => {
 
     const updatedLead = await base44.entities.Lead.update(lead_id, selected.updates);
 
+    if (action === 'lock' || action === 'flag_circumvention') {
+      await base44.entities.LeadProtectionWindow.create({
+        lead_id,
+        locked_at: new Date().toISOString(),
+        protected_until: updatedLead.protected_until,
+        status: action === 'lock' ? 'active' : 'overridden',
+        lock_reason: notes || selected.summary,
+        overridden_by: action === 'flag_circumvention' ? user.id : undefined,
+        override_reason: action === 'flag_circumvention' ? (notes || 'Circumvention review opened') : undefined,
+      });
+    }
+
+    if (action === 'assign' && partner_id) {
+      await base44.entities.LeadAssignment.create({
+        lead_id,
+        assignment_type: 'override',
+        partner_id,
+        assigned_at: new Date().toISOString(),
+        assignment_status: 'pending',
+        assignment_reason: notes || 'Internal assignment',
+        assigned_by: user.id,
+        sla_due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      });
+    }
+
+    if (action === 'flag_circumvention') {
+      await base44.entities.CircumventionAlert.create({
+        lead_id,
+        partner_id: lead.assigned_partner_id,
+        alert_type: 'bypass_risk',
+        severity: severity || 'high',
+        summary: notes || 'Circumvention risk detected by internal ops.',
+        evidence_json: { lead_id, source: lead.source, ownership_status: lead.ownership_status },
+        status: 'open',
+        opened_by: user.id,
+        assigned_reviewer_id: user.id,
+      });
+    }
+
+    if (action === 'merge' && target_lead_id) {
+      await base44.entities.LeadMergeLog.create({
+        source_lead_id: lead_id,
+        target_lead_id,
+        merge_reason: notes || 'Internal merge',
+        merged_by: user.id,
+        merge_confidence: 0.9,
+      });
+    }
+
     const event = await base44.entities.LeadEvent.create({
       lead_id,
       event_type: selected.event_type,
@@ -61,7 +145,7 @@ Deno.serve(async (req) => {
       actor_user_id: user.id,
       summary: selected.summary,
       reason: notes || '',
-      event_payload_json: { action, notes: notes || '' },
+      event_payload_json: { action, notes: notes || '', partner_id: partner_id || '', target_lead_id: target_lead_id || '' },
       immutable: true,
     });
 
@@ -74,7 +158,7 @@ Deno.serve(async (req) => {
       summary: selected.summary,
       immutable: true,
       scope: 'lead',
-      metadata: { notes: notes || '' }
+      metadata: { notes: notes || '', partner_id: partner_id || '', target_lead_id: target_lead_id || '' }
     });
 
     return Response.json({ lead: updatedLead, event, audit });

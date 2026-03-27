@@ -84,6 +84,7 @@ export async function createNotification(payload) {
 export async function createOrEnrichLeadFromIntent(payload) {
   const shortlists = await base44.entities.Shortlist.list('-updated_date', 50);
   const compareSets = await base44.entities.CompareSet.list('-updated_date', 50);
+  const rules = await base44.entities.LeadProtectionRule.list('-updated_date', 200);
   const attribution = captureAnonymousAttribution({
     first_action_type: payload.intent_type,
     last_action_type: payload.intent_type,
@@ -172,26 +173,50 @@ export async function createOrEnrichLeadFromIntent(payload) {
     event_payload_json: { compare_set_id: item.id, listing_ids: item.listing_ids },
   })));
 
-  if (payload.assigned_partner_id) {
+  const partnerAgencies = await base44.entities.PartnerAgency.list('-updated_date', 200);
+  const matchedPartnerId = payload.assigned_partner_id || leadRecord.assigned_partner_id || partnerAgencies[0]?.id;
+
+  if (matchedPartnerId) {
     await base44.entities.Lead.update(leadRecord.id, {
-      assigned_partner_id: payload.assigned_partner_id,
-      ownership_status: 'soft_owned',
+      assigned_partner_id: matchedPartnerId,
+      ownership_status: payload.is_private_inventory || payload.is_high_value ? 'protected' : 'soft_owned',
       current_stage: 'assigned',
       status: 'assigned',
+      protected_until: payload.is_private_inventory || payload.is_high_value ? new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString() : leadRecord.protected_until,
     });
     await base44.entities.LeadAssignment.create({
       lead_id: leadRecord.id,
-      assignment_type: 'manual',
-      partner_id: payload.assigned_partner_id,
+      assignment_type: payload.is_private_inventory || payload.is_concierge ? 'rule_based' : 'round_robin',
+      partner_id: matchedPartnerId,
       assigned_at: now,
       assignment_status: 'pending',
-      assignment_reason: 'Buyer intent routing',
+      assignment_reason: payload.is_private_inventory ? 'Private inventory routing' : payload.is_concierge ? 'Concierge routing' : 'Buyer intent routing',
       assigned_by: 'system',
       sla_due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
     });
     await createNotification({
       title: 'New lead assigned',
       body: `Lead ${leadRecord.lead_code} is ready for partner action.`,
+    });
+  }
+
+  await Promise.all(rules.map((rule) => base44.entities.LeadRuleEvaluation.create({
+    lead_id: leadRecord.id,
+    rule_id: rule.id,
+    trigger_event: existingLead ? 'lead_updated' : 'lead_created',
+    matched: rule.status === 'active',
+    evaluation_payload_json: { source: payload.source, priority: payload.priority, budget_max: payload.budget_max, country: payload.country },
+    result_payload_json: { rule_type: rule.rule_type, actions: rule.actions || {}, matched_partner_id: matchedPartnerId || '' },
+  })));
+
+  if (payload.is_private_inventory || payload.is_high_value) {
+    await base44.entities.LeadProtectionWindow.create({
+      lead_id: leadRecord.id,
+      rule_id: rules.find((item) => item.rule_type === 'ownership_lock')?.id,
+      lock_reason: payload.is_private_inventory ? 'Private inventory protected window' : 'High value lead protected window',
+      locked_at: now,
+      protected_until: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+      status: 'active',
     });
   }
 

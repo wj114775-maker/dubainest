@@ -30,6 +30,7 @@ export const navItems = {
   ],
   internal: [
     { label: "Dashboard", path: "/ops" },
+    { label: "Leads", path: "/ops/leads" },
     { label: "Admin", path: "/ops/admin" },
     { label: "Users", path: "/ops/users" },
     { label: "Compliance", path: "/ops/compliance" },

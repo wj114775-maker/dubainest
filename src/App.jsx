@@ -21,6 +21,8 @@ import PartnerListings from '@/pages/PartnerListings';
 import PartnerPayouts from '@/pages/PartnerPayouts';
 import PartnerDisputes from '@/pages/PartnerDisputes';
 import OpsDashboard from '@/pages/OpsDashboard';
+import OpsLeads from '@/pages/OpsLeads';
+import OpsLeadDetail from '@/pages/OpsLeadDetail';
 import OpsCompliance from '@/pages/OpsCompliance';
 import OpsRevenue from '@/pages/OpsRevenue';
 import OpsContent from '@/pages/OpsContent';
@@ -97,6 +99,8 @@ const AuthenticatedApp = () => {
       <Route path="/partner/payouts" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerPayouts /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/partner/disputes" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerDisputes /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsDashboard /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/leads" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsLeads /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/leads/:id" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsLeadDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/admin" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsAdminConsole /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/users" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsUsers /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/users/:id" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsUserDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />

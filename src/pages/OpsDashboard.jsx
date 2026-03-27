@@ -2,6 +2,8 @@ import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import LeadOwnershipTable from "@/components/ops/LeadOwnershipTable";
 import AdminMetricGrid from "@/components/admin/AdminMetricGrid";
 import AccessGuard from "@/components/admin/AccessGuard";
@@ -67,7 +69,7 @@ export default function OpsDashboard() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Internal OS" title="Enterprise operating system for demand, trust and payout control" description="This workspace centralises revenue operations, partner performance, compliance risk and lead protection." />
+      <SectionHeading eyebrow="Internal OS" title="Enterprise operating system for demand, trust and payout control" description="This workspace centralises revenue operations, partner performance, compliance risk and lead protection." action={<Button variant="outline" asChild><Link to="/ops/leads">Open lead workspace</Link></Button>} />
       <AccessGuard permission="audit.read">
         <AdminMetricGrid metrics={metrics} />
       </AccessGuard>
