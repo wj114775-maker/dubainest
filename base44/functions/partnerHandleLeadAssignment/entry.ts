@@ -187,7 +187,12 @@ Deno.serve(async (req) => {
           actor_type: 'system',
           summary: 'Lead auto-reassigned after partner rejection/request.',
           reason: notes || action,
-          event_payload_json: { previous_partner_id: partnerAgencyId, new_partner_id: ranked[0].partner.id, previous_assignment_id: assignment_id },
+          event_payload_json: {
+            previous_partner_id: partnerAgencyId,
+            new_partner_id: ranked[0].partner.id,
+            previous_assignment_id: assignment_id,
+            routing_reason: `enterprise_routing | trust:${ranked[0].partner.partner_trust_score || 0} | performance:${ranked[0].partner.performance_score || 0} | response:${ranked[0].partner.response_score || 0} | weight:${ranked[0].partner.routing_weight || 1}`
+          },
           immutable: true,
         });
       }

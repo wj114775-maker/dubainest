@@ -62,7 +62,11 @@ Deno.serve(async (req) => {
         actor_type: 'system',
         summary: reassignedPartnerId ? 'Lead assignment expired and was auto-reassigned.' : 'Lead assignment expired without partner action.',
         reason: reassignedPartnerId ? 'Auto-reassigned after SLA breach' : 'SLA breach without eligible reassignment target',
-        event_payload_json: { assignment_id: assignment.id, reassigned_partner_id: reassignedPartnerId },
+        event_payload_json: {
+          assignment_id: assignment.id,
+          reassigned_partner_id: reassignedPartnerId,
+          routing_reason: reassignedPartnerId ? 'enterprise_routing | auto_reassigned_after_sla_breach' : 'enterprise_routing | no_eligible_reassignment_target'
+        },
       });
     }
 

@@ -431,7 +431,9 @@ export async function createOrEnrichLeadFromIntent(payload) {
         won_priority: matchedRules[0]?.rule.id === rule.id,
         matched_rule_ids: matchedRuleIds,
         chained_after_rule_id: result?.matched ? matchedRules[matchedRules.findIndex((item) => item.rule.id === rule.id) - 1]?.rule.id || null : null,
-        conflict_resolution: result?.matched ? (matchedRules[0]?.rule.id === rule.id ? 'won_by_priority' : 'applied_after_higher_priority_rule') : 'not_applicable'
+        conflict_resolution: result?.matched ? (matchedRules[0]?.rule.id === rule.id ? 'won_by_priority' : 'applied_after_higher_priority_rule') : 'not_applicable',
+        routing_reason: result?.matched ? (result?.updates.assigned_partner_id || finalAssignment?.partner_id ? routingReason : null) : null,
+        ranked_partner_ids: rankedPartners.map((item) => item.partner.id)
       },
     });
   }));
