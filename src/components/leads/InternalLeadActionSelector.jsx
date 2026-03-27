@@ -2,7 +2,8 @@ import React from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const actionOptions = [
-  { value: "assign", label: "Assign / reassign" },
+  { value: "assign", label: "Assign lead" },
+  { value: "reassign", label: "Reassign lead" },
   { value: "mark_duplicate", label: "Start duplicate review" },
   { value: "merge", label: "Merge lead" },
   { value: "lock", label: "Lock protection" },

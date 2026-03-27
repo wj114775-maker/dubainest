@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import InternalLeadConfirmationDialog from "@/components/leads/InternalLeadConfirmationDialog";
 import InternalLeadActionSelector, { actionOptions } from "@/components/leads/InternalLeadActionSelector";
 import InternalLeadWorkflowHint from "@/components/leads/InternalLeadWorkflowHint";
-import InternalLeadEntitySelector from "@/components/leads/InternalLeadEntitySelector";
+import InternalLeadSearchableSelector from "@/components/leads/InternalLeadSearchableSelector";
 
 export default function InternalLeadActionPanel({ lead, partners = [], duplicates = [], loading, canManage, onSubmit }) {
   const [form, setForm] = useState({ action: "assign", notes: "", partner_id: "", target_lead_id: "", severity: "high" });
@@ -35,11 +35,13 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
   const isClosed = ["won", "lost", "merged", "blocked"].includes(lead?.status);
 
   const blockedReason = useMemo(() => {
-    if (form.action === "assign" && !form.partner_id) return "Choose a partner first.";
+    if (["assign", "reassign"].includes(form.action) && !form.partner_id) return "Choose a partner first.";
     if (form.action === "merge" && !form.target_lead_id) return "Choose a duplicate target first.";
-    if (["release", "merge", "escalate", "flag_circumvention", "mark_duplicate"].includes(form.action) && !form.notes.trim()) return "A reason is required for this action.";
-    if (form.action === "assign" && lead?.ownership_status === "protected") return "Protected leads must be released before reassignment.";
-    if (form.action === "assign" && isClosed) return "Closed leads cannot be reassigned.";
+    if (["release", "merge", "escalate", "flag_circumvention", "mark_duplicate", "reassign"].includes(form.action) && !form.notes.trim()) return "A reason is required for this action.";
+    if (form.action === "assign" && lead?.assigned_partner_id) return "This lead already has a partner. Use reassign instead.";
+    if (form.action === "reassign" && !lead?.assigned_partner_id) return "This lead has no current partner yet. Use assign instead.";
+    if (["assign", "reassign"].includes(form.action) && lead?.ownership_status === "protected") return "Protected leads must be released before changing partner ownership.";
+    if (["assign", "reassign"].includes(form.action) && isClosed) return "Closed leads cannot be assigned.";
     if (form.action === "release" && !["locked", "protected"].includes(lead?.ownership_status)) return "Only locked or protected leads can be released.";
     if (form.action === "lock" && lead?.status === "merged") return "Merged leads cannot be locked.";
     if (form.action === "merge" && lead?.status === "merged") return "This lead is already merged.";
@@ -58,6 +60,7 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
     form.partner_id && selectedPartnerOption ? `Partner: ${selectedPartnerOption.label}` : null,
     form.target_lead_id && selectedDuplicateOption ? `Target lead: ${selectedDuplicateOption.label}` : null,
     form.action === "mark_duplicate" ? "Workflow: duplicate review" : null,
+    form.action === "reassign" && lead?.assigned_partner_id ? `Previous partner: ${lead.assigned_partner_id}` : null,
     form.severity && ["flag_circumvention", "escalate"].includes(form.action) ? `Severity: ${form.severity}` : null,
     form.notes.trim() ? `Reason: ${form.notes.trim()}` : `Reason: none provided`
   ].filter(Boolean).join(" · ");
@@ -85,9 +88,11 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
 
           <InternalLeadWorkflowHint action={form.action} title={selectedAction?.label} />
 
-          {form.action === "assign" ? (
-            <InternalLeadEntitySelector
+          {["assign", "reassign"].includes(form.action) ? (
+            <InternalLeadSearchableSelector
               placeholder="Select partner"
+              searchPlaceholder="Search partners"
+              emptyLabel="No partners found"
               value={form.partner_id}
               onChange={(value) => setForm((current) => ({ ...current, partner_id: value }))}
               options={partnerOptions}
@@ -96,8 +101,10 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
           ) : null}
 
           {form.action === "merge" ? (
-            <InternalLeadEntitySelector
+            <InternalLeadSearchableSelector
               placeholder="Select duplicate target"
+              searchPlaceholder="Search duplicate leads"
+              emptyLabel="No duplicate leads found"
               value={form.target_lead_id}
               onChange={(value) => setForm((current) => ({ ...current, target_lead_id: value }))}
               options={duplicateOptions}
@@ -108,6 +115,12 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
           {form.action === "mark_duplicate" ? (
             <div className="rounded-2xl border border-white/10 bg-muted/20 p-3 text-sm text-muted-foreground">
               This starts duplicate review only. It does not merge the lead.
+            </div>
+          ) : null}
+
+          {form.action === "reassign" && lead?.assigned_partner_id ? (
+            <div className="rounded-2xl border border-white/10 bg-muted/20 p-3 text-sm text-muted-foreground">
+              Current partner ID: {lead.assigned_partner_id}
             </div>
           ) : null}
 

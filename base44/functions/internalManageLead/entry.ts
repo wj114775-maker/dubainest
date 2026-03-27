@@ -13,8 +13,8 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const runtimeRuleMatches = [];
 
-    const requireNotes = ['escalate', 'flag_circumvention', 'merge', 'release', 'mark_duplicate'];
-    const restrictedByOwnership = ['assign', 'merge'];
+    const requireNotes = ['escalate', 'flag_circumvention', 'merge', 'release', 'mark_duplicate', 'reassign'];
+    const restrictedByOwnership = ['assign', 'reassign', 'merge'];
 
     if (!lead_id || !action) {
       return Response.json({ error: 'lead_id and action are required' }, { status: 400 });
@@ -63,6 +63,16 @@ Deno.serve(async (req) => {
         event_type: 'lead_assigned',
         summary: 'Internal ops assigned the lead.'
       },
+      reassign: {
+        updates: {
+          assigned_partner_id: partner_id || lead.assigned_partner_id,
+          ownership_status: 'soft_owned',
+          status: 'assigned',
+          current_stage: 'assigned'
+        },
+        event_type: 'lead_reassigned',
+        summary: 'Internal ops reassigned the lead.'
+      },
       mark_duplicate: {
         updates: {
           is_duplicate_candidate: true,
@@ -96,8 +106,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unsupported action' }, { status: 400 });
     }
 
-    if (action === 'assign' && !partner_id) {
-      return Response.json({ error: 'partner_id is required for assign' }, { status: 400 });
+    if ((action === 'assign' || action === 'reassign') && !partner_id) {
+      return Response.json({ error: 'partner_id is required for this action' }, { status: 400 });
     }
 
     if (action === 'merge' && !target_lead_id) {
@@ -120,8 +130,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Merged leads cannot use this action' }, { status: 400 });
     }
 
-    if (action === 'assign' && ['won', 'lost', 'merged', 'blocked'].includes(lead.status || '')) {
-      return Response.json({ error: 'Closed leads cannot be reassigned' }, { status: 400 });
+    if ((action === 'assign' || action === 'reassign') && ['won', 'lost', 'merged', 'blocked'].includes(lead.status || '')) {
+      return Response.json({ error: 'Closed leads cannot be assigned' }, { status: 400 });
+    }
+
+    if (action === 'assign' && lead.assigned_partner_id) {
+      return Response.json({ error: 'Use reassign for leads that already have a partner' }, { status: 400 });
+    }
+
+    if (action === 'reassign' && !lead.assigned_partner_id) {
+      return Response.json({ error: 'Use assign for leads that do not yet have a partner' }, { status: 400 });
     }
 
     if (action === 'mark_duplicate' && lead.is_duplicate_candidate) {
@@ -185,7 +203,7 @@ Deno.serve(async (req) => {
       })));
     }
 
-    if (action === 'assign' && partner_id) {
+    if ((action === 'assign' || action === 'reassign') && partner_id) {
       await base44.entities.LeadAssignment.create({
         lead_id,
         assignment_type: 'override',

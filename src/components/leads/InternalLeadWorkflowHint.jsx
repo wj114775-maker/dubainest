@@ -1,7 +1,8 @@
 import React from "react";
 
 const helperText = {
-  assign: "Choose a partner, then add the handoff reason.",
+  assign: "Choose a partner for first-time ownership, then add the handoff reason.",
+  reassign: "Choose the next partner and explain why ownership is changing.",
   mark_duplicate: "Start duplicate review and capture why this lead needs review.",
   merge: "Choose the reviewed target lead, then confirm the merge reason.",
   lock: "Lock or extend protection for this lead.",
