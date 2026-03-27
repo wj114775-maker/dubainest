@@ -35,7 +35,7 @@ export default function OpsAdminConsole() {
         ]
       };
     },
-    initialData: [],
+    initialData: { modules: [], summary: [] },
   });
 
   return (
