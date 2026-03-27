@@ -32,15 +32,36 @@ export default function Home() {
   const { data: listings = fallbackListings } = useQuery({ queryKey: ["home-listings"], queryFn: () => base44.entities.Listing.filter({ status: "published" }, "-updated_date", 6), initialData: fallbackListings });
   const { data: areas = fallbackAreas } = useQuery({ queryKey: ["home-areas"], queryFn: () => base44.entities.Area.list(), initialData: fallbackAreas });
   const { data: guides = fallbackGuides } = useQuery({ queryKey: ["home-guides"], queryFn: () => base44.entities.Guide.filter({ status: "published" }, "-updated_date", 3), initialData: fallbackGuides });
+  const { data: homeMetrics } = useQuery({
+    queryKey: ["home-metrics"],
+    queryFn: async () => {
+      const [allListings, agencies] = await Promise.all([
+        base44.entities.Listing.list("-updated_date", 200),
+        base44.entities.PartnerAgency.list("-updated_date", 200),
+      ]);
+
+      const verifiedListings = allListings.filter((item) => item.status === "published" && item.permit_verified).length;
+      const activePartners = agencies.filter((item) => item.status === "active");
+      const averageTrust = allListings.length
+        ? Math.round(allListings.reduce((sum, item) => sum + Number(item.trust_score || 0), 0) / allListings.length)
+        : 0;
+      const callbackSla = activePartners.length
+        ? Math.round(activePartners.reduce((sum, item) => sum + Number(item.sla_response_minutes || 0), 0) / activePartners.length)
+        : 0;
+
+      return { verifiedListings, activePartners: activePartners.length, averageTrust, callbackSla };
+    },
+    initialData: { verifiedListings: 0, activePartners: 0, averageTrust: 0, callbackSla: 0 },
+  });
 
   return (
     <div className="space-y-10 pb-32">
       <HeroSearch appName={appConfig.app_name} />
       <section className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="Verified active listings" value="1,248" hint="Permit-aware publishing only" />
-        <MetricCard label="Partner agencies" value="46" hint="Licensed execution partners" />
-        <MetricCard label="Average trust score" value="88/100" hint="Listing + partner + broker weighted" />
-        <MetricCard label="Callback SLA" value="13 min" hint="Tracked across partner OS" />
+        <MetricCard label="Verified active listings" value={String(homeMetrics.verifiedListings)} hint="Permit-aware publishing only" />
+        <MetricCard label="Partner agencies" value={String(homeMetrics.activePartners)} hint="Licensed execution partners" />
+        <MetricCard label="Average trust score" value={`${homeMetrics.averageTrust}/100`} hint="Listing + partner + broker weighted" />
+        <MetricCard label="Callback SLA" value={homeMetrics.callbackSla ? `${homeMetrics.callbackSla} min` : "—"} hint="Tracked across partner OS" />
       </section>
       <section className="space-y-6">
         <SectionHeading eyebrow="Buyer App" title="Verified opportunities with enterprise trust signals" description="Listings are screened for permit evidence, broker verification, duplicate risk and stale inventory before publishing." />
