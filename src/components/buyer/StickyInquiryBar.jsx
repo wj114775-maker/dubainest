@@ -17,7 +17,7 @@ export default function StickyInquiryBar() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="rounded-2xl" onClick={() => { setIntentType('request_callback'); setOpen(true); }}><PhoneCall className="mr-2 h-4 w-4" /> Callback</Button>
-            <Button className="rounded-2xl" onClick={() => { setIntentType('listing_enquiry'); setOpen(true); }}><MessageCircle className="mr-2 h-4 w-4" /> Enquire</Button>
+            <Button className="rounded-2xl" onClick={() => { setIntentType('request_concierge'); setOpen(true); }}><MessageCircle className="mr-2 h-4 w-4" /> Concierge</Button>
           </div>
         </div>
       </div>

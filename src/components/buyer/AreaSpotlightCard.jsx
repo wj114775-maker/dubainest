@@ -1,5 +1,7 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function AreaSpotlightCard({ area }) {
   return (
@@ -15,6 +17,7 @@ export default function AreaSpotlightCard({ area }) {
           <div><p className="text-muted-foreground">Family</p><p className="font-semibold">{area.family_score}/100</p></div>
           <div><p className="text-muted-foreground">Investor</p><p className="font-semibold">{area.investor_score}/100</p></div>
         </div>
+        <Button asChild variant="outline" className="w-full rounded-2xl"><Link to={`/areas/${area.slug}`}>View area intelligence</Link></Button>
       </CardContent>
     </Card>
   );
