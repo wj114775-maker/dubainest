@@ -4,16 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PartnerActionGuidanceCard from "@/components/leads/PartnerActionGuidanceCard";
 import PartnerActionFieldset from "@/components/leads/PartnerActionFieldset";
 import PartnerActionSelector, { partnerActionOptions } from "@/components/leads/PartnerActionSelector";
+import { createPartnerActionForm, partnerActionRequirements } from "@/components/leads/partnerActionConfig";
 
 export default function PartnerLeadActionPanel({ lead, assignment, loading, onSubmit }) {
-  const [form, setForm] = useState({ action: "accept", notes: "", outcome: "call", scheduled_at: "" });
+  const [form, setForm] = useState(createPartnerActionForm("accept"));
   const selectedAction = useMemo(() => partnerActionOptions.find((item) => item.value === form.action), [form.action]);
 
   const blockedReason = (() => {
+    const requirements = partnerActionRequirements[form.action] || {};
     if (["accept", "mark_won"].includes(form.action) && assignment?.assignment_status === "rejected") return "This assignment is already closed.";
-    if (["reject", "request_reassignment", "log_contact_attempt", "log_viewing_completed", "mark_lost", "mark_invalid"].includes(form.action) && !form.notes.trim()) return "Add the required notes before submitting.";
-    if (["mark_lost", "mark_invalid"].includes(form.action) && !form.outcome) return "Choose the reason first.";
-    if (["log_callback_booked", "log_viewing_booked", "log_viewing_completed"].includes(form.action) && !form.scheduled_at) return "Choose the required date and time first.";
+    if (requirements.notes && !form.notes.trim()) return "Add the required details before submitting.";
+    if (requirements.outcome && !form.outcome) return "Choose the required option first.";
+    if (requirements.scheduled_at && !form.scheduled_at) return "Choose the required date and time first.";
     return "";
   })();
 
@@ -27,7 +29,7 @@ export default function PartnerLeadActionPanel({ lead, assignment, loading, onSu
       <CardHeader><CardTitle>Partner action panel</CardTitle></CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={handleSubmit}>
-          <PartnerActionSelector value={form.action} onChange={(value) => setForm({ action: value, notes: "", outcome: value === "mark_lost" || value === "mark_invalid" ? "" : "call", scheduled_at: "" })} />
+          <PartnerActionSelector value={form.action} onChange={(value) => setForm(createPartnerActionForm(value))} />
 
           <div className="space-y-3">
             <div className="rounded-2xl border border-white/10 bg-background/50 p-3 text-sm">
