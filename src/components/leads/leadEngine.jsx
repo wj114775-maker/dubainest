@@ -22,51 +22,75 @@ function matchesCondition(record, condition = {}) {
 
 function evaluateRuleConditions(record, conditions = {}) {
   const conditionList = Array.isArray(conditions.conditions) ? conditions.conditions : [];
-  if (!conditionList.length) return true;
-  const logic = conditions.logic === 'or' ? 'or' : 'and';
-  const results = conditionList.map((condition) => matchesCondition(record, condition));
-  return logic === 'or' ? results.some(Boolean) : results.every(Boolean);
+  const branchList = Array.isArray(conditions.branches) ? conditions.branches : [];
+
+  const baseMatched = !conditionList.length ? true : ((conditions.logic === 'or' ? 'or' : 'and') === 'or'
+    ? conditionList.map((condition) => matchesCondition(record, condition)).some(Boolean)
+    : conditionList.map((condition) => matchesCondition(record, condition)).every(Boolean));
+
+  if (!baseMatched) return { matched: false, branch: null };
+  if (!branchList.length) return { matched: true, branch: null };
+
+  const matchedBranch = branchList.find((branch) => {
+    const branchConditions = Array.isArray(branch.conditions) ? branch.conditions : [];
+    if (!branchConditions.length) return false;
+    const branchLogic = branch.logic === 'or' ? 'or' : 'and';
+    const branchResults = branchConditions.map((condition) => matchesCondition(record, condition));
+    return branchLogic === 'or' ? branchResults.some(Boolean) : branchResults.every(Boolean);
+  });
+
+  return { matched: true, branch: matchedBranch || null };
 }
 
 function applyRuleActions(lead, actions = {}, context = {}) {
+  const resolvedActions = context.branch?.actions || actions;
   const updates = {};
-  const sideEffects = { createWindow: null, createAlert: null, assignment: null, notifications: [] };
+  const sideEffects = { createWindow: null, createAlert: null, assignment: null, notifications: [], escalation: null };
 
-  if (actions.set_priority) updates.priority = actions.set_priority;
-  if (actions.set_stage) updates.current_stage = actions.set_stage;
-  if (actions.set_status) updates.status = actions.set_status;
-  if (actions.set_ownership_status) updates.ownership_status = actions.set_ownership_status;
-  if (actions.assign_partner_id) updates.assigned_partner_id = actions.assign_partner_id;
-  if (actions.lock_hours) {
-    const protectedUntil = new Date(Date.now() + Number(actions.lock_hours) * 60 * 60 * 1000).toISOString();
+  if (resolvedActions.set_priority) updates.priority = resolvedActions.set_priority;
+  if (resolvedActions.set_stage) updates.current_stage = resolvedActions.set_stage;
+  if (resolvedActions.set_status) updates.status = resolvedActions.set_status;
+  if (resolvedActions.set_ownership_status) updates.ownership_status = resolvedActions.set_ownership_status;
+  if (resolvedActions.assign_partner_id) updates.assigned_partner_id = resolvedActions.assign_partner_id;
+  if (resolvedActions.lock_hours) {
+    const protectedUntil = new Date(Date.now() + Number(resolvedActions.lock_hours) * 60 * 60 * 1000).toISOString();
     updates.protected_until = protectedUntil;
-    updates.ownership_status = actions.set_ownership_status || 'protected';
+    updates.ownership_status = resolvedActions.set_ownership_status || 'protected';
     sideEffects.createWindow = {
       protected_until: protectedUntil,
-      lock_reason: actions.lock_reason || context.rule?.name || 'Rule lock applied'
+      lock_reason: resolvedActions.lock_reason || context.rule?.name || 'Rule lock applied'
     };
   }
-  if (actions.sla_minutes) {
+  if (resolvedActions.sla_minutes) {
     sideEffects.assignment = {
-      sla_due_at: new Date(Date.now() + Number(actions.sla_minutes) * 60 * 1000).toISOString(),
-      assignment_reason: actions.assignment_reason || context.rule?.name || 'Rule-based routing'
+      sla_due_at: new Date(Date.now() + Number(resolvedActions.sla_minutes) * 60 * 1000).toISOString(),
+      assignment_reason: resolvedActions.assignment_reason || context.rule?.name || 'Rule-based routing'
     };
   }
-  if (actions.open_circumvention_alert) {
+  if (resolvedActions.open_circumvention_alert) {
     updates.is_circumvention_flagged = true;
     sideEffects.createAlert = {
-      severity: actions.alert_severity || 'high',
-      summary: actions.alert_summary || `${context.rule?.name || 'Rule'} opened a circumvention review.`
+      severity: resolvedActions.alert_severity || 'high',
+      summary: resolvedActions.alert_summary || `${context.rule?.name || 'Rule'} opened a circumvention review.`,
+      status: resolvedActions.escalate_immediately ? 'escalated' : 'reviewing'
     };
   }
-  if (actions.notify_title) {
+  if (resolvedActions.escalate_lead || resolvedActions.escalate_immediately) {
+    updates.status = resolvedActions.escalated_status || updates.status || 'disputed';
+    updates.current_stage = resolvedActions.escalated_stage || updates.current_stage || 'disputed';
+    sideEffects.escalation = {
+      severity: resolvedActions.escalation_severity || resolvedActions.alert_severity || 'high',
+      summary: resolvedActions.escalation_summary || `${context.rule?.name || 'Rule'} escalated the lead for review.`
+    };
+  }
+  if (resolvedActions.notify_title) {
     sideEffects.notifications.push({
-      title: actions.notify_title,
-      body: actions.notify_body || `Lead ${lead.lead_code || lead.id} was updated by rule execution.`
+      title: resolvedActions.notify_title,
+      body: resolvedActions.notify_body || `Lead ${lead.lead_code || lead.id} was updated by rule execution.`
     });
   }
 
-  return { updates, sideEffects };
+  return { updates, sideEffects, appliedActions: resolvedActions };
 }
 
 function buildDefaultRule(record, preferredPartnerId) {
@@ -288,13 +312,15 @@ export async function createOrEnrichLeadFromIntent(payload) {
 
   const activeRules = rules.filter((rule) => rule.status === 'active').sort((a, b) => Number(a.priority || 999) - Number(b.priority || 999));
   const evaluationResults = activeRules.map((rule) => {
-    const matched = evaluateRuleConditions(runtimeRecord, rule.conditions || {});
-    const execution = matched ? applyRuleActions(leadRecord, rule.actions || {}, { rule, payload, preferredPartnerId }) : { updates: {}, sideEffects: { createWindow: null, createAlert: null, assignment: null, notifications: [] } };
+    const evaluation = evaluateRuleConditions(runtimeRecord, rule.conditions || {});
+    const execution = evaluation.matched ? applyRuleActions(leadRecord, rule.actions || {}, { rule, payload, preferredPartnerId, branch: evaluation.branch }) : { updates: {}, sideEffects: { createWindow: null, createAlert: null, assignment: null, notifications: [], escalation: null }, appliedActions: {} };
     return {
       rule,
-      matched,
+      matched: evaluation.matched,
+      branch: evaluation.branch,
       updates: execution.updates,
-      sideEffects: execution.sideEffects
+      sideEffects: execution.sideEffects,
+      appliedActions: execution.appliedActions
     };
   });
 
@@ -304,6 +330,7 @@ export async function createOrEnrichLeadFromIntent(payload) {
   let finalAssignment = null;
   let finalWindow = null;
   let finalAlert = null;
+  let finalEscalation = null;
   const finalNotifications = [];
 
   matchedRules.forEach((item) => {
@@ -317,6 +344,7 @@ export async function createOrEnrichLeadFromIntent(payload) {
     }
     if (item.sideEffects.createWindow && !finalWindow) finalWindow = item.sideEffects.createWindow;
     if (item.sideEffects.createAlert && !finalAlert) finalAlert = item.sideEffects.createAlert;
+    if (item.sideEffects.escalation && !finalEscalation) finalEscalation = item.sideEffects.escalation;
     if (item.sideEffects.notifications?.length) finalNotifications.push(...item.sideEffects.notifications);
   });
 
@@ -362,8 +390,8 @@ export async function createOrEnrichLeadFromIntent(payload) {
       alert_type: 'rule_triggered_review',
       severity: finalAlert.severity,
       summary: finalAlert.summary,
-      evidence_json: { source: payload.source, trigger_event: runtimeRecord.trigger_event },
-      status: 'reviewing'
+      evidence_json: { source: payload.source, trigger_event: runtimeRecord.trigger_event, escalation: finalEscalation },
+      status: finalAlert.status || 'reviewing'
     });
   }
 
@@ -378,6 +406,8 @@ export async function createOrEnrichLeadFromIntent(payload) {
       result_payload_json: {
         rule_type: rule.rule_type,
         actions: rule.actions || {},
+        applied_actions: result?.appliedActions || {},
+        applied_branch: result?.branch?.name || null,
         applied_updates: result?.updates || {},
         matched_partner_id: (result?.updates.assigned_partner_id || finalAssignment?.partner_id || ''),
         result: result?.matched ? 'executed' : 'not_matched',
@@ -419,7 +449,8 @@ export async function createOrEnrichLeadFromIntent(payload) {
       applied_updates: finalUpdates,
       assignment_partner_id: finalAssignment?.partner_id || null,
       priority_winner_rule_id: matchedRules[0]?.rule.id || null,
-      rule_chain: matchedRules.map((item) => item.rule.id)
+      rule_chain: matchedRules.map((item) => item.rule.id),
+      escalation_summary: finalEscalation?.summary || null
     }
   });
 
