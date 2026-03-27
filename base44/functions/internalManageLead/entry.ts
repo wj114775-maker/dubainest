@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
       },
       assign: {
         updates: {
-          assigned_partner_id: partner_id,
+          assigned_partner_id: partner_id || lead.assigned_partner_id,
           ownership_status: 'soft_owned',
           status: 'assigned',
           current_stage: 'assigned'
@@ -85,6 +85,14 @@ Deno.serve(async (req) => {
     const selected = actionMap[action];
     if (!selected) {
       return Response.json({ error: 'Unsupported action' }, { status: 400 });
+    }
+
+    if (action === 'assign' && !partner_id) {
+      return Response.json({ error: 'partner_id is required for assign' }, { status: 400 });
+    }
+
+    if (action === 'merge' && !target_lead_id) {
+      return Response.json({ error: 'target_lead_id is required for merge' }, { status: 400 });
     }
 
     const updatedLead = await base44.entities.Lead.update(lead_id, selected.updates);

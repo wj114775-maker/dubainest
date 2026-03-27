@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       },
       request_reassignment: {
         assignment_updates: { assignment_status: 'reassigned', rejected_at: now },
-        lead_updates: { status: 'assigned', current_stage: 'assigned', ownership_status: 'released' },
+        lead_updates: { status: 'assigned', current_stage: 'assigned', ownership_status: 'released', assigned_partner_id: null },
         event_type: 'partner_reassignment_requested',
         summary: 'Partner requested reassignment.'
       },
@@ -70,25 +70,25 @@ Deno.serve(async (req) => {
         summary: 'Partner marked the lead as invalid.'
       },
       log_contact_attempt: {
-        assignment_updates: { assignment_status: assignment.assignment_status || 'accepted' },
+        assignment_updates: { assignment_status: assignment.assignment_status === 'pending' ? 'accepted' : (assignment.assignment_status || 'accepted'), accepted_at: assignment.accepted_at || now },
         lead_updates: { status: 'contact_in_progress', current_stage: 'contact_in_progress', ownership_status: 'locked', protected_until: protectedUntil },
         event_type: 'contact_attempt_logged',
         summary: 'Partner logged a contact attempt.'
       },
       log_callback_booked: {
-        assignment_updates: { assignment_status: assignment.assignment_status || 'accepted' },
+        assignment_updates: { assignment_status: assignment.assignment_status === 'pending' ? 'accepted' : (assignment.assignment_status || 'accepted'), accepted_at: assignment.accepted_at || now },
         lead_updates: { status: 'callback_booked', current_stage: 'callback_booked', ownership_status: 'locked', protected_until: protectedUntil },
         event_type: 'callback_booked',
         summary: 'Partner booked a callback.'
       },
       log_viewing_booked: {
-        assignment_updates: { assignment_status: assignment.assignment_status || 'accepted' },
+        assignment_updates: { assignment_status: assignment.assignment_status === 'pending' ? 'accepted' : (assignment.assignment_status || 'accepted'), accepted_at: assignment.accepted_at || now },
         lead_updates: { status: 'viewing_booked', current_stage: 'viewing_booked', ownership_status: 'locked', protected_until: protectedUntil },
         event_type: 'viewing_booked',
         summary: 'Partner booked a viewing.'
       },
       log_viewing_completed: {
-        assignment_updates: { assignment_status: assignment.assignment_status || 'accepted' },
+        assignment_updates: { assignment_status: assignment.assignment_status === 'pending' ? 'accepted' : (assignment.assignment_status || 'accepted'), accepted_at: assignment.accepted_at || now },
         lead_updates: { status: 'viewing_completed', current_stage: 'viewing_completed', ownership_status: 'protected', protected_until: protectedUntil },
         event_type: 'viewing_completed',
         summary: 'Partner completed a viewing.'

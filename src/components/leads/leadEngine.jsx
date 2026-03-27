@@ -175,14 +175,16 @@ export async function createOrEnrichLeadFromIntent(payload) {
 
   const partnerAgencies = await base44.entities.PartnerAgency.list('-updated_date', 200);
   const matchedPartnerId = payload.assigned_partner_id || leadRecord.assigned_partner_id || partnerAgencies[0]?.id;
+  const protectedWindowUntil = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
 
   if (matchedPartnerId) {
+    leadRecord.assigned_partner_id = matchedPartnerId;
     await base44.entities.Lead.update(leadRecord.id, {
       assigned_partner_id: matchedPartnerId,
       ownership_status: payload.is_private_inventory || payload.is_high_value ? 'protected' : 'soft_owned',
       current_stage: 'assigned',
       status: 'assigned',
-      protected_until: payload.is_private_inventory || payload.is_high_value ? new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString() : leadRecord.protected_until,
+      protected_until: payload.is_private_inventory || payload.is_high_value ? protectedWindowUntil : leadRecord.protected_until,
     });
     await base44.entities.LeadAssignment.create({
       lead_id: leadRecord.id,
@@ -215,7 +217,7 @@ export async function createOrEnrichLeadFromIntent(payload) {
       rule_id: rules.find((item) => item.rule_type === 'ownership_lock')?.id,
       lock_reason: payload.is_private_inventory ? 'Private inventory protected window' : 'High value lead protected window',
       locked_at: now,
-      protected_until: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+      protected_until: protectedWindowUntil,
       status: 'active',
     });
   }
