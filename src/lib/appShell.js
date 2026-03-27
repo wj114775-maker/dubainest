@@ -35,6 +35,7 @@ export const navItems = {
     { label: "Admin", path: "/ops/admin" },
     { label: "Users", path: "/ops/users" },
     { label: "Compliance", path: "/ops/compliance" },
+    { label: "Listings", path: "/ops/listings" },
     { label: "Revenue", path: "/ops/revenue" },
     { label: "Audit", path: "/ops/audit" },
     { label: "Settings", path: "/ops/settings" }

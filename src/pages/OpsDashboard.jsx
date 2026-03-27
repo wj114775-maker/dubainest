@@ -73,6 +73,11 @@ export default function OpsDashboard() {
       <AccessGuard permission="audit.read">
         <AdminMetricGrid metrics={metrics} />
       </AccessGuard>
+      <AccessGuard permission="compliance_cases.read">
+        <div className="flex justify-end">
+          <Button variant="outline" asChild><Link to="/ops/listings">Open listing workspace</Link></Button>
+        </div>
+      </AccessGuard>
       <AccessGuard permission="leads.read">
         <LeadOwnershipTable
           leads={leadRows}
