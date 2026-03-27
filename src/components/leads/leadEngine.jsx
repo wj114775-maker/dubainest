@@ -182,7 +182,9 @@ export async function createOrEnrichLeadFromIntent(payload) {
   const preferredPartner = partnerAgencies.find((item) => {
     const geographyMatch = payload.country && item.country ? item.country === payload.country : true;
     const privateMatch = payload.is_private_inventory ? item.status === 'active' : true;
-    return geographyMatch && privateMatch;
+    const conciergeMatch = payload.is_concierge ? item.status === 'active' : true;
+    const investorMatch = payload.buying_purpose === 'investor' ? (item.specialties || '').toLowerCase().includes('invest') || true : true;
+    return geographyMatch && privateMatch && conciergeMatch && investorMatch;
   });
   const matchedPartnerId = payload.assigned_partner_id || leadRecord.assigned_partner_id || preferredPartner?.id || partnerAgencies[0]?.id;
   const protectedWindowUntil = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
@@ -202,7 +204,7 @@ export async function createOrEnrichLeadFromIntent(payload) {
       partner_id: matchedPartnerId,
       assigned_at: now,
       assignment_status: 'pending',
-      assignment_reason: payload.is_private_inventory ? 'Private inventory routing' : payload.is_concierge ? 'Concierge routing' : 'Buyer intent routing',
+      assignment_reason: payload.is_private_inventory ? 'Private inventory routing' : payload.is_concierge ? 'Concierge routing' : payload.buying_purpose === 'investor' ? 'Investor routing' : 'Buyer intent routing',
       assigned_by: 'system',
       sla_due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
     });
@@ -219,7 +221,7 @@ export async function createOrEnrichLeadFromIntent(payload) {
     trigger_event: existingLead ? 'lead_updated' : 'lead_created',
     matched: rule.status === 'active',
     evaluation_payload_json: { source: payload.source, priority: payload.priority, budget_max: payload.budget_max, country: payload.country },
-    result_payload_json: { rule_type: rule.rule_type, actions: rule.actions || {}, matched_partner_id: matchedPartnerId || '' },
+    result_payload_json: { rule_type: rule.rule_type, actions: rule.actions || {}, matched_partner_id: matchedPartnerId || '', result: matchedPartnerId ? 'routing_applied' : 'observed_only' },
   })));
 
   if (payload.is_private_inventory || payload.is_high_value) {

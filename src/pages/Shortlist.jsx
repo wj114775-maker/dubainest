@@ -6,6 +6,7 @@ import EmptyStateCard from "@/components/common/EmptyStateCard";
 import ListingCard from "@/components/buyer/ListingCard";
 import ShortlistActionsCard from "@/components/buyer/ShortlistActionsCard";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
+import ConversionSignalCard from "@/components/buyer/ConversionSignalCard";
 import { getSessionId } from "@/components/leads/leadEngine";
 
 export default function Shortlist() {
@@ -40,6 +41,7 @@ export default function Shortlist() {
     <div className="space-y-6 pb-28">
       <SectionHeading eyebrow="Saved" title="Shortlists stay anonymous until you share or request access" description="This is designed for mobile-first saving, later sharing, and controlled sign-up only when trust has been earned." />
       {listings.length ? <>
+        <ConversionSignalCard title="Shortlist conversion flow" description="Saved listings can now move into a share step or a guided shortlist consultation request." items={[{ label: "Saved", value: String(listings.length) }, { label: "Share status", value: shareMutation.isSuccess ? "Ready" : "Not shared" }, { label: "Next step", value: "Consultation" }]} />
         <ShortlistActionsCard onShare={() => shareMutation.mutate()} onConsult={() => setOpenIntent(true)} />
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{listings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div>
         <BuyerIntentSheet open={openIntent} onOpenChange={setOpenIntent} intentType="request_shortlist_consultation" title="Request shortlist consultation" />

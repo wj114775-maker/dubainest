@@ -6,6 +6,7 @@ import AccessGuard from "@/components/admin/AccessGuard";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
 import GovernanceRegistryTableCard from "@/components/admin/GovernanceRegistryTableCard";
 import GovernanceRuleFormCard from "@/components/admin/GovernanceRuleFormCard";
+import LeadRuleEvaluationPanel from "@/components/leads/LeadRuleEvaluationPanel";
 
 export default function OpsLeadRules() {
   const queryClient = useQueryClient();
@@ -25,6 +26,12 @@ export default function OpsLeadRules() {
         source: item
       }));
     },
+    initialData: []
+  });
+
+  const { data: evaluations = [] } = useQuery({
+    queryKey: ["ops-lead-rule-evaluations"],
+    queryFn: async () => base44.entities.LeadRuleEvaluation.list("-updated_date", 20),
     initialData: []
   });
 
@@ -52,6 +59,9 @@ export default function OpsLeadRules() {
       </AccessGuard>
       <AccessGuard permission="assignments.manage">
         <GovernanceRuleFormCard title="Create lead protection rule" fields={fields} initialValues={initialValues} record={editingRule} onSubmit={submitRule} submitLabel="Create rule" onCancel={() => setEditingRule(null)} />
+      </AccessGuard>
+      <AccessGuard permission="assignments.read">
+        <LeadRuleEvaluationPanel items={evaluations.map((item) => ({ id: item.id, ruleLabel: item.rule_id || "Runtime rule", matched: item.matched, summary: [item.result_payload_json?.result, item.result_payload_json?.rule_type, item.lead_id].filter(Boolean).join(" · ") || "Evaluation recorded", trigger: item.trigger_event || "runtime" }))} />
       </AccessGuard>
     </div>
   );

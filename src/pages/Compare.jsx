@@ -5,6 +5,7 @@ import SectionHeading from "@/components/common/SectionHeading";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
 import { Card, CardContent } from "@/components/ui/card";
 import CompareActionsCard from "@/components/buyer/CompareActionsCard";
+import ConversionSignalCard from "@/components/buyer/ConversionSignalCard";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import { getSessionId } from "@/components/leads/leadEngine";
 
@@ -29,6 +30,7 @@ export default function Compare() {
       <SectionHeading eyebrow="Compare" title="Compare trust, yield, price and fit before you register" description="Compare sets are part of the anonymous browse layer, with registration triggered only when the user takes a protected action." />
       {listings.length ? (
         <>
+        <ConversionSignalCard title="Compare-to-consultation flow" description="Comparison intent now feeds directly into a guided consultation request with richer intake branching." items={[{ label: "Compared", value: String(listings.length) }, { label: "Trust view", value: "Active" }, { label: "Next step", value: "Consultation" }]} />
         <CompareActionsCard onConsult={() => setOpenIntent(true)} />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {listings.map((listing) => (

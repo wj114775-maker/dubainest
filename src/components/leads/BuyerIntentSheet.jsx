@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { captureBuyerIntent } from '@/components/leads/buyerLeadActions';
 
@@ -25,6 +26,14 @@ const defaultForm = {
 export default function BuyerIntentSheet({ open, onOpenChange, intentType, listingId = '', projectId = '', areaId = '', title }) {
   const [form, setForm] = useState(defaultForm);
   const { toast } = useToast();
+  const isInvestor = form.buyer_mode === 'investor';
+  const isMover = form.buyer_mode === 'mover';
+  const isPrivateBuyer = form.buyer_mode === 'private';
+  const dynamicDescription = useMemo(() => {
+    if (isInvestor) return 'Tell us about yield goals, budget and timing so the right investment team picks this up.';
+    if (isPrivateBuyer) return 'Share privacy expectations and buying intent so we can route this carefully.';
+    return 'Tell us your move plans and preferred areas so we can tailor the next step.';
+  }, [isInvestor, isPrivateBuyer]);
 
   const mutation = useMutation({
     mutationFn: () => captureBuyerIntent({
@@ -58,7 +67,7 @@ export default function BuyerIntentSheet({ open, onOpenChange, intentType, listi
       <SheetContent side="right" className="w-full sm:max-w-xl">
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
-          <SheetDescription>Your request will be routed with attribution and ownership protection.</SheetDescription>
+          <SheetDescription>{dynamicDescription}</SheetDescription>
         </SheetHeader>
         <div className="mt-6 grid gap-3">
           <Input placeholder="Full name" value={form.full_name} onChange={(event) => setForm({ ...form, full_name: event.target.value })} />
@@ -79,7 +88,10 @@ export default function BuyerIntentSheet({ open, onOpenChange, intentType, listi
             <Input placeholder="Budget ceiling" value={form.budget_max} onChange={(event) => setForm({ ...form, budget_max: event.target.value })} />
           </div>
           <Input placeholder="Preferred area" value={form.preferred_area} onChange={(event) => setForm({ ...form, preferred_area: event.target.value })} />
-          <Input placeholder="Purchase timeline" value={form.purchase_timeline} onChange={(event) => setForm({ ...form, purchase_timeline: event.target.value })} />
+          <Input placeholder={isInvestor ? "Investment timeline" : isMover ? "Move timeline" : "Purchase timeline"} value={form.purchase_timeline} onChange={(event) => setForm({ ...form, purchase_timeline: event.target.value })} />
+          {isInvestor ? <Input placeholder="Target yield or strategy" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} /> : null}
+          {isMover ? <Input placeholder="Home needs or family priorities" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} /> : null}
+          {isPrivateBuyer ? <Input placeholder="Privacy or access expectations" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} /> : null}
           <Select value={form.financing} onValueChange={(value) => setForm({ ...form, financing: value })}>
             <SelectTrigger><SelectValue placeholder="Financing" /></SelectTrigger>
             <SelectContent>
@@ -88,7 +100,7 @@ export default function BuyerIntentSheet({ open, onOpenChange, intentType, listi
               <SelectItem value="unknown">Unknown</SelectItem>
             </SelectContent>
           </Select>
-          <Input placeholder="Extra notes" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />
+          <Textarea placeholder="Extra notes" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />
           <Select value={intentType} disabled>
             <SelectTrigger><SelectValue placeholder="Intent type" /></SelectTrigger>
             <SelectContent>

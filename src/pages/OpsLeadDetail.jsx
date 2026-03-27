@@ -9,6 +9,7 @@ import LeadRecordPanel from "@/components/leads/LeadRecordPanel";
 import InternalLeadActionPanel from "@/components/leads/InternalLeadActionPanel";
 import LeadNotesCard from "@/components/leads/LeadNotesCard";
 import LeadTimelinePanel from "@/components/leads/LeadTimelinePanel";
+import LeadRuleEvaluationPanel from "@/components/leads/LeadRuleEvaluationPanel";
 import useAccessControl from "@/hooks/useAccessControl";
 
 export default function OpsLeadDetail() {
@@ -27,7 +28,7 @@ export default function OpsLeadDetail() {
   const { data } = useQuery({
     queryKey: ["ops-lead-detail", id],
     queryFn: async () => {
-      const [lead, attributions, identities, assignments, events, attempts, viewings, windows, alerts, audits, partners, leads] = await Promise.all([
+      const [lead, attributions, identities, assignments, events, attempts, viewings, windows, alerts, audits, partners, leads, evaluations] = await Promise.all([
         base44.entities.Lead.get(id),
         base44.entities.LeadAttribution.filter({ lead_id: id }),
         base44.entities.LeadIdentity.filter({ lead_id: id }),
@@ -39,11 +40,12 @@ export default function OpsLeadDetail() {
         base44.entities.CircumventionAlert.filter({ lead_id: id }),
         base44.entities.AuditLog.filter({ entity_id: id }),
         base44.entities.PartnerAgency.list("-updated_date", 100),
-        base44.entities.Lead.list("-updated_date", 200)
+        base44.entities.Lead.list("-updated_date", 200),
+        base44.entities.LeadRuleEvaluation.filter({ lead_id: id })
       ]);
-      return { lead, attributions, identities, assignments, events, attempts, viewings, windows, alerts, audits, partners, leads };
+      return { lead, attributions, identities, assignments, events, attempts, viewings, windows, alerts, audits, partners, leads, evaluations };
     },
-    initialData: { lead: null, attributions: [], identities: [], assignments: [], events: [], attempts: [], viewings: [], windows: [], alerts: [], audits: [], partners: [], leads: [] }
+    initialData: { lead: null, attributions: [], identities: [], assignments: [], events: [], attempts: [], viewings: [], windows: [], alerts: [], audits: [], partners: [], leads: [], evaluations: [] }
   });
 
   const overviewItems = [
@@ -81,6 +83,7 @@ export default function OpsLeadDetail() {
           <TabsTrigger value="viewings">Viewings</TabsTrigger>
           <TabsTrigger value="protection">Protection</TabsTrigger>
           <TabsTrigger value="alerts">Alerts</TabsTrigger>
+          <TabsTrigger value="rules">Rules</TabsTrigger>
           <TabsTrigger value="audit">Audit</TabsTrigger>
         </TabsList>
         <TabsContent value="overview"><LeadRecordPanel title="Lead overview" items={overviewItems} /></TabsContent>
@@ -92,6 +95,7 @@ export default function OpsLeadDetail() {
         <TabsContent value="viewings"><LeadRecordPanel title="Viewings" items={data.viewings.map((item) => ({ id: item.id, label: item.status || "requested", value: [item.listing_id, item.scheduled_at].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
         <TabsContent value="protection"><LeadRecordPanel title="Protection windows" items={data.windows.map((item) => ({ id: item.id, label: item.status || "active", value: [item.lock_reason, item.protected_until, item.override_reason].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
         <TabsContent value="alerts"><LeadRecordPanel title="Circumvention alerts" items={data.alerts.map((item) => ({ id: item.id, label: item.alert_type || "alert", value: [item.severity, item.status, item.summary].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
+        <TabsContent value="rules"><LeadRuleEvaluationPanel items={data.evaluations.map((item) => ({ id: item.id, ruleLabel: item.rule_id || "Runtime rule", matched: item.matched, summary: [item.result_payload_json?.result, item.result_payload_json?.rule_type, item.result_payload_json?.matched_partner_id].filter(Boolean).join(" · ") || "Evaluation recorded", trigger: item.trigger_event || "runtime" }))} /></TabsContent>
         <TabsContent value="audit"><LeadRecordPanel title="Audit history" items={data.audits.map((item) => ({ id: item.id, label: item.action || "audit", value: item.summary || "—" }))} /></TabsContent>
         </Tabs>
         </div>
