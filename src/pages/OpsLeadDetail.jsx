@@ -11,6 +11,9 @@ import LeadNotesCard from "@/components/leads/LeadNotesCard";
 import LeadTimelinePanel from "@/components/leads/LeadTimelinePanel";
 import LeadRuleEvaluationPanel from "@/components/leads/LeadRuleEvaluationPanel";
 import ProtectionReviewPanel from "@/components/leads/ProtectionReviewPanel";
+import DuplicateReviewPanel from "@/components/leads/DuplicateReviewPanel";
+import LeadResolutionSummaryCard from "@/components/leads/LeadResolutionSummaryCard";
+import LeadEvidencePanel from "@/components/leads/LeadEvidencePanel";
 import useAccessControl from "@/hooks/useAccessControl";
 
 export default function OpsLeadDetail() {
@@ -68,6 +71,10 @@ export default function OpsLeadDetail() {
   const timelineItems = [...data.events.map((item) => ({ id: `event-${item.id}`, label: item.event_type || "event", value: item.summary || "—" })), ...data.audits.map((item) => ({ id: `audit-${item.id}`, label: item.action || "audit", value: item.summary || "—" }))]
     .sort((a, b) => String(b.id).localeCompare(String(a.id)));
 
+  const latestAssignment = data.assignments[0] || null;
+  const latestAlert = data.alerts[0] || null;
+  const latestWindow = data.windows[0] || null;
+
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Internal OS" title={data.lead?.lead_code || "Lead detail"} description="Review the full operating record across routing, protection, partner handling and audit trail." action={<div className="flex gap-2"><Button variant="outline" asChild><Link to="/ops/leads">Back</Link></Button><Button onClick={() => manageLead.mutate({ action: "lock" })}>Lock</Button><Button variant="outline" onClick={() => manageLead.mutate({ action: "release" })}>Release</Button></div>} />
@@ -94,8 +101,8 @@ export default function OpsLeadDetail() {
         <TabsContent value="events"><LeadTimelinePanel title="Lead activity timeline" items={timelineItems} /></TabsContent>
         <TabsContent value="attempts"><LeadRecordPanel title="Contact attempts" items={data.attempts.map((item) => ({ id: item.id, label: item.channel || "contact", value: [item.outcome, item.notes, item.attempt_at].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
         <TabsContent value="viewings"><LeadRecordPanel title="Viewings" items={data.viewings.map((item) => ({ id: item.id, label: item.status || "requested", value: [item.listing_id, item.scheduled_at].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
-        <TabsContent value="protection"><LeadRecordPanel title="Protection windows" items={data.windows.map((item) => ({ id: item.id, label: item.status || "active", value: [item.lock_reason, item.protected_until, item.override_reason].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
-        <TabsContent value="alerts"><LeadRecordPanel title="Circumvention alerts" items={data.alerts.map((item) => ({ id: item.id, label: item.alert_type || "alert", value: [item.severity, item.status, item.summary].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
+        <TabsContent value="protection"><div className="space-y-4"><LeadRecordPanel title="Protection windows" items={data.windows.map((item) => ({ id: item.id, label: item.status || "active", value: [item.lock_reason, item.protected_until, item.override_reason].filter(Boolean).join(" · ") || "—" }))} /><DuplicateReviewPanel candidates={duplicateCandidates} /></div></TabsContent>
+        <TabsContent value="alerts"><div className="space-y-4"><LeadRecordPanel title="Circumvention alerts" items={data.alerts.map((item) => ({ id: item.id, label: item.alert_type || "alert", value: [item.severity, item.status, item.summary].filter(Boolean).join(" · ") || "—" }))} /><LeadEvidencePanel alerts={data.alerts} /></div></TabsContent>
         <TabsContent value="rules"><LeadRuleEvaluationPanel items={data.evaluations.map((item) => ({ id: item.id, ruleLabel: item.rule_id || "Runtime rule", matched: item.matched, summary: [item.result_payload_json?.result, item.result_payload_json?.rule_type, item.result_payload_json?.matched_partner_id].filter(Boolean).join(" · ") || "Evaluation recorded", trigger: item.trigger_event || "runtime" }))} /></TabsContent>
         <TabsContent value="audit"><LeadRecordPanel title="Audit history" items={data.audits.map((item) => ({ id: item.id, label: item.action || "audit", value: item.summary || "—" }))} /></TabsContent>
         </Tabs>
@@ -109,6 +116,7 @@ export default function OpsLeadDetail() {
             canManage={access.can("assignments.manage")}
             onSubmit={(payload) => manageLead.mutate(payload)}
           />
+          <LeadResolutionSummaryCard lead={data.lead} latestAssignment={latestAssignment} latestAlert={latestAlert} latestWindow={latestWindow} />
           <ProtectionReviewPanel windows={data.windows} alerts={data.alerts} />
           <LeadNotesCard leadId={id} />
         </div>

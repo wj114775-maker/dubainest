@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
     }
 
     const { lead_id, action, notes, partner_id, target_lead_id, severity } = await req.json();
+    const now = new Date().toISOString();
     const runtimeRuleMatches = [];
 
     const requireNotes = ['escalate', 'flag_circumvention', 'merge', 'release'];
@@ -38,6 +39,7 @@ Deno.serve(async (req) => {
         updates: {
           ownership_status: 'released',
           protected_until: null,
+          is_circumvention_flagged: false,
         },
         event_type: 'lead_released',
         summary: 'Internal ops released the lead.'
@@ -127,7 +129,7 @@ Deno.serve(async (req) => {
     if (action === 'lock' || action === 'flag_circumvention') {
       await base44.entities.LeadProtectionWindow.create({
         lead_id,
-        locked_at: new Date().toISOString(),
+        locked_at: now,
         protected_until: updatedLead.protected_until,
         status: action === 'lock' ? 'active' : 'overridden',
         lock_reason: notes || selected.summary,
@@ -136,12 +138,29 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'release') {
+      const windows = await base44.entities.LeadProtectionWindow.filter({ lead_id });
+      await Promise.all(windows.filter((item) => item.status === 'active').map((item) => base44.entities.LeadProtectionWindow.update(item.id, {
+        status: 'released',
+        override_reason: notes || 'Protection released by internal ops',
+        overridden_by: user.id,
+      })));
+
+      const alerts = await base44.entities.CircumventionAlert.filter({ lead_id });
+      await Promise.all(alerts.filter((item) => ['open', 'reviewing', 'awaiting_partner_response', 'escalated'].includes(item.status)).map((item) => base44.entities.CircumventionAlert.update(item.id, {
+        status: 'resolved',
+        resolution_notes: notes || 'Resolved during release',
+        resolved_by: user.id,
+        resolved_date: now,
+      })));
+    }
+
     if (action === 'assign' && partner_id) {
       await base44.entities.LeadAssignment.create({
         lead_id,
         assignment_type: 'override',
         partner_id,
-        assigned_at: new Date().toISOString(),
+        assigned_at: now,
         assignment_status: 'pending',
         assignment_reason: notes || 'Internal assignment',
         assigned_by: user.id,
@@ -156,7 +175,7 @@ Deno.serve(async (req) => {
         alert_type: 'bypass_risk',
         severity: severity || 'high',
         summary: notes || 'Circumvention risk detected by internal ops.',
-        evidence_json: { lead_id, source: lead.source, ownership_status: lead.ownership_status, evidence_note: notes || '' },
+        evidence_json: { lead_id, source: lead.source, ownership_status: lead.ownership_status, evidence_note: notes || '', opened_at: now },
         status: 'reviewing',
         opened_by: user.id,
         assigned_reviewer_id: user.id,
@@ -170,6 +189,24 @@ Deno.serve(async (req) => {
         merge_reason: notes || 'Internal merge',
         merged_by: user.id,
         merge_confidence: 0.9,
+      });
+
+      await base44.entities.Lead.update(target_lead_id, {
+        is_duplicate_candidate: false,
+        notes_summary: [lead.notes_summary, 'Merged duplicate reviewed by internal ops'].filter(Boolean).join(' · ')
+      });
+
+      await base44.entities.LeadRuleEvaluation.create({
+        lead_id,
+        rule_id: 'duplicate_merge_review',
+        trigger_event: action,
+        matched: true,
+        evaluation_payload_json: { source_lead_id: lead_id, target_lead_id },
+        result_payload_json: { result: 'merged_after_review', target_lead_id }
+      });
+
+      await base44.entities.Lead.update(lead_id, {
+        is_duplicate_candidate: false
       });
     }
 
