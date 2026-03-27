@@ -15,6 +15,7 @@ export default function DuplicateQueueCard({ items = [] }) {
             <div>
               <p className="font-medium text-foreground">{item.title}</p>
               <p className="mt-1 text-sm text-muted-foreground">{item.summary}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Top confidence {item.confidence}%</p>
             </div>
             <Button variant="outline" size="sm" asChild>
               <Link to={`/ops/leads/${item.id}`}>Review</Link>

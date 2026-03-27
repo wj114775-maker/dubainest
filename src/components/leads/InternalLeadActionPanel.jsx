@@ -7,6 +7,7 @@ import InternalLeadConfirmationDialog from "@/components/leads/InternalLeadConfi
 import InternalLeadActionSelector, { actionOptions } from "@/components/leads/InternalLeadActionSelector";
 import InternalLeadWorkflowHint from "@/components/leads/InternalLeadWorkflowHint";
 import InternalLeadSearchableSelector from "@/components/leads/InternalLeadSearchableSelector";
+import LeadComparisonReviewCard from "@/components/leads/LeadComparisonReviewCard";
 
 export default function InternalLeadActionPanel({ lead, partners = [], duplicates = [], loading, canManage, onSubmit }) {
   const [form, setForm] = useState({ action: "assign", notes: "", partner_id: "", target_lead_id: "", severity: "high" });
@@ -101,15 +102,18 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
           ) : null}
 
           {form.action === "merge" ? (
-            <InternalLeadSearchableSelector
-              placeholder="Select duplicate target"
-              searchPlaceholder="Search duplicate leads"
-              emptyLabel="No duplicate leads found"
-              value={form.target_lead_id}
-              onChange={(value) => setForm((current) => ({ ...current, target_lead_id: value }))}
-              options={duplicateOptions}
-              helper={selectedDuplicateOption?.helper}
-            />
+            <>
+              <InternalLeadSearchableSelector
+                placeholder="Select duplicate target"
+                searchPlaceholder="Search duplicate leads"
+                emptyLabel="No duplicate leads found"
+                value={form.target_lead_id}
+                onChange={(value) => setForm((current) => ({ ...current, target_lead_id: value }))}
+                options={duplicateOptions}
+                helper={selectedDuplicateOption?.helper}
+              />
+              <LeadComparisonReviewCard currentLead={lead} selectedCandidate={form.target_lead_id} candidates={duplicates} />
+            </>
           ) : null}
 
           {form.action === "mark_duplicate" ? (

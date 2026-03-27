@@ -12,6 +12,7 @@ import LeadTimelinePanel from "@/components/leads/LeadTimelinePanel";
 import LeadRuleEvaluationPanel from "@/components/leads/LeadRuleEvaluationPanel";
 import ProtectionReviewPanel from "@/components/leads/ProtectionReviewPanel";
 import DuplicateReviewPanel from "@/components/leads/DuplicateReviewPanel";
+import LeadComparisonReviewCard from "@/components/leads/LeadComparisonReviewCard";
 import LeadResolutionSummaryCard from "@/components/leads/LeadResolutionSummaryCard";
 import LeadEvidencePanel from "@/components/leads/LeadEvidencePanel";
 import useAccessControl from "@/hooks/useAccessControl";
@@ -60,13 +61,24 @@ export default function OpsLeadDetail() {
   ];
 
   const duplicateCandidates = data.leads
-    .filter((item) => item.id !== id && (item.is_duplicate_candidate || item.lead_code === data.lead?.lead_code))
-    .map((item) => ({
-      id: item.id,
-      label: `${item.lead_code || item.id} · ${item.intent_type || item.source || "Lead"}`,
-      summary: [item.country, item.assigned_partner_id, item.status].filter(Boolean).join(" · ") || "Candidate lead",
-      confidence: item.lead_code && item.lead_code === data.lead?.lead_code ? 95 : 72
-    }));
+    .filter((item) => item.id !== id)
+    .map((item) => {
+      let confidence = 0;
+      if (item.lead_code && item.lead_code === data.lead?.lead_code) confidence += 55;
+      if (item.assigned_partner_id && item.assigned_partner_id === data.lead?.assigned_partner_id) confidence += 10;
+      if (item.country && item.country === data.lead?.country) confidence += 10;
+      if (item.status && item.status === data.lead?.status) confidence += 5;
+      if (item.is_duplicate_candidate) confidence += 10;
+      return {
+        ...item,
+        id: item.id,
+        label: `${item.lead_code || item.id} · ${item.intent_type || item.source || "Lead"}`,
+        summary: [item.country, item.assigned_partner_id, item.status].filter(Boolean).join(" · ") || "Candidate lead",
+        confidence
+      };
+    })
+    .filter((item) => item.confidence >= 20)
+    .sort((a, b) => b.confidence - a.confidence);
 
   const timelineItems = [...data.events.map((item) => ({ id: `event-${item.id}`, label: item.event_type || "event", value: item.summary || "—" })), ...data.audits.map((item) => ({ id: `audit-${item.id}`, label: item.action || "audit", value: item.summary || "—" }))]
     .sort((a, b) => String(b.id).localeCompare(String(a.id)));
@@ -101,7 +113,7 @@ export default function OpsLeadDetail() {
         <TabsContent value="events"><LeadTimelinePanel title="Lead activity timeline" items={timelineItems} /></TabsContent>
         <TabsContent value="attempts"><LeadRecordPanel title="Contact attempts" items={data.attempts.map((item) => ({ id: item.id, label: item.channel || "contact", value: [item.outcome, item.notes, item.attempt_at].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
         <TabsContent value="viewings"><LeadRecordPanel title="Viewings" items={data.viewings.map((item) => ({ id: item.id, label: item.status || "requested", value: [item.listing_id, item.scheduled_at].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
-        <TabsContent value="protection"><div className="space-y-4"><LeadRecordPanel title="Protection windows" items={data.windows.map((item) => ({ id: item.id, label: item.status || "active", value: [item.lock_reason, item.protected_until, item.override_reason].filter(Boolean).join(" · ") || "—" }))} /><DuplicateReviewPanel candidates={duplicateCandidates} /></div></TabsContent>
+        <TabsContent value="protection"><div className="space-y-4"><LeadRecordPanel title="Protection windows" items={data.windows.map((item) => ({ id: item.id, label: item.status || "active", value: [item.lock_reason, item.protected_until, item.override_reason].filter(Boolean).join(" · ") || "—" }))} /><DuplicateReviewPanel candidates={duplicateCandidates} /><LeadComparisonReviewCard currentLead={data.lead} selectedCandidate={duplicateCandidates[0]?.id} candidates={duplicateCandidates} /></div></TabsContent>
         <TabsContent value="alerts"><div className="space-y-4"><LeadRecordPanel title="Circumvention alerts" items={data.alerts.map((item) => ({ id: item.id, label: item.alert_type || "alert", value: [item.severity, item.status, item.summary].filter(Boolean).join(" · ") || "—" }))} /><LeadEvidencePanel alerts={data.alerts} /></div></TabsContent>
         <TabsContent value="rules"><LeadRuleEvaluationPanel items={data.evaluations.map((item) => ({ id: item.id, ruleLabel: item.rule_id || "Runtime rule", matched: item.matched, summary: [item.result_payload_json?.result, item.result_payload_json?.rule_type, item.result_payload_json?.matched_partner_id].filter(Boolean).join(" · ") || "Evaluation recorded", trigger: item.trigger_event || "runtime" }))} /></TabsContent>
         <TabsContent value="audit"><LeadRecordPanel title="Audit history" items={data.audits.map((item) => ({ id: item.id, label: item.action || "audit", value: item.summary || "—" }))} /></TabsContent>

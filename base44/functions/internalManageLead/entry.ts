@@ -231,6 +231,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'merge' && target_lead_id) {
+      const targetLead = await base44.entities.Lead.get(target_lead_id);
+      const consolidatedNotes = [targetLead?.notes_summary, lead.notes_summary, notes || 'Merged duplicate reviewed by internal ops'].filter(Boolean).join(' · ');
+      const consolidatedPartner = targetLead?.assigned_partner_id || lead.assigned_partner_id || null;
+      const consolidatedPriority = targetLead?.priority === 'critical' || lead.priority === 'critical' ? 'critical' : (targetLead?.priority || lead.priority || 'standard');
+      const consolidatedLastTouch = [targetLead?.last_touch_at, lead.last_touch_at].filter(Boolean).sort().slice(-1)[0] || null;
+
       await base44.entities.LeadMergeLog.create({
         source_lead_id: lead_id,
         target_lead_id,
@@ -241,7 +247,10 @@ Deno.serve(async (req) => {
 
       await base44.entities.Lead.update(target_lead_id, {
         is_duplicate_candidate: false,
-        notes_summary: [lead.notes_summary, 'Merged duplicate reviewed by internal ops'].filter(Boolean).join(' · ')
+        assigned_partner_id: consolidatedPartner,
+        priority: consolidatedPriority,
+        last_touch_at: consolidatedLastTouch,
+        notes_summary: consolidatedNotes
       });
 
       await base44.entities.LeadRuleEvaluation.create({
@@ -250,7 +259,16 @@ Deno.serve(async (req) => {
         trigger_event: action,
         matched: true,
         evaluation_payload_json: { source_lead_id: lead_id, target_lead_id },
-        result_payload_json: { result: 'merged_after_review', target_lead_id }
+        result_payload_json: {
+          result: 'merged_after_review',
+          target_lead_id,
+          consolidation_rules: {
+            assigned_partner_id: 'prefer_target_then_source',
+            priority: 'keep_highest_severity',
+            last_touch_at: 'keep_latest',
+            notes_summary: 'append_source_and_merge_reason'
+          }
+        }
       });
 
       await base44.entities.Lead.update(lead_id, {

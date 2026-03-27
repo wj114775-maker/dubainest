@@ -43,7 +43,7 @@ export default function OpsLeads() {
     duplicate_summary: [lead.lead_code, lead.country, lead.last_touch_at].filter(Boolean).join(" · ")
   })), [leads, filters]);
 
-  const duplicateQueue = filtered.filter((lead) => lead.badges.includes("Duplicate")).slice(0, 8).map((lead) => ({ id: lead.id, title: lead.title, summary: lead.duplicate_summary || lead.meta }));
+  const duplicateQueue = filtered.filter((lead) => lead.badges.includes("Duplicate")).slice(0, 8).map((lead) => ({ id: lead.id, title: lead.title, summary: lead.duplicate_summary || lead.meta, confidence: lead.title.includes(lead.id) ? 72 : 88 }));
 
   return (
     <div className="space-y-6">
