@@ -16,9 +16,6 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
   const [confirmed, setConfirmed] = useState(false);
 
   const selectedAction = useMemo(() => actionOptions.find((item) => item.value === form.action), [form.action]);
-  const selectedPartner = partners.find((item) => item.id === form.partner_id);
-  const selectedDuplicate = duplicates.find((item) => item.id === form.target_lead_id);
-
   const partnerOptions = partners.map((item) => ({
     id: item.id,
     label: item.name,
@@ -131,7 +128,7 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
 
           {form.action === "reassign" && lead?.assigned_partner_id ? (
             <div className="rounded-2xl border border-white/10 bg-muted/20 p-3 text-sm text-muted-foreground">
-              Current partner ID: {lead.assigned_partner_id}
+              Current partner: {partners.find((item) => item.id === lead.assigned_partner_id)?.name || lead.assigned_partner_id}
             </div>
           ) : null}
 
