@@ -31,9 +31,11 @@ export default function ListingDetail() {
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <TrustBadge score={listing.trust_score || 0} />
-            <Badge variant="outline">Permit {listing.permit_verified ? "verified" : "pending"}</Badge>
-            <Badge variant="outline">Title deed {listing.title_deed_verified ? "checked" : "pending"}</Badge>
-            <Badge variant="outline">Project {listing.project_status_verified ? "checked" : "pending"}</Badge>
+            {listing.trust_band === 'verified' || listing.verification_status === 'verified' ? <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Verified</Badge> : null}
+            <Badge variant="outline">Last checked {listing.last_checked_at ? new Date(listing.last_checked_at).toLocaleDateString() : 'Pending'}</Badge>
+            <Badge variant="outline">Partner {listing.partner_verified ? 'verified' : 'pending'}</Badge>
+            <Badge variant="outline">Project {listing.project_status_verified ? 'checked' : 'pending'}</Badge>
+            {listing.is_private_inventory ? <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Private inventory</Badge> : null}
           </div>
           <h1 className="text-4xl font-semibold tracking-tight">{listing.title}</h1>
           <p className="max-w-3xl text-muted-foreground">{listing.description || "No description available yet."}</p>
