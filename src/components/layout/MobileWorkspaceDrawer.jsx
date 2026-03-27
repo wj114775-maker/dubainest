@@ -17,7 +17,7 @@ export default function MobileWorkspaceDrawer({ items = [] }) {
       </SheetTrigger>
       <SheetContent side="left" className="w-80 border-white/10 bg-background/95">
         <SheetHeader>
-          <SheetTitle>Internal OS</SheetTitle>
+          <SheetTitle>Internal tools</SheetTitle>
         </SheetHeader>
         <div className="mt-6 space-y-2">
           {items.map((item) => {

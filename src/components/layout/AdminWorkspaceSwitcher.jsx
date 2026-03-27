@@ -13,7 +13,7 @@ export default function AdminWorkspaceSwitcher({ items = [] }) {
       <DropdownMenuTrigger asChild>
         <Button variant={inInternal ? "default" : "outline"} className="hidden rounded-full px-4 md:inline-flex">
           <ShieldCheck className="h-4 w-4" />
-          {inInternal ? "Internal OS" : "Open Internal OS"}
+          Internal
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
