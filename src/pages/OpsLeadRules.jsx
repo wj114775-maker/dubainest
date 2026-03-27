@@ -7,6 +7,8 @@ import EmptyStateCard from "@/components/common/EmptyStateCard";
 import GovernanceRegistryTableCard from "@/components/admin/GovernanceRegistryTableCard";
 import GovernanceRuleFormCard from "@/components/admin/GovernanceRuleFormCard";
 import LeadRuleEvaluationPanel from "@/components/leads/LeadRuleEvaluationPanel";
+import RulePerformanceSummaryCard from "@/components/admin/RulePerformanceSummaryCard";
+import RuleOutcomeFeedCard from "@/components/admin/RuleOutcomeFeedCard";
 
 export default function OpsLeadRules() {
   const queryClient = useQueryClient();
@@ -51,17 +53,37 @@ export default function OpsLeadRules() {
     summary: editingRule ? "Lead protection rule updated" : "Lead protection rule created"
   });
 
+  const matchedCount = evaluations.filter((item) => item.matched).length;
+  const observedCount = evaluations.length - matchedCount;
+  const uniqueRules = new Set(evaluations.map((item) => item.rule_id).filter(Boolean)).size;
+  const performanceItems = [
+    { label: "Matched", value: matchedCount, note: "Evaluations that triggered a rule outcome" },
+    { label: "Observed", value: observedCount, note: "Evaluations recorded without a match" },
+    { label: "Rules firing", value: uniqueRules, note: "Distinct rules seen in recent activity" }
+  ];
+  const outcomeItems = evaluations.slice(0, 6).map((item) => ({
+    id: item.id,
+    title: item.rule_id || "Runtime rule",
+    description: [item.trigger_event, item.result_payload_json?.result, item.lead_id].filter(Boolean).join(" · ") || "Outcome recorded"
+  }));
+
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Governance" title="Lead protection rules" description="Move ownership, attribution and payout logic into a central event-driven governance layer." />
       <AccessGuard permission="assignments.read">
-        {rows.length ? <GovernanceRegistryTableCard title="Lead protection engine" columns={[{ key: "name", label: "Rule" }, { key: "code", label: "Type" }, { key: "status", label: "Status" }]} rows={rows} onEdit={setEditingRule} /> : <EmptyStateCard title="No lead rules yet" description="Lead protection rules will appear here once they are added." />}
+        <div className="space-y-6">
+          <RulePerformanceSummaryCard items={performanceItems} />
+          {rows.length ? <GovernanceRegistryTableCard title="Lead protection engine" columns={[{ key: "name", label: "Rule" }, { key: "code", label: "Type" }, { key: "status", label: "Status" }]} rows={rows} onEdit={setEditingRule} /> : <EmptyStateCard title="No lead rules yet" description="Lead protection rules will appear here once they are added." />}
+        </div>
       </AccessGuard>
       <AccessGuard permission="assignments.manage">
         <GovernanceRuleFormCard title="Create lead protection rule" fields={fields} initialValues={initialValues} record={editingRule} onSubmit={submitRule} submitLabel="Create rule" onCancel={() => setEditingRule(null)} />
       </AccessGuard>
       <AccessGuard permission="assignments.read">
-        <LeadRuleEvaluationPanel items={evaluations.map((item) => ({ id: item.id, ruleLabel: item.rule_id || "Runtime rule", matched: item.matched, summary: [item.result_payload_json?.result, item.result_payload_json?.rule_type, item.lead_id].filter(Boolean).join(" · ") || "Evaluation recorded", trigger: item.trigger_event || "runtime" }))} />
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <LeadRuleEvaluationPanel items={evaluations.map((item) => ({ id: item.id, ruleLabel: item.rule_id || "Runtime rule", matched: item.matched, summary: [item.result_payload_json?.result, item.result_payload_json?.rule_type, item.lead_id].filter(Boolean).join(" · ") || "Evaluation recorded", trigger: item.trigger_event || "runtime" }))} />
+          <RuleOutcomeFeedCard items={outcomeItems} />
+        </div>
       </AccessGuard>
     </div>
   );
