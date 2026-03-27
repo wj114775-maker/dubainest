@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
     }
 
     const { lead_id, action, notes, partner_id, target_lead_id, severity } = await req.json();
+    const runtimeRuleMatches = [];
 
     if (!lead_id || !action) {
       return Response.json({ error: 'lead_id and action are required' }, { status: 400 });
@@ -95,6 +96,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'target_lead_id is required for merge' }, { status: 400 });
     }
 
+    if (lead.is_private_inventory) {
+      runtimeRuleMatches.push({ rule: 'private_inventory_priority', matched: true, result: 'protected_handling' });
+    }
+    if (lead.is_high_value || ['hnw', 'critical'].includes(lead.priority || '')) {
+      runtimeRuleMatches.push({ rule: 'high_value_escalation', matched: true, result: 'ownership_lock' });
+    }
+
     const updatedLead = await base44.entities.Lead.update(lead_id, selected.updates);
 
     if (action === 'lock' || action === 'flag_circumvention') {
@@ -146,6 +154,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    await Promise.all(runtimeRuleMatches.map((item) => base44.entities.LeadRuleEvaluation.create({
+      lead_id,
+      rule_id: item.rule,
+      trigger_event: action,
+      matched: item.matched,
+      evaluation_payload_json: { source: lead.source, priority: lead.priority, is_private_inventory: lead.is_private_inventory, is_high_value: lead.is_high_value },
+      result_payload_json: { result: item.result }
+    })));
+
     const event = await base44.entities.LeadEvent.create({
       lead_id,
       event_type: selected.event_type,
@@ -155,6 +172,14 @@ Deno.serve(async (req) => {
       reason: notes || '',
       event_payload_json: { action, notes: notes || '', partner_id: partner_id || '', target_lead_id: target_lead_id || '' },
       immutable: true,
+    });
+
+    await base44.entities.Notification.create({
+      title: selected.summary,
+      body: `${updatedLead.lead_code || updatedLead.id} was updated by internal ops.`,
+      lead_id,
+      channel: 'in_app',
+      status: 'queued'
     });
 
     const audit = await base44.entities.AuditLog.create({

@@ -6,12 +6,14 @@ import SectionHeading from "@/components/common/SectionHeading";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LeadRecordPanel from "@/components/leads/LeadRecordPanel";
+import InternalLeadActionsCard from "@/components/leads/InternalLeadActionsCard";
+import LeadNotesCard from "@/components/leads/LeadNotesCard";
 
 export default function OpsLeadDetail() {
   const { id } = useParams();
   const queryClient = useQueryClient();
   const manageLead = useMutation({
-    mutationFn: ({ action, notes }) => base44.functions.invoke("internalManageLead", { lead_id: id, action, notes }),
+    mutationFn: ({ action, notes, partner_id, target_lead_id, severity }) => base44.functions.invoke("internalManageLead", { lead_id: id, action, notes, partner_id, target_lead_id, severity }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ops-lead-detail", id] });
       queryClient.invalidateQueries({ queryKey: ["ops-leads-registry"] });
@@ -49,7 +51,9 @@ export default function OpsLeadDetail() {
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Internal OS" title={data.lead?.lead_code || "Lead detail"} description="Review the full operating record across routing, protection, partner handling and audit trail." action={<div className="flex gap-2"><Button variant="outline" asChild><Link to="/ops/leads">Back</Link></Button><Button onClick={() => manageLead.mutate({ action: "lock" })}>Lock</Button><Button variant="outline" onClick={() => manageLead.mutate({ action: "release" })}>Release</Button></div>} />
-      <Tabs defaultValue="overview" className="space-y-4">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div>
+        <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-2xl bg-muted/70 p-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="attribution">Attribution</TabsTrigger>
@@ -72,7 +76,13 @@ export default function OpsLeadDetail() {
         <TabsContent value="protection"><LeadRecordPanel title="Protection windows" items={data.windows.map((item) => ({ id: item.id, label: item.status || "active", value: [item.lock_reason, item.protected_until, item.override_reason].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
         <TabsContent value="alerts"><LeadRecordPanel title="Circumvention alerts" items={data.alerts.map((item) => ({ id: item.id, label: item.alert_type || "alert", value: [item.severity, item.status, item.summary].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
         <TabsContent value="audit"><LeadRecordPanel title="Audit history" items={data.audits.map((item) => ({ id: item.id, label: item.action || "audit", value: item.summary || "—" }))} /></TabsContent>
-      </Tabs>
+        </Tabs>
+        </div>
+        <div className="space-y-6">
+          <InternalLeadActionsCard loading={manageLead.isPending} onSubmit={(payload) => manageLead.mutate(payload)} />
+          <LeadNotesCard leadId={id} />
+        </div>
+      </div>
     </div>
   );
 }

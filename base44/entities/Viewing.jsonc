@@ -1,0 +1,39 @@
+{
+  "name": "Viewing",
+  "type": "object",
+  "properties": {
+    "lead_id": {
+      "type": "string"
+    },
+    "listing_id": {
+      "type": "string"
+    },
+    "scheduled_at": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "confirmed",
+        "completed",
+        "cancelled",
+        "no_show"
+      ],
+      "default": "requested"
+    },
+    "broker_id": {
+      "type": "string"
+    },
+    "completion_notes": {
+      "type": "string"
+    },
+    "lost_reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "lead_id",
+    "listing_id"
+  ]
+}

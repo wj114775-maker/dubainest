@@ -1,0 +1,72 @@
+{
+  "name": "LeadAssignment",
+  "type": "object",
+  "properties": {
+    "lead_id": {
+      "type": "string"
+    },
+    "assignment_type": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "rule_based",
+        "round_robin",
+        "override"
+      ]
+    },
+    "partner_id": {
+      "type": "string"
+    },
+    "broker_id": {
+      "type": "string"
+    },
+    "internal_owner_id": {
+      "type": "string"
+    },
+    "assigned_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "assignment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "rejected",
+        "reassigned",
+        "expired"
+      ],
+      "default": "pending"
+    },
+    "assignment_reason": {
+      "type": "string"
+    },
+    "assigned_by": {
+      "type": "string"
+    },
+    "sla_due_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sla_status": {
+      "type": "string",
+      "enum": [
+        "on_track",
+        "at_risk",
+        "breached"
+      ]
+    }
+  },
+  "required": [
+    "lead_id",
+    "assignment_type"
+  ]
+}

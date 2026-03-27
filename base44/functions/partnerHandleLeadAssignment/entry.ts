@@ -31,7 +31,9 @@ Deno.serve(async (req) => {
     }
 
     const now = new Date().toISOString();
+    const parsedSchedule = scheduled_at ? new Date(scheduled_at).toISOString() : now;
     const protectedUntil = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+    const slaStatus = assignment.sla_due_at && new Date(assignment.sla_due_at) < new Date() ? 'breached' : 'on_track';
     const actionMap = {
       accept: {
         assignment_updates: { assignment_status: 'accepted', accepted_at: now, rejected_at: assignment.rejected_at },
@@ -100,7 +102,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unsupported action' }, { status: 400 });
     }
 
-    const updatedAssignment = await base44.entities.LeadAssignment.update(assignment_id, selected.assignment_updates);
+    const updatedAssignment = await base44.entities.LeadAssignment.update(assignment_id, { ...selected.assignment_updates, sla_status: slaStatus });
     const updatedLead = await base44.entities.Lead.update(lead_id, selected.lead_updates);
 
     if (action === 'log_contact_attempt' || action === 'log_callback_booked') {
@@ -109,7 +111,7 @@ Deno.serve(async (req) => {
         partner_id: partnerAgencyId,
         attempt_type: action,
         channel: outcome || 'call',
-        attempt_at: scheduled_at || now,
+        attempt_at: parsedSchedule,
         outcome: notes || action,
         notes: notes || ''
       });
@@ -119,9 +121,11 @@ Deno.serve(async (req) => {
       await base44.entities.Viewing.create({
         lead_id,
         listing_id: lead.listing_id,
-        scheduled_at: scheduled_at || now,
+        scheduled_at: parsedSchedule,
         status: action === 'log_viewing_completed' ? 'completed' : 'confirmed',
-        broker_id: lead.assigned_broker_id || ''
+        broker_id: lead.assigned_broker_id || '',
+        completion_notes: notes || '',
+        lost_reason: action === 'mark_lost' ? (notes || 'Lost by partner') : ''
       });
     }
 
@@ -140,6 +144,7 @@ Deno.serve(async (req) => {
     await base44.entities.Notification.create({
       title: selected.summary,
       body: `${updatedLead.lead_code || updatedLead.id} changed to ${updatedLead.status || 'updated'} by the assigned partner.`,
+      lead_id,
       channel: 'in_app',
       status: 'queued',
     });

@@ -29,7 +29,7 @@ export default function AppHeader({ appName, tagline, onMenuClick }) {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon"><Bell className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" asChild><Link to="/notifications"><Bell className="h-4 w-4" /></Link></Button>
           <Button asChild className="rounded-full px-5"><Link to="/account">Open account</Link></Button>
         </div>
       </div>

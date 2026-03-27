@@ -18,6 +18,7 @@ export default function InternalLeadTable({ leads }) {
             <div className="flex flex-wrap items-center gap-2">
               <LeadStatusBadge status={lead.status} />
               <LeadStatusBadge status={lead.ownership_status} />
+              {lead.badges?.map((badge) => <LeadStatusBadge key={badge} status={badge} />)}
               <Button variant="outline" size="sm" asChild>
                 <Link to={`/ops/leads/${lead.id}`}>Open</Link>
               </Button>

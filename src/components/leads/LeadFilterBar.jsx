@@ -6,7 +6,7 @@ export default function LeadFilterBar({ filters, onChange }) {
   const update = (key, value) => onChange({ ...filters, [key]: value });
 
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
       <Input placeholder="Search lead code or source" value={filters.search} onChange={(e) => update("search", e.target.value)} />
       <Select value={filters.stage} onValueChange={(value) => update("stage", value)}>
         <SelectTrigger><SelectValue placeholder="Stage" /></SelectTrigger>
@@ -38,6 +38,35 @@ export default function LeadFilterBar({ filters, onChange }) {
           <SelectItem value="high">High</SelectItem>
           <SelectItem value="hnw">HNW</SelectItem>
           <SelectItem value="critical">Critical</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={filters.source} onValueChange={(value) => update("source", value)}>
+        <SelectTrigger><SelectValue placeholder="Source" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All sources</SelectItem>
+          <SelectItem value="organic">Organic</SelectItem>
+          <SelectItem value="enquiry">Enquiry</SelectItem>
+          <SelectItem value="callback">Callback</SelectItem>
+          <SelectItem value="concierge">Concierge</SelectItem>
+          <SelectItem value="private_inventory">Private inventory</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={filters.duplicate} onValueChange={(value) => update("duplicate", value)}>
+        <SelectTrigger><SelectValue placeholder="Duplicate" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All duplicate states</SelectItem>
+          <SelectItem value="true">Duplicate only</SelectItem>
+          <SelectItem value="false">Non-duplicate</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={filters.sla} onValueChange={(value) => update("sla", value)}>
+        <SelectTrigger><SelectValue placeholder="SLA" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All SLA</SelectItem>
+          <SelectItem value="on_track">On track</SelectItem>
+          <SelectItem value="at_risk">At risk</SelectItem>
+          <SelectItem value="breached">Breached</SelectItem>
+          <SelectItem value="overdue">Overdue</SelectItem>
         </SelectContent>
       </Select>
     </div>

@@ -19,7 +19,8 @@ export const navItems = {
     { label: "Shortlist", path: "/shortlist" },
     { label: "Compare", path: "/compare" },
     { label: "Guides", path: "/guides" },
-    { label: "Account", path: "/account" }
+    { label: "Account", path: "/account" },
+    { label: "Notifications", path: "/notifications" }
   ],
   partner: [
     { label: "Overview", path: "/partner" },

@@ -1,23 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import LeadOwnershipTable from "@/components/ops/LeadOwnershipTable";
+import LeadActionComposer from "@/components/leads/LeadActionComposer";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function PartnerLeads() {
   const { data: current } = useCurrentUserRole();
+  const [selectedLead, setSelectedLead] = useState(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const assignmentMutation = useMutation({
-    mutationFn: ({ leadId, assignmentId, action, notes, outcome }) => base44.functions.invoke("partnerHandleLeadAssignment", {
+    mutationFn: ({ leadId, assignmentId, action, notes, outcome, scheduled_at }) => base44.functions.invoke("partnerHandleLeadAssignment", {
       lead_id: leadId,
       assignment_id: assignmentId,
       action,
       notes,
       outcome,
+      scheduled_at,
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["partner-leads", current.user?.id] });
@@ -69,19 +72,13 @@ export default function PartnerLeads() {
         getActions={(lead) => {
           if (!lead.assignment_id || assignmentMutation.isPending) return [];
           return [
-            { label: "Accept", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "accept" }) },
-            { label: "Reject", variant: "ghost", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "reject" }) },
-            { label: "Reassign", variant: "ghost", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "request_reassignment", notes: "Partner requested reassignment" }) },
-            { label: "Contact", variant: "ghost", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "log_contact_attempt", outcome: "call", notes: "Initial contact logged" }) },
-            { label: "Callback", variant: "ghost", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "log_callback_booked", outcome: "call", notes: "Callback booked" }) },
-            { label: "Viewing", variant: "ghost", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "log_viewing_booked", notes: "Viewing booked" }) },
-            { label: "Complete", variant: "ghost", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "log_viewing_completed", notes: "Viewing completed" }) },
-            { label: "Won", variant: "ghost", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "mark_won", notes: "Lead won" }) },
-            { label: "Lost", variant: "ghost", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "mark_lost", notes: "Lead lost" }) },
-            { label: "Invalid", variant: "ghost", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "mark_invalid", notes: "Lead marked invalid" }) }
+            { label: "Open action", onClick: () => setSelectedLead(lead) },
+            { label: "Accept", variant: "ghost", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "accept" }) },
+            { label: "Reject", variant: "ghost", onClick: () => assignmentMutation.mutate({ leadId: lead.id, assignmentId: lead.assignment_id, action: "reject" }) }
           ];
         }}
       />
+      {selectedLead ? <LeadActionComposer loading={assignmentMutation.isPending} onSubmit={(payload) => assignmentMutation.mutate({ leadId: selectedLead.id, assignmentId: selectedLead.assignment_id, ...payload })} /> : null}
     </div>
   );
 }

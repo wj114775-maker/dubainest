@@ -1,0 +1,41 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "lead_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "body": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "in_app",
+        "email",
+        "whatsapp",
+        "push"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "sent",
+        "read"
+      ],
+      "default": "queued"
+    }
+  },
+  "required": [
+    "title",
+    "body",
+    "channel"
+  ]
+}

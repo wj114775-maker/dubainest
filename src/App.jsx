@@ -37,6 +37,7 @@ import OpsSecurity from '@/pages/OpsSecurity';
 import OpsLeadRules from '@/pages/OpsLeadRules';
 import OpsCommissionRules from '@/pages/OpsCommissionRules';
 import OpsComplianceRules from '@/pages/OpsComplianceRules';
+import Notifications from '@/pages/Notifications';
 import AppHeader from '@/components/layout/AppHeader';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import SideRail from '@/components/layout/SideRail';
@@ -88,6 +89,7 @@ const AuthenticatedApp = () => {
       <Route path="/compare" element={<AppFrame mode="buyer"><Compare /></AppFrame>} />
       <Route path="/guides" element={<AppFrame mode="buyer"><Guides /></AppFrame>} />
       <Route path="/account" element={<AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/notifications" element={<AppFrame mode="buyer"><Notifications /></AppFrame>} />
       <Route path="/listing/:id" element={<AppFrame mode="buyer"><ListingDetail /></AppFrame>} />
       <Route path="/areas/:slug" element={<AppFrame mode="buyer"><AreaDetail /></AppFrame>} />
       <Route path="/projects/:slug" element={<AppFrame mode="buyer"><ProjectDetail /></AppFrame>} />
