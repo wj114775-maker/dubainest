@@ -6,9 +6,12 @@ import { base44 } from "@/api/base44Client";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import SectionHeading from "@/components/common/SectionHeading";
 import BuyerProfileCard from "@/components/account/BuyerProfileCard";
+import AdminShortcutsCard from "@/components/account/AdminShortcutsCard";
+import { roleGroups } from "@/lib/appShell";
 
 export default function Account() {
   const { data } = useCurrentUserRole();
+  const isInternal = roleGroups.internal.includes(data.role) || (data.permissions || []).length > 0;
   const { data: profile } = useQuery({
     queryKey: ["buyer-profile", data.user?.id],
     enabled: !!data.user?.id,
@@ -43,6 +46,7 @@ export default function Account() {
           </div>
         </CardContent>
       </Card>
+      {isInternal ? <AdminShortcutsCard /> : null}
       {data.isAuthenticated ? <BuyerProfileCard profile={profile} /> : null}
     </div>
   );

@@ -45,13 +45,13 @@ import useAppConfig from '@/hooks/useAppConfig';
 import useCurrentUserRole from '@/hooks/useCurrentUserRole';
 import { navItems, roleGroups } from '@/lib/appShell';
 
-const AppFrame = ({ children, mode = 'buyer', title }) => {
+const AppFrame = ({ children, mode = 'buyer', title, showInternalAccess = false }) => {
   const { data: appConfig } = useAppConfig();
   const items = navItems[mode];
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader appName={appConfig.app_name} tagline={appConfig.tagline} />
+      <AppHeader appName={appConfig.app_name} tagline={appConfig.tagline} internalItems={navItems.internal} showInternalAccess={showInternalAccess} />
       <div className="mx-auto flex max-w-7xl">
         {mode !== 'buyer' ? <SideRail title={title} items={items} /> : null}
         <main className="min-h-screen flex-1 px-4 py-6 md:px-6 md:py-8">{children}</main>
@@ -81,20 +81,21 @@ const AuthenticatedApp = () => {
   const permissions = current?.permissions || [];
   const isInternal = roleGroups.internal.includes(role) || permissions.length > 0;
   const isPartner = roleGroups.partner.includes(role) || permissions.includes('listings.read') || permissions.includes('leads.read');
+  const headerInternalAccess = isInternal;
 
   return (
     <Routes>
-      <Route path="/" element={<AppFrame mode="buyer"><Home /></AppFrame>} />
-      <Route path="/shortlist" element={<AppFrame mode="buyer"><Shortlist /></AppFrame>} />
-      <Route path="/compare" element={<AppFrame mode="buyer"><Compare /></AppFrame>} />
-      <Route path="/guides" element={<AppFrame mode="buyer"><Guides /></AppFrame>} />
-      <Route path="/account" element={<AppFrame mode="buyer"><Account /></AppFrame>} />
-      <Route path="/notifications" element={<AppFrame mode="buyer"><Notifications /></AppFrame>} />
-      <Route path="/listing/:id" element={<AppFrame mode="buyer"><ListingDetail /></AppFrame>} />
-      <Route path="/areas/:slug" element={<AppFrame mode="buyer"><AreaDetail /></AppFrame>} />
-      <Route path="/projects/:slug" element={<AppFrame mode="buyer"><ProjectDetail /></AppFrame>} />
-      <Route path="/quiz" element={<AppFrame mode="buyer"><BuyerQuiz /></AppFrame>} />
-      <Route path="/golden-visa" element={<AppFrame mode="buyer"><GoldenVisa /></AppFrame>} />
+      <Route path="/" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Home /></AppFrame>} />
+      <Route path="/shortlist" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Shortlist /></AppFrame>} />
+      <Route path="/compare" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Compare /></AppFrame>} />
+      <Route path="/guides" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Guides /></AppFrame>} />
+      <Route path="/account" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Account /></AppFrame>} />
+      <Route path="/notifications" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Notifications /></AppFrame>} />
+      <Route path="/listing/:id" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><ListingDetail /></AppFrame>} />
+      <Route path="/areas/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><AreaDetail /></AppFrame>} />
+      <Route path="/projects/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><ProjectDetail /></AppFrame>} />
+      <Route path="/quiz" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><BuyerQuiz /></AppFrame>} />
+      <Route path="/golden-visa" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><GoldenVisa /></AppFrame>} />
       <Route path="/partner" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerOverview /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/partner/leads" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerLeads /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/partner/listings" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerListings /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />

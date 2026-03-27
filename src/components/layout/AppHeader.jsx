@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Building2, Menu, ShieldCheck } from "lucide-react";
+import AdminWorkspaceSwitcher from "@/components/layout/AdminWorkspaceSwitcher";
+import MobileWorkspaceDrawer from "@/components/layout/MobileWorkspaceDrawer";
 
-export default function AppHeader({ appName, tagline, onMenuClick }) {
+export default function AppHeader({ appName, tagline, onMenuClick, internalItems = [], showInternalAccess = false }) {
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 md:px-6">
@@ -29,8 +31,10 @@ export default function AppHeader({ appName, tagline, onMenuClick }) {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
+          {showInternalAccess ? <MobileWorkspaceDrawer items={internalItems} /> : null}
+          {showInternalAccess ? <AdminWorkspaceSwitcher items={internalItems.filter((item) => item.path !== "/ops")} /> : null}
           <Button variant="ghost" size="icon" asChild><Link to="/notifications"><Bell className="h-4 w-4" /></Link></Button>
-          <Button asChild className="rounded-full px-5"><Link to="/account">Open account</Link></Button>
+          <Button asChild className="rounded-full px-5"><Link to="/account">{showInternalAccess ? "Workspace & account" : "Open account"}</Link></Button>
         </div>
       </div>
     </header>
