@@ -160,10 +160,13 @@ Deno.serve(async (req) => {
       const assignments = await base44.entities.LeadAssignment.list('-updated_date', 500);
       const candidates = agencies.filter((item) => item.status === 'active' && item.id !== partnerAgencyId);
       const ranked = candidates
-        .map((item) => ({
-          partner: item,
-          score: Number(item.partner_trust_score || 0) - assignments.filter((row) => row.partner_id === item.id && row.assignment_status === 'pending').length * 10
-        }))
+        .map((item) => {
+          const pending = assignments.filter((row) => row.partner_id === item.id && row.assignment_status === 'pending').length;
+          const capacityLimit = Number(item.capacity_limit || 0);
+          const capacityPenalty = capacityLimit > 0 ? Math.max(0, pending - capacityLimit) * 25 : pending * 10;
+          const score = ((Number(item.partner_trust_score || 0) * 0.35) + (Number(item.performance_score || 0) * 0.35) + (Number(item.response_score || 0) * 0.2) + (Number(item.routing_weight || 1) * 10)) - capacityPenalty;
+          return { partner: item, score };
+        })
         .sort((a, b) => b.score - a.score);
 
       if (ranked[0]?.partner?.id) {
@@ -173,7 +176,7 @@ Deno.serve(async (req) => {
           assignment_type: 'rule_based',
           assigned_at: now,
           assignment_status: 'pending',
-          assignment_reason: `Auto-reassigned after ${action}${notes ? `: ${notes}` : ''}`,
+          assignment_reason: `Auto-reassigned after ${action}${notes ? `: ${notes}` : ''} | enterprise_routing`,
           assigned_by: 'system',
           sla_due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
         });

@@ -20,10 +20,13 @@ Deno.serve(async (req) => {
 
       const candidates = agencies
         .filter((item) => item.status === 'active' && item.id !== assignment.partner_id)
-        .map((item) => ({
-          partner: item,
-          score: Number(item.partner_trust_score || 0) - assignments.filter((row) => row.partner_id === item.id && row.assignment_status === 'pending').length * 10
-        }))
+        .map((item) => {
+          const pending = assignments.filter((row) => row.partner_id === item.id && row.assignment_status === 'pending').length;
+          const capacityLimit = Number(item.capacity_limit || 0);
+          const capacityPenalty = capacityLimit > 0 ? Math.max(0, pending - capacityLimit) * 25 : pending * 10;
+          const score = ((Number(item.partner_trust_score || 0) * 0.35) + (Number(item.performance_score || 0) * 0.35) + (Number(item.response_score || 0) * 0.2) + (Number(item.routing_weight || 1) * 10)) - capacityPenalty;
+          return { partner: item, score };
+        })
         .sort((a, b) => b.score - a.score);
 
       const reassignedPartnerId = candidates[0]?.partner?.id || null;
@@ -35,7 +38,7 @@ Deno.serve(async (req) => {
           assignment_type: 'rule_based',
           assigned_at: new Date().toISOString(),
           assignment_status: 'pending',
-          assignment_reason: 'Auto-reassigned after SLA breach',
+          assignment_reason: 'Auto-reassigned after SLA breach | enterprise_routing',
           assigned_by: 'system',
           sla_due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
         });

@@ -15,10 +15,11 @@ export function isPartnerEligible(partner, lead) {
 
 export function buildPartnerRoutingScore(partner, metrics = {}) {
   const trustScore = Number(partner.partner_trust_score || 0);
-  const performanceScore = Number(metrics.performanceScore || 0);
+  const performanceScore = Number(partner.performance_score ?? metrics.performanceScore ?? 0);
   const capacityScore = Number(metrics.capacityScore || 0);
-  const responsivenessScore = Number(metrics.responsivenessScore || 0);
-  return trustScore * 0.35 + performanceScore * 0.3 + capacityScore * 0.2 + responsivenessScore * 0.15;
+  const responsivenessScore = Number(partner.response_score ?? metrics.responsivenessScore ?? 0);
+  const routingWeight = Number(partner.routing_weight || 1);
+  return (trustScore * 0.3 + performanceScore * 0.3 + capacityScore * 0.25 + responsivenessScore * 0.15) * routingWeight;
 }
 
 export function summariseRoutingReason({ partner, lead, metrics, mode }) {
@@ -27,7 +28,9 @@ export function summariseRoutingReason({ partner, lead, metrics, mode }) {
   if (lead.is_private_inventory) reasons.push('private_inventory_match');
   if (lead.is_concierge) reasons.push('concierge_match');
   if (metrics.capacityScore != null) reasons.push(`capacity:${metrics.capacityScore}`);
-  if (metrics.performanceScore != null) reasons.push(`performance:${metrics.performanceScore}`);
+  if ((partner.performance_score ?? metrics.performanceScore) != null) reasons.push(`performance:${partner.performance_score ?? metrics.performanceScore}`);
+  if ((partner.response_score ?? metrics.responsivenessScore) != null) reasons.push(`response:${partner.response_score ?? metrics.responsivenessScore}`);
+  if (partner.routing_weight != null) reasons.push(`weight:${partner.routing_weight}`);
   if (partner.partner_trust_score != null) reasons.push(`trust:${partner.partner_trust_score}`);
   return reasons.join(' | ');
 }

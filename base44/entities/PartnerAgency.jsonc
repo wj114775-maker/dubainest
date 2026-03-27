@@ -1,0 +1,74 @@
+{
+  "name": "PartnerAgency",
+  "type": "object",
+  "properties": {
+    "organisation_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "trade_license_number": {
+      "type": "string"
+    },
+    "rera_registration_number": {
+      "type": "string"
+    },
+    "agreement_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "paused",
+        "blacklisted"
+      ],
+      "default": "pending"
+    },
+    "partner_trust_score": {
+      "type": "number"
+    },
+    "sla_response_minutes": {
+      "type": "number"
+    },
+    "whitelabel_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "country": {
+      "type": "string"
+    },
+    "private_inventory_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "concierge_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "min_budget": {
+      "type": "number"
+    },
+    "max_budget": {
+      "type": "number"
+    },
+    "routing_weight": {
+      "type": "number",
+      "default": 1
+    },
+    "capacity_limit": {
+      "type": "number"
+    },
+    "performance_score": {
+      "type": "number"
+    },
+    "response_score": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

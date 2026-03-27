@@ -304,10 +304,12 @@ export async function createOrEnrichLeadFromIntent(payload) {
     const acceptedCount = partnerAssignments.filter((item) => item.assignment_status === 'accepted').length;
     const rejectedCount = partnerAssignments.filter((item) => item.assignment_status === 'rejected').length;
     const breachedCount = partnerAssignments.filter((item) => item.sla_status === 'breached' || item.assignment_status === 'expired').length;
+    const capacityLimit = Number(partner.capacity_limit || 0);
+    const usagePenalty = capacityLimit > 0 ? Math.max(0, pendingCount - capacityLimit) * 25 : pendingCount * 15;
     acc[partner.id] = {
-      capacityScore: Math.max(0, 100 - pendingCount * 15),
-      performanceScore: Math.max(0, 60 + acceptedCount * 8 - rejectedCount * 12 - breachedCount * 15),
-      responsivenessScore: Math.max(0, 100 - breachedCount * 20)
+      capacityScore: Math.max(0, 100 - usagePenalty),
+      performanceScore: Math.max(0, Number(partner.performance_score ?? (60 + acceptedCount * 8 - rejectedCount * 12 - breachedCount * 15))),
+      responsivenessScore: Math.max(0, Number(partner.response_score ?? (100 - breachedCount * 20)))
     };
     return acc;
   }, {});
