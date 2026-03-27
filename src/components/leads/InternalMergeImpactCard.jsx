@@ -19,6 +19,7 @@ export default function InternalMergeImpactCard() {
           <li>Protection windows</li>
           <li>Viewings</li>
         </ul>
+        <p className="pt-2">The target keeps the strongest priority, latest touch date, and resolved partner ownership, while the source lead is closed as merged and released from active ownership.</p>
       </CardContent>
     </Card>
   );
