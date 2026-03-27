@@ -17,7 +17,8 @@ export default function OpsListings() {
     { label: "Governed listings", value: String(listings.length) },
     { label: "Under review", value: String(listings.filter((item) => ["under_review", "verification_pending", "flagged"].includes(item.status)).length) },
     { label: "Frozen", value: String(listings.filter((item) => item.status === "frozen").length) },
-    { label: "Stale", value: String(listings.filter((item) => item.freshness_status === "stale" || item.freshness_status === "expired").length) }
+    { label: "Stale", value: String(listings.filter((item) => item.freshness_status === "stale" || item.freshness_status === "expired").length) },
+    { label: "Published", value: String(listings.filter((item) => item.publication_status === "published").length) }
   ];
 
   const queue = listings.filter((item) => ["under_review", "verification_pending", "flagged", "frozen", "stale"].includes(item.status));

@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import LeadOwnershipTable from "@/components/ops/LeadOwnershipTable";
 import AdminMetricGrid from "@/components/admin/AdminMetricGrid";
+import ListingGovernanceSnapshot from "@/components/ops/ListingGovernanceSnapshot";
 import AccessGuard from "@/components/admin/AccessGuard";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -74,9 +75,7 @@ export default function OpsDashboard() {
         <AdminMetricGrid metrics={metrics} />
       </AccessGuard>
       <AccessGuard permission="compliance_cases.read">
-        <div className="flex justify-end">
-          <Button variant="outline" asChild><Link to="/ops/listings">Open listing workspace</Link></Button>
-        </div>
+        <ListingGovernanceSnapshot listings={data.listings} />
       </AccessGuard>
       <AccessGuard permission="leads.read">
         <LeadOwnershipTable

@@ -32,6 +32,8 @@ export default function ListingDetail() {
           <div className="flex flex-wrap gap-2">
             <TrustBadge score={listing.trust_score || 0} />
             {listing.trust_band === 'verified' || listing.verification_status === 'verified' ? <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Verified</Badge> : null}
+            <Badge variant="outline">Freshness {listing.freshness_status || 'fresh'}</Badge>
+            <Badge variant="outline">Publication {listing.publication_status || 'draft'}</Badge>
             <Badge variant="outline">Last checked {listing.last_checked_at ? new Date(listing.last_checked_at).toLocaleDateString() : 'Pending'}</Badge>
             <Badge variant="outline">Partner {listing.partner_verified ? 'verified' : 'pending'}</Badge>
             <Badge variant="outline">Project {listing.project_status_verified ? 'checked' : 'pending'}</Badge>
