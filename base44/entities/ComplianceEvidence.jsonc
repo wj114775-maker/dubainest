@@ -1,0 +1,54 @@
+{
+  "name": "ComplianceEvidence",
+  "type": "object",
+  "properties": {
+    "compliance_case_id": {
+      "type": "string"
+    },
+    "listing_id": {
+      "type": "string"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "evidence_type": {
+      "type": "string",
+      "enum": [
+        "document",
+        "image",
+        "video",
+        "screenshot",
+        "external_link",
+        "note"
+      ]
+    },
+    "uploaded_by": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "accepted",
+        "rejected",
+        "needs_more_info"
+      ],
+      "default": "submitted"
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "compliance_case_id",
+    "file_url",
+    "evidence_type"
+  ]
+}

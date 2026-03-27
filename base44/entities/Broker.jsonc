@@ -1,0 +1,68 @@
+{
+  "name": "Broker",
+  "type": "object",
+  "properties": {
+    "partner_agency_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "rera_card_number": {
+      "type": "string"
+    },
+    "rera_expiry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "verified",
+        "expired",
+        "suspended"
+      ],
+      "default": "pending"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "verified",
+        "failed",
+        "expired"
+      ],
+      "default": "not_started"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "specialties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "broker_trust_score": {
+      "type": "number"
+    },
+    "last_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "verification_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "full_name"
+  ]
+}

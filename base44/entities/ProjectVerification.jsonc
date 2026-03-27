@@ -1,0 +1,46 @@
+{
+  "name": "ProjectVerification",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string"
+    },
+    "verification_type": {
+      "type": "string",
+      "enum": [
+        "developer_status",
+        "project_status",
+        "authority",
+        "completion_progress",
+        "publication_readiness"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "passed",
+        "failed",
+        "manual_review"
+      ],
+      "default": "pending"
+    },
+    "reviewer_id": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "score_impact": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "project_id",
+    "verification_type"
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "developer_id": {
+      "type": "string"
+    },
+    "area_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "launched",
+        "under_construction",
+        "completed"
+      ]
+    },
+    "handover_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "trust_score": {
+      "type": "number"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "verified",
+        "failed"
+      ],
+      "default": "not_started"
+    },
+    "project_trust_band": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "verified"
+      ],
+      "default": "low"
+    },
+    "last_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authority_status": {
+      "type": "string",
+      "enum": [
+        "unknown",
+        "pending",
+        "valid",
+        "invalid"
+      ],
+      "default": "unknown"
+    },
+    "price_from": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

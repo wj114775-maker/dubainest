@@ -1,0 +1,51 @@
+{
+  "name": "BrokerVerification",
+  "type": "object",
+  "properties": {
+    "broker_id": {
+      "type": "string"
+    },
+    "partner_agency_id": {
+      "type": "string"
+    },
+    "verification_type": {
+      "type": "string",
+      "enum": [
+        "rera",
+        "identity",
+        "licence",
+        "kyc",
+        "authority"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "passed",
+        "failed",
+        "expired",
+        "manual_review"
+      ],
+      "default": "pending"
+    },
+    "reviewer_id": {
+      "type": "string"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "broker_id",
+    "verification_type"
+  ]
+}

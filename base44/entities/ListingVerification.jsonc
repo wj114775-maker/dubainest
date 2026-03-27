@@ -1,0 +1,66 @@
+{
+  "name": "ListingVerification",
+  "type": "object",
+  "properties": {
+    "listing_id": {
+      "type": "string"
+    },
+    "verification_type": {
+      "type": "string",
+      "enum": [
+        "permit",
+        "broker",
+        "title_deed",
+        "project_status",
+        "duplicate_check",
+        "stale_check",
+        "authority",
+        "freshness",
+        "completeness",
+        "publication_readiness"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "passed",
+        "failed",
+        "manual_review",
+        "requested_correction"
+      ],
+      "default": "pending"
+    },
+    "reviewer_id": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "evidence_url": {
+      "type": "string"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "score_impact": {
+      "type": "number"
+    },
+    "decision_reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "listing_id",
+    "verification_type"
+  ]
+}

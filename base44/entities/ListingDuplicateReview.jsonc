@@ -1,0 +1,39 @@
+{
+  "name": "ListingDuplicateReview",
+  "type": "object",
+  "properties": {
+    "listing_id": {
+      "type": "string"
+    },
+    "matched_listing_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "candidate",
+        "under_review",
+        "confirmed_duplicate",
+        "dismissed",
+        "merged_to_primary"
+      ],
+      "default": "candidate"
+    },
+    "confidence_score": {
+      "type": "number"
+    },
+    "reviewer_id": {
+      "type": "string"
+    },
+    "primary_listing_id": {
+      "type": "string"
+    },
+    "decision_reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "listing_id",
+    "matched_listing_id"
+  ]
+}

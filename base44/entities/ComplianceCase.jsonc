@@ -1,0 +1,101 @@
+{
+  "name": "ComplianceCase",
+  "type": "object",
+  "properties": {
+    "listing_id": {
+      "type": "string"
+    },
+    "lead_id": {
+      "type": "string"
+    },
+    "partner_agency_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "permit",
+        "misrepresentation",
+        "duplicate",
+        "stale",
+        "broker_verification",
+        "authority",
+        "evidence_missing",
+        "project_verification",
+        "kyc",
+        "aml",
+        "payout_hold"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "triage",
+        "under_review",
+        "awaiting_evidence",
+        "frozen",
+        "approved",
+        "rejected",
+        "resolved",
+        "closed"
+      ],
+      "default": "open"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "assigned_reviewer_id": {
+      "type": "string"
+    },
+    "sla_due_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "freeze_target_type": {
+      "type": "string",
+      "enum": [
+        "listing",
+        "lead",
+        "partner",
+        "payout",
+        "user",
+        "project"
+      ]
+    },
+    "freeze_target_id": {
+      "type": "string"
+    },
+    "freeze_active": {
+      "type": "boolean",
+      "default": false
+    },
+    "trust_impact": {
+      "type": "number"
+    },
+    "resolution_notes": {
+      "type": "string"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "severity",
+    "category",
+    "summary"
+  ]
+}

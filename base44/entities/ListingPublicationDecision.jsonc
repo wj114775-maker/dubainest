@@ -1,0 +1,43 @@
+{
+  "name": "ListingPublicationDecision",
+  "type": "object",
+  "properties": {
+    "listing_id": {
+      "type": "string"
+    },
+    "decision_type": {
+      "type": "string",
+      "enum": [
+        "publish",
+        "unpublish",
+        "freeze",
+        "reject",
+        "archive",
+        "request_correction",
+        "republish"
+      ]
+    },
+    "decision_status": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "blocked",
+        "pending"
+      ],
+      "default": "pending"
+    },
+    "actor_user_id": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "snapshot": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "listing_id",
+    "decision_type"
+  ]
+}

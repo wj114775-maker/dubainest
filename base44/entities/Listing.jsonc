@@ -1,0 +1,255 @@
+{
+  "name": "Listing",
+  "type": "object",
+  "properties": {
+    "organisation_id": {
+      "type": "string"
+    },
+    "partner_agency_id": {
+      "type": "string"
+    },
+    "broker_id": {
+      "type": "string"
+    },
+    "developer_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "area_id": {
+      "type": "string"
+    },
+    "reference_number": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "listing_type": {
+      "type": "string",
+      "enum": [
+        "sale",
+        "rent",
+        "private_inventory"
+      ]
+    },
+    "property_type": {
+      "type": "string"
+    },
+    "price": {
+      "type": "number"
+    },
+    "bedrooms": {
+      "type": "number"
+    },
+    "bathrooms": {
+      "type": "number"
+    },
+    "built_up_area_sqft": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "under_review",
+        "verification_pending",
+        "verified",
+        "published",
+        "stale",
+        "flagged",
+        "frozen",
+        "rejected",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "in_review",
+        "verified",
+        "failed"
+      ],
+      "default": "not_started"
+    },
+    "publication_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "eligible",
+        "published",
+        "suppressed",
+        "frozen",
+        "rejected",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "freshness_status": {
+      "type": "string",
+      "enum": [
+        "fresh",
+        "aging",
+        "stale",
+        "expired"
+      ],
+      "default": "fresh"
+    },
+    "trust_band": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "verified"
+      ],
+      "default": "low"
+    },
+    "authority_status": {
+      "type": "string",
+      "enum": [
+        "unknown",
+        "pending",
+        "valid",
+        "invalid",
+        "expired"
+      ],
+      "default": "unknown"
+    },
+    "duplicate_status": {
+      "type": "string",
+      "enum": [
+        "clear",
+        "candidate",
+        "under_review",
+        "suppressed",
+        "primary"
+      ],
+      "default": "clear"
+    },
+    "primary_listing_id": {
+      "type": "string"
+    },
+    "duplicate_group_key": {
+      "type": "string"
+    },
+    "permit_number": {
+      "type": "string"
+    },
+    "permit_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "title_deed_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "project_status_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "partner_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "broker_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "trust_score": {
+      "type": "number"
+    },
+    "partner_trust_score": {
+      "type": "number"
+    },
+    "broker_trust_score": {
+      "type": "number"
+    },
+    "completeness_score": {
+      "type": "number"
+    },
+    "freshness_score": {
+      "type": "number"
+    },
+    "duplicate_risk_score": {
+      "type": "number"
+    },
+    "issue_count": {
+      "type": "number"
+    },
+    "evidence_count": {
+      "type": "number"
+    },
+    "verification_due_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_refreshed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_checked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stale_after_days": {
+      "type": "number"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "frozen_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "publish_block_reason": {
+      "type": "string"
+    },
+    "freeze_reason": {
+      "type": "string"
+    },
+    "rejection_reason": {
+      "type": "string"
+    },
+    "missing_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "open_issue_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "hero_image_url": {
+      "type": "string"
+    },
+    "is_private_inventory": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "title",
+    "listing_type",
+    "price"
+  ]
+}
