@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import PartnerActionGuidanceCard from "@/components/leads/PartnerActionGuidanceCard";
+import PartnerActionFieldset from "@/components/leads/PartnerActionFieldset";
 
 const actionOptions = [
   { value: "accept", label: "Accept assignment" },
@@ -18,27 +18,15 @@ const actionOptions = [
   { value: "mark_invalid", label: "Mark invalid" }
 ];
 
-const channelOptions = ["call", "whatsapp", "email", "sms", "meeting", "other"];
-
 export default function PartnerLeadActionPanel({ lead, assignment, loading, onSubmit }) {
   const [form, setForm] = useState({ action: "accept", notes: "", outcome: "call", scheduled_at: "" });
   const selectedAction = useMemo(() => actionOptions.find((item) => item.value === form.action), [form.action]);
 
-  const helperText = {
-    accept: "Accept and lock this lead to your team.",
-    reject: "Reject this lead back to internal routing with a clear reason.",
-    request_reassignment: "Ask for reassignment when fit, capacity or geography is wrong.",
-    log_contact_attempt: "Record contact channel, outcome and evidence.",
-    log_callback_booked: "Schedule a callback and move the lead forward.",
-    log_viewing_booked: "Schedule the viewing date and time.",
-    log_viewing_completed: "Confirm the viewing result and what happened next.",
-    mark_won: "Use only when the lead has converted.",
-    mark_lost: "Record the loss reason clearly.",
-    mark_invalid: "Use for invalid or unworkable leads."
-  };
-
-  const requiresSchedule = ["log_callback_booked", "log_viewing_booked", "log_viewing_completed"].includes(form.action);
-  const requiresChannel = ["log_contact_attempt", "log_callback_booked"].includes(form.action);
+  const blockedReason = (() => {
+    if (["reject", "request_reassignment", "log_contact_attempt", "log_viewing_completed", "mark_lost", "mark_invalid"].includes(form.action) && !form.notes.trim()) return "Add the required notes before submitting.";
+    if (["log_callback_booked", "log_viewing_booked", "log_viewing_completed"].includes(form.action) && !form.scheduled_at) return "Choose the required date and time first.";
+    return "";
+  })();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -57,23 +45,13 @@ export default function PartnerLeadActionPanel({ lead, assignment, loading, onSu
             </SelectContent>
           </Select>
 
-          <div className="rounded-2xl border border-white/10 bg-muted/30 p-3 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">{selectedAction?.label}</p>
-            <p className="mt-1">{helperText[form.action]}</p>
+          <div className="space-y-3">
+            <div className="rounded-2xl border border-white/10 bg-background/50 p-3 text-sm">
+              <p className="font-medium text-foreground">{selectedAction?.label}</p>
+            </div>
+            <PartnerActionGuidanceCard action={form.action} />
+            <PartnerActionFieldset form={form} setForm={setForm} />
           </div>
-
-          {requiresSchedule ? <Input type="datetime-local" value={form.scheduled_at} onChange={(e) => setForm((current) => ({ ...current, scheduled_at: e.target.value }))} /> : null}
-
-          {requiresChannel ? (
-            <Select value={form.outcome} onValueChange={(value) => setForm((current) => ({ ...current, outcome: value }))}>
-              <SelectTrigger><SelectValue placeholder="Channel" /></SelectTrigger>
-              <SelectContent>
-                {channelOptions.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          ) : null}
-
-          <Textarea placeholder="Notes, evidence or outcome summary" value={form.notes} onChange={(e) => setForm((current) => ({ ...current, notes: e.target.value }))} />
 
           <div className="grid gap-3 rounded-2xl border border-dashed border-white/10 p-3 text-sm text-muted-foreground md:grid-cols-2">
             <p>Status: {lead?.status || "new"}</p>
@@ -82,7 +60,9 @@ export default function PartnerLeadActionPanel({ lead, assignment, loading, onSu
             <p>SLA: {assignment?.sla_status || "on_track"}</p>
           </div>
 
-          <Button type="submit" disabled={loading} className="w-full">Run action</Button>
+          {blockedReason ? <p className="text-sm text-destructive">{blockedReason}</p> : null}
+
+          <Button type="submit" disabled={loading || Boolean(blockedReason)} className="w-full">Run action</Button>
         </form>
       </CardContent>
     </Card>

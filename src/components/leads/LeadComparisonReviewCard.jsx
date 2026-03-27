@@ -20,7 +20,7 @@ export default function LeadComparisonReviewCard({ currentLead, selectedCandidat
         <CardTitle>Merge review</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {compareLead ? <div className="rounded-2xl border border-dashed border-white/10 bg-muted/20 p-3 text-sm text-muted-foreground">Post-merge consolidation keeps the target lead as the surviving record, keeps the highest priority, keeps the latest touch date, and appends merge notes.</div> : null}
+        {compareLead ? <div className="rounded-2xl border border-dashed border-white/10 bg-muted/20 p-3 text-sm text-muted-foreground">Current merge finalisation keeps the target lead as the surviving record, keeps the highest priority, keeps the latest touch date, appends merge notes, creates a merge log, and marks the source lead as merged. Related identities, attribution, assignments, notes, attempts, alerts and viewings are not yet fully consolidated automatically.</div> : null}
         {compareLead ? rows.map((row) => (
           <div key={row.label} className="grid gap-2 rounded-2xl border border-white/10 p-3 text-sm md:grid-cols-3">
             <p className="font-medium text-foreground">{row.label}</p>
