@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import MetricCard from "@/components/common/MetricCard";
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import BuyerIntentSheet from '@/components/leads/BuyerIntentSheet';
 
@@ -30,6 +31,11 @@ export default function ProjectDetail() {
     <>
     <div className="space-y-6 pb-28">
       <SectionHeading eyebrow="Project intelligence" title={project?.name || slug?.replace(/-/g, " ") || "Project"} description={`Status: ${project?.status || 'planned'}${project?.handover_date ? ` · Handover ${project.handover_date}` : ''}`} action={<Button onClick={() => setOpen(true)}>Request brochure</Button>} />
+      <div className="flex flex-wrap gap-2">
+        <Badge variant="outline">Verification {project?.verification_status || 'not_started'}</Badge>
+        <Badge variant="outline">Trust band {project?.project_trust_band || 'low'}</Badge>
+        <Badge variant="outline">Authority {project?.authority_status || 'unknown'}</Badge>
+      </div>
       <div className="grid gap-4 md:grid-cols-4">
         <MetricCard label="Project trust" value={`${trustScore}/100`} />
         <MetricCard label="Construction status" value={constructionValue} />

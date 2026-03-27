@@ -27,7 +27,13 @@ export default function ListingCard({ listing }) {
         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {listing.area_name}</span>
           <span className="flex items-center gap-1"><BedDouble className="h-4 w-4" /> {listing.bedrooms} bed</span>
-          <span className="flex items-center gap-1"><Building2 className="h-4 w-4" /> Permit verified</span>
+          <span className="flex items-center gap-1"><Building2 className="h-4 w-4" /> {listing.permit_verified ? 'Permit verified' : 'Permit pending'}</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {listing.trust_band === 'verified' || listing.verification_status === 'verified' ? <Badge variant="outline" className="rounded-full">Verified</Badge> : null}
+          <Badge variant="outline" className="rounded-full">Freshness {listing.freshness_status || 'fresh'}</Badge>
+          {listing.partner_verified ? <Badge variant="outline" className="rounded-full">Partner verified</Badge> : null}
+          {listing.is_private_inventory ? <Badge className="rounded-full bg-primary/10 text-primary hover:bg-primary/10">Private inventory</Badge> : null}
         </div>
         <div className="flex items-center justify-between">
           <div>

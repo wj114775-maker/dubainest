@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import MetricCard from "@/components/common/MetricCard";
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import BuyerIntentSheet from '@/components/leads/BuyerIntentSheet';
 
@@ -25,6 +26,11 @@ export default function AreaDetail() {
     <>
     <div className="space-y-6 pb-28">
       <SectionHeading eyebrow="Area intelligence" title={area?.name || slug?.replace(/-/g, " ") || "Dubai area"} description={area?.description || `City: ${area?.city || 'Dubai'}`} action={<Button onClick={() => setOpen(true)}>Request area consultation</Button>} />
+      <div className="flex flex-wrap gap-2">
+        <Badge variant="outline">City {area?.city || 'Dubai'}</Badge>
+        {area?.lifestyle_tag ? <Badge variant="outline">{area.lifestyle_tag}</Badge> : null}
+        {area?.buyer_profile ? <Badge variant="outline">{area.buyer_profile}</Badge> : null}
+      </div>
       <div className="grid gap-4 md:grid-cols-4">
         <MetricCard label="Demand score" value={String(area?.investor_score || 0)} />
         <MetricCard label="Median price" value={area?.avg_sale_price ? `AED ${Number(area.avg_sale_price).toLocaleString()}` : 'On request'} />
