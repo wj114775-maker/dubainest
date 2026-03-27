@@ -110,6 +110,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lead is protected and cannot be reassigned without release' }, { status: 400 });
     }
 
+    if (action === 'release' && !['locked', 'protected'].includes(lead.ownership_status || '')) {
+      return Response.json({ error: 'Only locked or protected leads can be released' }, { status: 400 });
+    }
+
+    if ((action === 'lock' || action === 'mark_duplicate' || action === 'merge') && lead.status === 'merged') {
+      return Response.json({ error: 'Merged leads cannot use this action' }, { status: 400 });
+    }
+
+    if (action === 'escalate' && ['won', 'lost', 'merged', 'blocked'].includes(lead.status || '')) {
+      return Response.json({ error: 'This lead state cannot be escalated' }, { status: 400 });
+    }
+
     if (action === 'merge') {
       const targetLead = await base44.entities.Lead.get(target_lead_id);
       if (!targetLead || targetLead.id === lead_id) {

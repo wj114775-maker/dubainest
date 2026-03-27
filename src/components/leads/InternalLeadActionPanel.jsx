@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import InternalLeadConfirmationDialog from "@/components/leads/InternalLeadConfirmationDialog";
 
 const actionOptions = [
   { value: "assign", label: "Assign / reassign" },
@@ -17,6 +17,8 @@ const actionOptions = [
 
 export default function InternalLeadActionPanel({ lead, partners = [], duplicates = [], loading, canManage, onSubmit }) {
   const [form, setForm] = useState({ action: "assign", notes: "", partner_id: "", target_lead_id: "", severity: "high" });
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   const selectedAction = useMemo(() => actionOptions.find((item) => item.value === form.action), [form.action]);
   const selectedPartner = partners.find((item) => item.id === form.partner_id);
@@ -32,9 +34,38 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
     escalate: "Escalate this lead for higher-priority handling."
   };
 
+  const blockedReason = useMemo(() => {
+    if (form.action === "assign" && !form.partner_id) return "Choose a partner first.";
+    if (form.action === "merge" && !form.target_lead_id) return "Choose a duplicate target first.";
+    if (["release", "merge", "escalate", "flag_circumvention"].includes(form.action) && !form.notes.trim()) return "A reason is required for this action.";
+    if (form.action === "assign" && lead?.ownership_status === "protected") return "Protected leads must be released before reassignment.";
+    if (form.action === "release" && !["locked", "protected"].includes(lead?.ownership_status)) return "Only locked or protected leads can be released.";
+    if (form.action === "lock" && lead?.status === "merged") return "Merged leads cannot be locked.";
+    if (form.action === "merge" && lead?.status === "merged") return "This lead is already merged.";
+    if (form.action === "mark_duplicate" && lead?.status === "merged") return "Merged leads cannot be marked as duplicate.";
+    return "";
+  }, [form, lead]);
+
+  const requiresConfirmation = ["release", "merge", "flag_circumvention", "escalate"].includes(form.action);
+
+  const confirmationSummary = [
+    `Action: ${selectedAction?.label || "Lead action"}`,
+    form.partner_id && selectedPartner ? `Partner: ${selectedPartner.name}` : null,
+    form.target_lead_id && selectedDuplicate ? `Target lead: ${selectedDuplicate.label}` : null,
+    form.severity && ["flag_circumvention", "escalate"].includes(form.action) ? `Severity: ${form.severity}` : null,
+    form.notes.trim() ? `Reason: ${form.notes.trim()}` : `Reason: none provided`
+  ].filter(Boolean).join(" · ");
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (blockedReason) return;
+    setConfirmed(false);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirm = () => {
     onSubmit(form);
+    setConfirmOpen(false);
   };
 
   return (
@@ -99,9 +130,22 @@ export default function InternalLeadActionPanel({ lead, partners = [], duplicate
             <p className="mt-1">{lead?.status || "new"} · {lead?.current_stage || "new"} · {lead?.ownership_status || "unowned"}</p>
           </div>
 
-          <Button type="submit" disabled={loading || !canManage} className="w-full">Apply action</Button>
+          {blockedReason ? <p className="text-sm text-destructive">{blockedReason}</p> : null}
+
+          <Button type="submit" disabled={loading || !canManage || Boolean(blockedReason)} className="w-full">Review action</Button>
         </form>
       </CardContent>
+      <InternalLeadConfirmationDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        actionLabel={selectedAction?.label || "Lead action"}
+        summary={confirmationSummary}
+        requiresConfirmation={requiresConfirmation}
+        confirmed={confirmed}
+        onConfirmedChange={setConfirmed}
+        loading={loading}
+        onConfirm={handleConfirm}
+      />
     </Card>
   );
 }
