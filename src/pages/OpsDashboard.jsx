@@ -1,12 +1,27 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import LeadOwnershipTable from "@/components/ops/LeadOwnershipTable";
 import AdminMetricGrid from "@/components/admin/AdminMetricGrid";
 import AccessGuard from "@/components/admin/AccessGuard";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function OpsDashboard() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const leadMutation = useMutation({
+    mutationFn: ({ leadId, action }) => base44.functions.invoke("internalManageLead", {
+      lead_id: leadId,
+      action,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ops-dashboard-data"] });
+      toast({ title: "Lead updated" });
+    },
+  });
+
   const { data } = useQuery({
     queryKey: ["ops-dashboard-data"],
     queryFn: async () => {
@@ -57,7 +72,17 @@ export default function OpsDashboard() {
         <AdminMetricGrid metrics={metrics} />
       </AccessGuard>
       <AccessGuard permission="leads.read">
-        <LeadOwnershipTable leads={leadRows} />
+        <LeadOwnershipTable
+          leads={leadRows}
+          getActions={(lead) => {
+            if (leadMutation.isPending) return [];
+            return [
+              { label: "Lock", onClick: () => leadMutation.mutate({ leadId: lead.id, action: "lock" }) },
+              { label: "Release", variant: "ghost", onClick: () => leadMutation.mutate({ leadId: lead.id, action: "release" }) },
+              { label: "Flag", variant: "ghost", onClick: () => leadMutation.mutate({ leadId: lead.id, action: "flag_circumvention" }) }
+            ];
+          }}
+        />
       </AccessGuard>
     </div>
   );
