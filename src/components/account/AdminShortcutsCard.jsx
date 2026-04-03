@@ -1,26 +1,25 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, Users, Briefcase, Lock, ScrollText, LayoutDashboard, Gem } from "lucide-react";
+import { ShieldCheck, Briefcase, LayoutDashboard, Gem, Building2, WalletCards } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const shortcuts = [
-  { label: "Open Workspace", path: "/ops", icon: LayoutDashboard },
+  { label: "Open Home", path: "/ops", icon: LayoutDashboard },
+  { label: "Open Buyers", path: "/ops/leads", icon: Briefcase },
+  { label: "Open Listings", path: "/ops/listings", icon: Building2 },
+  { label: "Open Premium", path: "/ops/concierge", icon: Gem },
+  { label: "Open Money", path: "/ops/revenue", icon: WalletCards },
   { label: "Open Control Center", path: "/ops/admin", icon: ShieldCheck },
-  { label: "Open Buyer Pipeline", path: "/ops/leads", icon: Briefcase },
-  { label: "Open Premium Cases", path: "/ops/concierge", icon: Gem },
-  { label: "Open Team Access", path: "/ops/users", icon: Users },
-  { label: "Open Security", path: "/ops/security", icon: Lock },
-  { label: "Open Audit Log", path: "/ops/audit", icon: ScrollText },
 ];
 
 export default function AdminShortcutsCard() {
   return (
     <Card className="rounded-[2rem] border-primary/15 bg-card/80 shadow-lg shadow-primary/5">
       <CardHeader>
-        <CardTitle>Operations and control shortcuts</CardTitle>
-        <CardDescription>You are signed in with admin access. Daily work starts in Workspace; setup lives in Control Center.</CardDescription>
+        <CardTitle>Operations menu shortcuts</CardTitle>
+        <CardDescription>Daily work stays in Home, Buyers, Listings, Premium, and Money. Setup stays in Control Center.</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {shortcuts.map((item) => {
           const Icon = item.icon;
           return (

@@ -5,6 +5,7 @@ import MetricCard from "@/components/common/MetricCard";
 import PartnerProfileCard from "@/components/partner/PartnerProfileCard";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import { base44 } from "@/api/base44Client";
+import { listEntitySafe } from "@/lib/base44Safeguards";
 
 export default function PartnerOverview() {
   const { data } = useCurrentUserRole();
@@ -18,7 +19,7 @@ export default function PartnerOverview() {
         base44.entities.Lead.list("-updated_date", 200),
         base44.entities.LeadAssignment.list("-updated_date", 200),
         base44.entities.Listing.list("-updated_date", 200),
-        base44.entities.RevenueDispute.list("-updated_date", 200),
+        listEntitySafe("RevenueDispute", "-updated_date", 200),
       ]);
 
       const profile = profiles[0] || { membership_type: "broker", status: "active" };

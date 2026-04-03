@@ -9,6 +9,7 @@ import ConciergeFilters from "@/components/concierge/ConciergeFilters";
 import AdminSummaryStrip from "@/components/admin/AdminSummaryStrip";
 import AccessGuard from "@/components/admin/AccessGuard";
 import { Button } from "@/components/ui/button";
+import { listEntitySafe } from "@/lib/base44Safeguards";
 import { compactLabel, conciergeCaseTypeOptions, conciergePriorityOptions, isOpenCase, isOverdue, priorityRank } from "@/lib/concierge";
 
 export default function OpsConcierge() {
@@ -19,13 +20,13 @@ export default function OpsConcierge() {
     queryKey: ["ops-concierge-workspace"],
     queryFn: async () => {
       const [cases, tasks, ndaRecords, inventoryRequests, viewingPlans, viewingStops, referrals] = await Promise.all([
-        base44.entities.ConciergeCase.list("-updated_date", 200),
-        base44.entities.ConciergeTask.list("-updated_date", 400),
-        base44.entities.NDATracking.list("-updated_date", 200),
-        base44.entities.PrivateInventoryRequest.list("-updated_date", 200),
-        base44.entities.ViewingPlan.list("-updated_date", 200),
-        base44.entities.ViewingStop.list("-updated_date", 400),
-        base44.entities.ServiceReferral.list("-updated_date", 300)
+        listEntitySafe("ConciergeCase", "-updated_date", 200),
+        listEntitySafe("ConciergeTask", "-updated_date", 400),
+        listEntitySafe("NDATracking", "-updated_date", 200),
+        listEntitySafe("PrivateInventoryRequest", "-updated_date", 200),
+        listEntitySafe("ViewingPlan", "-updated_date", 200),
+        listEntitySafe("ViewingStop", "-updated_date", 400),
+        listEntitySafe("ServiceReferral", "-updated_date", 300)
       ]);
       return { cases, tasks, ndaRecords, inventoryRequests, viewingPlans, viewingStops, referrals };
     },

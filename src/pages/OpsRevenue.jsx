@@ -9,6 +9,7 @@ import RevenueQueueCard from "@/components/revenue/RevenueQueueCard";
 import RevenueWorkflowDialog from "@/components/revenue/RevenueWorkflowDialog";
 import RevenueFilters from "@/components/revenue/RevenueFilters";
 import { Button } from "@/components/ui/button";
+import { listEntitySafe } from "@/lib/base44Safeguards";
 import { formatCurrency, getEntitlementAmount, isOverdueDate, triggerTypeOptions } from "@/lib/revenue";
 
 export default function OpsRevenue() {
@@ -19,11 +20,11 @@ export default function OpsRevenue() {
     queryKey: ["ops-revenue-workspace"],
     queryFn: async () => {
       const [entitlements, invoices, payouts, disputes, settlements] = await Promise.all([
-        base44.entities.RevenueEntitlement.list("-updated_date", 200),
-        base44.entities.InvoiceRecord.list("-updated_date", 200),
-        base44.entities.PayoutRecord.list("-updated_date", 200),
-        base44.entities.RevenueDispute.list("-updated_date", 200),
-        base44.entities.SettlementRecord.list("-updated_date", 200)
+        listEntitySafe("RevenueEntitlement", "-updated_date", 200),
+        listEntitySafe("InvoiceRecord", "-updated_date", 200),
+        listEntitySafe("PayoutRecord", "-updated_date", 200),
+        listEntitySafe("RevenueDispute", "-updated_date", 200),
+        listEntitySafe("SettlementRecord", "-updated_date", 200)
       ]);
 
       return { entitlements, invoices, payouts, disputes, settlements };

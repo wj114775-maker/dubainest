@@ -19,7 +19,7 @@ export default function AdminWorkspaceSwitcher({ items = [] }) {
       <DropdownMenuTrigger asChild>
         <Button variant={inInternal ? "default" : "outline"} className="hidden rounded-full px-4 md:inline-flex">
           <ShieldCheck className="h-4 w-4" />
-          Operations
+          Ops Menu
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
@@ -30,9 +30,11 @@ export default function AdminWorkspaceSwitcher({ items = [] }) {
             {sectionItems.map((item) => (
               <DropdownMenuItem key={item.path} asChild>
                 <Link to={item.path} className="flex w-full items-start justify-between gap-3">
-                  <div>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted/70">
+                      {item.icon ? <item.icon className="h-4 w-4" /> : null}
+                    </div>
                     <span className="font-medium">{item.label}</span>
-                    {item.description ? <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p> : null}
                   </div>
                   <ChevronRight className="mt-0.5 h-4 w-4" />
                 </Link>

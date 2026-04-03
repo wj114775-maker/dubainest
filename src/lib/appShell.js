@@ -1,3 +1,5 @@
+import { Briefcase, Building2, Gem, LayoutDashboard, ShieldCheck, WalletCards } from "lucide-react";
+
 export const defaultAppConfig = {
   app_name: "DubaiSphere",
   tagline: "Dubai property intelligence, verification and concierge.",
@@ -32,52 +34,46 @@ export const navItems = {
   ],
   internal: [
     {
-      label: "Workspace",
+      label: "Home",
       path: "/ops",
-      section: "Daily work",
-      description: "Start here. See what needs action first."
+      section: "Operations",
+      description: "Start here. See what needs action first.",
+      icon: LayoutDashboard
     },
     {
-      label: "Buyer pipeline",
+      label: "Buyers",
       path: "/ops/leads",
-      section: "Daily work",
-      description: "Qualify, protect, assign, and progress buyers."
+      section: "Operations",
+      description: "Qualify, protect, assign, and progress buyers.",
+      icon: Briefcase
     },
     {
-      label: "Supply review",
+      label: "Listings",
       path: "/ops/listings",
-      section: "Daily work",
-      description: "Control listing trust, freshness, and publication."
+      section: "Operations",
+      description: "Control listing trust, freshness, and publication.",
+      icon: Building2
     },
     {
-      label: "Premium cases",
+      label: "Premium",
       path: "/ops/concierge",
-      section: "Daily work",
-      description: "Run private, HNW, and concierge journeys."
+      section: "Operations",
+      description: "Run private, HNW, and concierge journeys.",
+      icon: Gem
     },
     {
-      label: "Money desk",
+      label: "Money",
       path: "/ops/revenue",
-      section: "Daily work",
-      description: "Track fee claims, invoices, payments, and disputes."
-    },
-    {
-      label: "Verification",
-      path: "/ops/compliance",
-      section: "Risk and quality",
-      description: "Resolve permits, evidence, and publishing issues."
-    },
-    {
-      label: "Audit log",
-      path: "/ops/audit",
-      section: "Risk and quality",
-      description: "Review the activity trail across the platform."
+      section: "Operations",
+      description: "Track fee claims, invoices, payments, and disputes.",
+      icon: WalletCards
     },
     {
       label: "Control center",
       path: "/ops/admin",
-      section: "System control",
-      description: "Rules, roles, security, team access, and setup."
+      section: "Admin",
+      description: "Rules, roles, security, team access, and setup.",
+      icon: ShieldCheck
     }
   ]
 };

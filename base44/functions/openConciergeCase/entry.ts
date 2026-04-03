@@ -27,6 +27,38 @@ function mergeText(...values) {
   return values.filter(Boolean).join(' | ');
 }
 
+function isMissingEntitySchemaError(error) {
+  const message = String(error?.message || error?.detail || '');
+  return message.includes('Entity schema') && message.includes('not found');
+}
+
+async function safeFilter(base44, entityName, query) {
+  try {
+    return await base44.asServiceRole.entities[entityName].filter(query);
+  } catch (error) {
+    if (isMissingEntitySchemaError(error)) return [];
+    throw error;
+  }
+}
+
+async function safeCreate(base44, entityName, payload) {
+  try {
+    return await base44.asServiceRole.entities[entityName].create(payload);
+  } catch (error) {
+    if (isMissingEntitySchemaError(error)) return null;
+    throw error;
+  }
+}
+
+async function safeUpdate(base44, entityName, id, payload) {
+  try {
+    return await base44.asServiceRole.entities[entityName].update(id, payload);
+  } catch (error) {
+    if (isMissingEntitySchemaError(error)) return null;
+    throw error;
+  }
+}
+
 function isClosedCase(caseRecord) {
   return ['closed_won', 'closed_lost', 'archived'].includes(caseRecord?.case_status || '');
 }
@@ -263,37 +295,37 @@ Deno.serve(async (req) => {
           ...baseCasePayload
         });
 
-    const milestones = await base44.asServiceRole.entities.ConciergeMilestone.filter({ case_id: caseRecord.id });
-    const tasks = await base44.asServiceRole.entities.ConciergeTask.filter({ case_id: caseRecord.id });
-    const participants = await base44.asServiceRole.entities.CaseParticipant.filter({ case_id: caseRecord.id });
-    const ndaRecords = await base44.asServiceRole.entities.NDATracking.filter({ case_id: caseRecord.id });
-    const inventoryRequests = await base44.asServiceRole.entities.PrivateInventoryRequest.filter({ case_id: caseRecord.id });
-    const preferences = await base44.asServiceRole.entities.ClientPreferenceProfile.filter({ case_id: caseRecord.id });
+    const milestones = await safeFilter(base44, 'ConciergeMilestone', { case_id: caseRecord.id });
+    const tasks = await safeFilter(base44, 'ConciergeTask', { case_id: caseRecord.id });
+    const participants = await safeFilter(base44, 'CaseParticipant', { case_id: caseRecord.id });
+    const ndaRecords = await safeFilter(base44, 'NDATracking', { case_id: caseRecord.id });
+    const inventoryRequests = await safeFilter(base44, 'PrivateInventoryRequest', { case_id: caseRecord.id });
+    const preferences = await safeFilter(base44, 'ClientPreferenceProfile', { case_id: caseRecord.id });
 
     const milestoneTemplates = buildDefaultMilestones(caseRecord, { requiresNda });
     const existingMilestoneTypes = new Set(milestones.map((item) => item.milestone_type));
-    const newMilestones = await Promise.all(milestoneTemplates
+    const newMilestones = (await Promise.all(milestoneTemplates
       .filter((item) => !existingMilestoneTypes.has(item.milestone_type))
-      .map((item) => base44.asServiceRole.entities.ConciergeMilestone.create({
+      .map((item) => safeCreate(base44, 'ConciergeMilestone', {
         case_id: caseRecord.id,
         ...item
-      })));
+      })))).filter(Boolean);
 
     const taskTemplates = buildDefaultTasks(caseRecord, lead, { requiresNda, requiredDocumentTypes });
     const existingTaskTitles = new Set(tasks.map((item) => item.title));
-    const newTasks = await Promise.all(taskTemplates
+    const newTasks = (await Promise.all(taskTemplates
       .filter((item) => !existingTaskTitles.has(item.title))
-      .map((item) => base44.asServiceRole.entities.ConciergeTask.create({
+      .map((item) => safeCreate(base44, 'ConciergeTask', {
         case_id: caseRecord.id,
         status: 'open',
         visibility: 'internal_only',
         created_by: actorId,
         ...item
-      })));
+      })))).filter(Boolean);
 
     let buyerParticipant = participants.find((item) => item.participant_type === 'buyer');
     if (!buyerParticipant && (lead?.full_name || payload.full_name)) {
-      buyerParticipant = await base44.asServiceRole.entities.CaseParticipant.create({
+      buyerParticipant = await safeCreate(base44, 'CaseParticipant', {
         case_id: caseRecord.id,
         participant_type: 'buyer',
         name: payload.full_name || lead?.full_name || 'Premium buyer',
@@ -309,7 +341,7 @@ Deno.serve(async (req) => {
 
     let ndaRecord = ndaRecords[0] || null;
     if (requiresNda && !ndaRecord) {
-      ndaRecord = await base44.asServiceRole.entities.NDATracking.create({
+      ndaRecord = await safeCreate(base44, 'NDATracking', {
         case_id: caseRecord.id,
         nda_status: 'pending',
         required_for: caseType === 'private_inventory' ? 'private_inventory_release' : 'premium_case_handling',
@@ -319,7 +351,7 @@ Deno.serve(async (req) => {
 
     let inventoryRequest = inventoryRequests.find((item) => !['fulfilled', 'rejected', 'revoked'].includes(item.request_status)) || null;
     if (caseRecord.is_private_inventory && !inventoryRequest) {
-      inventoryRequest = await base44.asServiceRole.entities.PrivateInventoryRequest.create({
+      inventoryRequest = await safeCreate(base44, 'PrivateInventoryRequest', {
         case_id: caseRecord.id,
         lead_id: caseRecord.lead_id || '',
         request_status: requiresNda ? 'nda_required' : 'under_review',
@@ -346,8 +378,8 @@ Deno.serve(async (req) => {
     };
 
     const preferenceRecord = preferences[0]
-      ? await base44.asServiceRole.entities.ClientPreferenceProfile.update(preferences[0].id, preferencePayload)
-      : await base44.asServiceRole.entities.ClientPreferenceProfile.create({
+      ? await safeUpdate(base44, 'ClientPreferenceProfile', preferences[0].id, preferencePayload)
+      : await safeCreate(base44, 'ClientPreferenceProfile', {
           case_id: caseRecord.id,
           ...preferencePayload
         });

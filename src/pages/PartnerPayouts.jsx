@@ -8,6 +8,7 @@ import RevenueWorkflowDialog from "@/components/revenue/RevenueWorkflowDialog";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import { Button } from "@/components/ui/button";
+import { listEntitySafe } from "@/lib/base44Safeguards";
 import { formatCurrency, getEntitlementAmount, isOverdueDate } from "@/lib/revenue";
 
 export default function PartnerPayouts() {
@@ -20,10 +21,10 @@ export default function PartnerPayouts() {
     queryFn: async () => {
       const [profiles, entitlements, invoices, payouts, settlements] = await Promise.all([
         base44.entities.PartnerUserProfile.filter({ user_id: current.user.id }),
-        base44.entities.RevenueEntitlement.list("-updated_date", 200),
-        base44.entities.InvoiceRecord.list("-updated_date", 200),
-        base44.entities.PayoutRecord.list("-updated_date", 200),
-        base44.entities.SettlementRecord.list("-updated_date", 200)
+        listEntitySafe("RevenueEntitlement", "-updated_date", 200),
+        listEntitySafe("InvoiceRecord", "-updated_date", 200),
+        listEntitySafe("PayoutRecord", "-updated_date", 200),
+        listEntitySafe("SettlementRecord", "-updated_date", 200)
       ]);
 
       const partnerAgencyId = profiles[0]?.partner_agency_id || "";

@@ -8,6 +8,7 @@ import AdminSummaryStrip from "@/components/admin/AdminSummaryStrip";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import { Button } from "@/components/ui/button";
+import { listEntitySafe } from "@/lib/base44Safeguards";
 import { compactLabel } from "@/lib/concierge";
 
 export default function PartnerConcierge() {
@@ -20,12 +21,12 @@ export default function PartnerConcierge() {
     queryFn: async () => {
       const [profiles, cases, referrals, viewingPlans, viewingStops, notes, documents] = await Promise.all([
         base44.entities.PartnerUserProfile.filter({ user_id: current.user.id }),
-        base44.entities.ConciergeCase.list("-updated_date", 200),
-        base44.entities.ServiceReferral.list("-updated_date", 200),
-        base44.entities.ViewingPlan.list("-updated_date", 200),
-        base44.entities.ViewingStop.list("-updated_date", 300),
-        base44.entities.ConciergeNote.list("-updated_date", 300),
-        base44.entities.SecureDocument.list("-updated_date", 300)
+        listEntitySafe("ConciergeCase", "-updated_date", 200),
+        listEntitySafe("ServiceReferral", "-updated_date", 200),
+        listEntitySafe("ViewingPlan", "-updated_date", 200),
+        listEntitySafe("ViewingStop", "-updated_date", 300),
+        listEntitySafe("ConciergeNote", "-updated_date", 300),
+        listEntitySafe("SecureDocument", "-updated_date", 300)
       ]);
 
       const partnerAgencyId = profiles[0]?.partner_agency_id || "";

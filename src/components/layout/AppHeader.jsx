@@ -20,7 +20,7 @@ export default function AppHeader({ appName, tagline, onMenuClick, internalItems
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight">{appName}</h1>
-              <p className="text-sm text-muted-foreground">{showInternalAccess ? "Operations workspace available" : tagline}</p>
+              <p className="text-sm text-muted-foreground">{showInternalAccess ? "Operations menu available" : tagline}</p>
             </div>
           </Link>
         </div>

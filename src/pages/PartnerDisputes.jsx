@@ -8,6 +8,7 @@ import RevenueWorkflowDialog from "@/components/revenue/RevenueWorkflowDialog";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import { Button } from "@/components/ui/button";
+import { listEntitySafe } from "@/lib/base44Safeguards";
 import { compactLabel, disputeTypeOptions, severityOptions } from "@/lib/revenue";
 
 export default function PartnerDisputes() {
@@ -20,8 +21,8 @@ export default function PartnerDisputes() {
     queryFn: async () => {
       const [profiles, invoices, disputes] = await Promise.all([
         base44.entities.PartnerUserProfile.filter({ user_id: current.user.id }),
-        base44.entities.InvoiceRecord.list("-updated_date", 200),
-        base44.entities.RevenueDispute.list("-updated_date", 200)
+        listEntitySafe("InvoiceRecord", "-updated_date", 200),
+        listEntitySafe("RevenueDispute", "-updated_date", 200)
       ]);
 
       const partnerAgencyId = profiles[0]?.partner_agency_id || "";

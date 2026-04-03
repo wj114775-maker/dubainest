@@ -1,17 +1,22 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import AccessGuard from "@/components/admin/AccessGuard";
 import SectionHeading from "@/components/common/SectionHeading";
+import WorkflowDialog from "@/components/common/WorkflowDialog";
 import MetricCard from "@/components/common/MetricCard";
 import DuplicateQueueCard from "@/components/leads/DuplicateQueueCard";
 import BuyerCaseDeskDrawer from "@/components/leads/BuyerCaseDeskDrawer";
 import LeadFilterBar from "@/components/leads/LeadFilterBar";
 import LeadPipelineBoard from "@/components/leads/LeadPipelineBoard";
 import InternalLeadTable from "@/components/leads/InternalLeadTable";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
+import { buildLeadCode, normaliseEmail, normalisePhone } from "@/components/leads/leadEngine";
 import { buyerPipelineStages, compactLabel, getBuyerPipelineNextAction, getBuyerPipelineStage, isClosedBuyerCase } from "@/lib/buyerPipeline";
 import { roleGroups } from "@/lib/appShell";
+import { listEntitySafe } from "@/lib/base44Safeguards";
 import { formatCurrency, getEntitlementAmount } from "@/lib/revenue";
 
 function byNewest(left, right) {
@@ -29,8 +34,11 @@ function groupBy(items, key) {
 }
 
 export default function OpsLeads() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [filters, setFilters] = useState({ search: "", stage: "all", ownership: "all", priority: "all", source: "all", duplicate: "all", sla: "all" });
   const [selectedCaseId, setSelectedCaseId] = useState("");
+  const [showRegistry, setShowRegistry] = useState(false);
 
   const { data: workspace = { buyerCases: [], partnerOptions: [], conciergeUserOptions: [] } } = useQuery({
     queryKey: ["ops-leads-registry"],
@@ -40,13 +48,13 @@ export default function OpsLeads() {
         base44.entities.LeadAssignment.list("-updated_date", 300),
         base44.entities.LeadIdentity.list("-updated_date", 400),
         base44.entities.Viewing.list("-updated_date", 300),
-        base44.entities.ConciergeCase.list("-updated_date", 200),
-        base44.entities.RevenueEntitlement.list("-updated_date", 300),
+        listEntitySafe("ConciergeCase", "-updated_date", 200),
+        listEntitySafe("RevenueEntitlement", "-updated_date", 300),
         base44.entities.Listing.list("-updated_date", 300),
         base44.entities.PartnerAgency.list("-updated_date", 100),
-        base44.entities.InvoiceRecord.list("-updated_date", 300),
-        base44.entities.PayoutRecord.list("-updated_date", 300),
-        base44.entities.RevenueDispute.list("-updated_date", 300),
+        listEntitySafe("InvoiceRecord", "-updated_date", 300),
+        listEntitySafe("PayoutRecord", "-updated_date", 300),
+        listEntitySafe("RevenueDispute", "-updated_date", 300),
         base44.entities.User.list(),
         base44.entities.UserRoleAssignment.list()
       ]);
@@ -174,6 +182,80 @@ export default function OpsLeads() {
   });
   const buyerCases = workspace.buyerCases;
 
+  const manualLead = useMutation({
+    mutationFn: async (form) => {
+      const now = new Date().toISOString();
+      const lead = await base44.entities.Lead.create({
+        lead_code: buildLeadCode(),
+        status: "new",
+        current_stage: "capture",
+        ownership_status: "unowned",
+        first_touch_at: now,
+        last_touch_at: now,
+        source: form.source || "manual",
+        source_channel: "internal_manual",
+        intent_type: form.intent_type || "manual_intake",
+        buying_purpose: form.buying_purpose || "",
+        priority: form.priority || "standard",
+        country: form.country || "",
+        budget_min: form.budget_min ? Number(form.budget_min) : undefined,
+        budget_max: form.budget_max ? Number(form.budget_max) : undefined,
+        is_private_inventory: Boolean(form.is_private_inventory),
+        is_high_value: Boolean(form.is_high_value),
+        notes_summary: form.notes || ""
+      });
+
+      if ([form.full_name, form.email, form.mobile, form.whatsapp, form.country].some(Boolean)) {
+        await base44.entities.LeadIdentity.create({
+          lead_id: lead.id,
+          full_name: form.full_name || "",
+          email_normalised: normaliseEmail(form.email),
+          mobile_normalised: normalisePhone(form.mobile),
+          whatsapp_normalised: normalisePhone(form.whatsapp),
+          country: form.country || "",
+          identity_source: "internal_manual",
+          identity_confidence: 1,
+          is_primary_identity: true
+        });
+      }
+
+      await base44.entities.LeadEvent.create({
+        lead_id: lead.id,
+        event_type: "manual_intake_created",
+        actor_type: "internal",
+        summary: "Lead created manually from the buyer pipeline.",
+        reason: form.notes || "",
+        event_payload_json: {
+          source: form.source || "manual",
+          intent_type: form.intent_type || "manual_intake",
+          buying_purpose: form.buying_purpose || "",
+          full_name: form.full_name || ""
+        }
+      });
+
+      return lead;
+    },
+    onSuccess: async (lead) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["ops-leads-registry"] }),
+        queryClient.invalidateQueries({ queryKey: ["ops-dashboard-data"] }),
+        queryClient.invalidateQueries({ queryKey: ["ops-audit-feed"] })
+      ]);
+      setFilters((current) => ({ ...current, search: lead.lead_code || "" }));
+      toast({
+        title: "Lead created",
+        description: `${lead.lead_code || lead.id} is ready in the buyer pipeline.`
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Lead could not be created",
+        description: error?.message || "Manual lead intake failed.",
+        variant: "destructive"
+      });
+    }
+  });
+
   const filteredCases = useMemo(() => buyerCases.filter((item) => {
     const searchMatch = !filters.search || [
       item.identityName,
@@ -244,7 +326,40 @@ export default function OpsLeads() {
       <SectionHeading
         eyebrow="Buyer pipeline"
         title="One board for buyer intake, protection, premium handling, and money"
-        description="This view turns the lead registry into a workflow board. Each buyer card now carries its linked premium and commercial state so staff can work from stage to stage instead of jumping between modules."
+        description="This page is the working desk for buyer operations. The board stays primary, the raw registry stays secondary, and manual lead intake now starts here."
+        action={(
+          <div className="flex flex-wrap gap-2">
+            <WorkflowDialog
+              title="Add lead manually"
+              description="Create a buyer case directly from operations when the enquiry comes in by phone, WhatsApp, referral, or offline handoff."
+              actionLabel="Create lead"
+              loading={manualLead.isPending}
+              fields={[
+                { key: "full_name", label: "Buyer name", required: true },
+                { key: "mobile", label: "Mobile" },
+                { key: "whatsapp", label: "WhatsApp" },
+                { key: "email", label: "Email" },
+                { key: "country", label: "Country" },
+                { key: "source", label: "Source", type: "select", options: ["manual", "phone", "whatsapp", "referral", "walk_in", "partner_referral", "other"], required: true },
+                { key: "intent_type", label: "Intent summary" },
+                { key: "buying_purpose", label: "Buying purpose" },
+                { key: "priority", label: "Priority", type: "select", options: ["standard", "priority", "critical"], required: true },
+                { key: "budget_min", label: "Budget min", type: "number" },
+                { key: "budget_max", label: "Budget max", type: "number" },
+                { key: "is_private_inventory", label: "Private inventory", type: "checkbox", fullWidth: false },
+                { key: "is_high_value", label: "High value", type: "checkbox", fullWidth: false },
+                { key: "notes", label: "Notes", type: "textarea" }
+              ]}
+              initialValues={{ source: "manual", priority: "standard" }}
+              onSubmit={(form) => manualLead.mutateAsync(form)}
+            >
+              <Button>Add lead manually</Button>
+            </WorkflowDialog>
+            <Button variant="outline" onClick={() => setShowRegistry((current) => !current)}>
+              {showRegistry ? "Hide raw registry" : "Show raw registry"}
+            </Button>
+          </div>
+        )}
       />
       <AccessGuard permission="leads.read">
         <div className="space-y-6">
@@ -270,18 +385,30 @@ export default function OpsLeads() {
 
           <DuplicateQueueCard items={duplicateQueue} />
 
-          <Tabs defaultValue="board" className="space-y-4">
-            <TabsList className="h-auto rounded-[1.3rem] bg-muted/70 p-1">
-              <TabsTrigger value="board" className="rounded-[1rem] px-4 py-2">Pipeline board</TabsTrigger>
-              <TabsTrigger value="registry" className="rounded-[1rem] px-4 py-2">Advanced registry</TabsTrigger>
-            </TabsList>
-            <TabsContent value="board" className="space-y-4">
-              <LeadPipelineBoard items={filteredCases} onOpenCase={setSelectedCaseId} />
-            </TabsContent>
-            <TabsContent value="registry">
-              <InternalLeadTable leads={registryRows} />
-            </TabsContent>
-          </Tabs>
+          <div className="space-y-4">
+            <LeadPipelineBoard items={filteredCases} onOpenCase={setSelectedCaseId} />
+
+            <Card className="rounded-[2rem] border-white/10 bg-card/75">
+              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle className="text-lg">Raw registry</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">Only open this when you need the flat list. Daily work should stay on the board above.</p>
+                </div>
+                <Button variant="outline" onClick={() => setShowRegistry((current) => !current)}>
+                  {showRegistry ? "Hide raw registry" : "Open raw registry"}
+                </Button>
+              </CardHeader>
+              {showRegistry ? (
+                <CardContent>
+                  <InternalLeadTable leads={registryRows} />
+                </CardContent>
+              ) : (
+                <CardContent className="pt-0 text-sm text-muted-foreground">
+                  The raw registry is hidden by default so the page stays focused on the live workflow.
+                </CardContent>
+              )}
+            </Card>
+          </div>
 
           <BuyerCaseDeskDrawer
             item={selectedCase}

@@ -21,6 +21,7 @@ import QueueCard from "@/components/common/QueueCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { listEntitySafe } from "@/lib/base44Safeguards";
 import { compactLabel, formatCurrency, getEntitlementAmount, isOverdueDate } from "@/lib/revenue";
 
 function WorkspacePortalCard({ title, badge, description, rules, path, actionLabel, icon: Icon }) {
@@ -105,11 +106,11 @@ export default function OpsDashboard() {
         base44.entities.LeadAssignment.list("-updated_date", 300),
         base44.entities.ComplianceCase.list("-updated_date", 300),
         base44.entities.Listing.list("-updated_date", 300),
-        base44.entities.RevenueEntitlement.list("-updated_date", 300),
-        base44.entities.InvoiceRecord.list("-updated_date", 300),
-        base44.entities.RevenueDispute.list("-updated_date", 300),
-        base44.entities.ConciergeCase.list("-updated_date", 300),
-        base44.entities.ConciergeTask.list("-updated_date", 400)
+        listEntitySafe("RevenueEntitlement", "-updated_date", 300),
+        listEntitySafe("InvoiceRecord", "-updated_date", 300),
+        listEntitySafe("RevenueDispute", "-updated_date", 300),
+        listEntitySafe("ConciergeCase", "-updated_date", 300),
+        listEntitySafe("ConciergeTask", "-updated_date", 400)
       ]);
 
       return { leads, assignments, complianceCases, listings, entitlements, invoices, disputes, conciergeCases, conciergeTasks };

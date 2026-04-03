@@ -19,7 +19,7 @@ export default function MobileWorkspaceDrawer({ items = [] }) {
       <SheetTrigger asChild>
         <Button variant="outline" className="rounded-full px-3 md:hidden">
           <ShieldCheck className="h-4 w-4" />
-          Operations
+          Ops Menu
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-80 border-white/10 bg-background/95">
@@ -33,18 +33,21 @@ export default function MobileWorkspaceDrawer({ items = [] }) {
               <div className="space-y-2">
                 {sectionItems.map((item) => {
                   const active = isActive(item.path);
+                  const Icon = item.icon;
                   return (
                     <Link
                       key={item.path}
                       to={item.path}
-                      className={`block rounded-[1.4rem] border px-4 py-3 text-sm transition ${
+                      className={`flex items-center gap-3 rounded-[1.2rem] border px-4 py-3 text-sm transition ${
                         active
-                          ? "border-primary/20 bg-primary text-primary-foreground"
+                          ? "border-primary/20 bg-primary/10 text-foreground"
                           : "border-white/10 text-muted-foreground hover:bg-muted hover:text-foreground"
                       }`}
                     >
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.95rem] ${active ? "bg-primary text-primary-foreground" : "bg-background/70 text-muted-foreground"}`}>
+                        {Icon ? <Icon className="h-4 w-4" /> : null}
+                      </div>
                       <div className="font-medium">{item.label}</div>
-                      {item.description ? <p className={`mt-1 text-xs ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{item.description}</p> : null}
                     </Link>
                   );
                 })}
