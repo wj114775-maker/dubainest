@@ -1,0 +1,54 @@
+{
+  "name": "CaseParticipant",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "participant_type": {
+      "type": "string",
+      "enum": [
+        "buyer",
+        "spouse",
+        "family_office_representative",
+        "concierge_manager",
+        "broker",
+        "lawyer",
+        "mortgage_adviser",
+        "visa_adviser",
+        "relocation_adviser",
+        "other"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "organisation": {
+      "type": "string"
+    },
+    "role_in_case": {
+      "type": "string"
+    },
+    "linked_user_id": {
+      "type": "string"
+    },
+    "is_primary": {
+      "type": "boolean",
+      "default": false
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "participant_type",
+    "name"
+  ]
+}

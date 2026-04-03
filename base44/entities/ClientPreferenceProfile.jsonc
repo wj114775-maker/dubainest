@@ -1,0 +1,39 @@
+{
+  "name": "ClientPreferenceProfile",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "lifestyle_preferences_json": {
+      "type": "object"
+    },
+    "risk_profile": {
+      "type": "string"
+    },
+    "investment_preferences_json": {
+      "type": "object"
+    },
+    "family_requirements_json": {
+      "type": "object"
+    },
+    "must_have_features_json": {
+      "type": "object"
+    },
+    "deal_breakers_json": {
+      "type": "object"
+    },
+    "travel_preferences_json": {
+      "type": "object"
+    },
+    "service_needs_json": {
+      "type": "object"
+    },
+    "privacy_expectations_json": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "case_id"
+  ]
+}

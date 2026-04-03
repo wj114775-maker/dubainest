@@ -28,35 +28,41 @@ export default function OpsDashboard() {
   const { data } = useQuery({
     queryKey: ["ops-dashboard-data"],
     queryFn: async () => {
-      const [leads, complianceCases, payouts, listings, disputes] = await Promise.all([
+      const [leads, complianceCases, entitlements, listings, disputes, conciergeCases, conciergeTasks] = await Promise.all([
         base44.entities.Lead.list("-updated_date", 200),
         base44.entities.ComplianceCase.list("-updated_date", 200),
-        base44.entities.Payout.list("-updated_date", 200),
+        base44.entities.RevenueEntitlement.list("-updated_date", 200),
         base44.entities.Listing.list("-updated_date", 200),
-        base44.entities.Dispute.list("-updated_date", 200),
+        base44.entities.RevenueDispute.list("-updated_date", 200),
+        base44.entities.ConciergeCase.list("-updated_date", 200),
+        base44.entities.ConciergeTask.list("-updated_date", 300),
       ]);
 
-      return { leads, complianceCases, payouts, listings, disputes };
+      return { leads, complianceCases, entitlements, listings, disputes, conciergeCases, conciergeTasks };
     },
-    initialData: { leads: [], complianceCases: [], payouts: [], listings: [], disputes: [] }
+    initialData: { leads: [], complianceCases: [], entitlements: [], listings: [], disputes: [], conciergeCases: [], conciergeTasks: [] }
   });
 
   const protectedLeads = data.leads.filter((lead) => ["locked", "protected", "soft_owned"].includes(lead.ownership_status)).length;
   const partnerSlaAtRisk = data.complianceCases.filter((item) => ["open", "triage", "under_review", "awaiting_evidence"].includes(item.status)).length;
-  const disputeExposure = data.payouts
-    .filter((item) => item.status === "failed")
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const revenueAwaitingPayment = data.entitlements
+    .filter((item) => ["approved", "invoiced", "awaiting_payment", "partially_paid", "disputed", "adjusted"].includes(item.entitlement_status))
+    .reduce((sum, item) => sum + Math.max(0, Number(item.net_amount || item.gross_amount || 0) - Number(item.paid_amount || 0)), 0);
   const trustMedian = data.listings.length
     ? Math.round(data.listings.reduce((sum, item) => sum + Number(item.trust_score || 0), 0) / data.listings.length)
     : 0;
-  const activeDisputes = data.disputes.filter((item) => !["resolved", "dismissed", "closed"].includes(item.status)).length;
+  const activeDisputes = data.disputes.filter((item) => !["resolved", "rejected", "closed"].includes(item.status)).length;
+  const activeConcierge = data.conciergeCases.filter((item) => !["closed_won", "closed_lost", "archived"].includes(item.case_status)).length;
+  const conciergeOverdue = data.conciergeTasks.filter((item) => !["completed", "cancelled"].includes(item.status) && item.due_date && new Date(item.due_date) < new Date()).length;
 
   const metrics = [
     { label: "Protected leads", value: String(protectedLeads) },
+    { label: "Active concierge", value: String(activeConcierge) },
     { label: "Partner SLA at risk", value: String(partnerSlaAtRisk) },
-    { label: "Failed payout exposure", value: `AED ${disputeExposure.toLocaleString()}` },
+    { label: "Revenue awaiting payment", value: `AED ${revenueAwaitingPayment.toLocaleString()}` },
     { label: "Open disputes", value: String(activeDisputes) },
-    { label: "Trust score median", value: String(trustMedian) }
+    { label: "Trust score median", value: String(trustMedian) },
+    { label: "Concierge overdue tasks", value: String(conciergeOverdue) }
   ];
 
   const leadRows = data.leads.slice(0, 8).map((lead) => ({
@@ -70,7 +76,7 @@ export default function OpsDashboard() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Internal OS" title="Enterprise operating system for demand, trust and payout control" description="This workspace centralises revenue operations, partner performance, compliance risk and lead protection." action={<Button variant="outline" asChild><Link to="/ops/leads">Open lead workspace</Link></Button>} />
+      <SectionHeading eyebrow="Internal OS" title="Enterprise operating system for demand, trust and payout control" description="This workspace centralises revenue operations, premium concierge handling, partner performance, compliance risk and lead protection." action={<div className="flex flex-wrap gap-2"><Button variant="outline" asChild><Link to="/ops/leads">Open lead workspace</Link></Button><Button variant="outline" asChild><Link to="/ops/concierge">Open concierge workspace</Link></Button></div>} />
       <AccessGuard permission="audit.read">
         <AdminMetricGrid metrics={metrics} />
       </AccessGuard>

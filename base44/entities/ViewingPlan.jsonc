@@ -1,0 +1,55 @@
+{
+  "name": "ViewingPlan",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "awaiting_internal_review",
+        "awaiting_client_approval",
+        "approved",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "date_start": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "date_end": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "city": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "approved_by_client": {
+      "type": "boolean",
+      "default": false
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "title",
+    "status"
+  ]
+}

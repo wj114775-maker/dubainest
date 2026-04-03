@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
+import { base44 } from '@/api/base44Client';
 import { captureBuyerIntent } from '@/components/leads/buyerLeadActions';
 
 const defaultForm = {
@@ -36,25 +37,55 @@ export default function BuyerIntentSheet({ open, onOpenChange, intentType, listi
   }, [isInvestor, isPrivateBuyer]);
 
   const mutation = useMutation({
-    mutationFn: () => captureBuyerIntent({
-      ...form,
-      budget_min: form.budget_min ? Number(form.budget_min) : undefined,
-      budget_max: form.budget_max ? Number(form.budget_max) : undefined,
-      buying_purpose: form.buyer_mode,
-      offplan_or_ready: form.buyer_mode === 'investor' ? 'either' : 'unknown',
-      cash_or_mortgage: form.financing,
-      notes_summary: form.notes,
-      intent_type: intentType,
-      listing_id: listingId,
-      project_id: projectId,
-      area_id: areaId,
-      source_channel: 'web',
-      source: 'enquiry',
-      lead_type: 'buyer',
-      is_private_inventory: intentType === 'request_private_inventory',
-      is_concierge: intentType === 'request_concierge',
-      is_high_value: intentType === 'request_private_inventory' || Number(form.budget_max || 0) >= 5000000,
-    }),
+    mutationFn: async () => {
+      const lead = await captureBuyerIntent({
+        ...form,
+        budget_min: form.budget_min ? Number(form.budget_min) : undefined,
+        budget_max: form.budget_max ? Number(form.budget_max) : undefined,
+        buying_purpose: form.buyer_mode,
+        offplan_or_ready: form.buyer_mode === 'investor' ? 'either' : 'unknown',
+        cash_or_mortgage: form.financing,
+        notes_summary: form.notes,
+        intent_type: intentType,
+        listing_id: listingId,
+        project_id: projectId,
+        area_id: areaId,
+        source_channel: 'web',
+        source: 'enquiry',
+        lead_type: 'buyer',
+        is_private_inventory: intentType === 'request_private_inventory',
+        is_concierge: intentType === 'request_concierge',
+        is_high_value: intentType === 'request_private_inventory' || Number(form.budget_max || 0) >= 5000000,
+      });
+
+      const shouldOpenConcierge = ["request_private_inventory", "request_concierge", "golden_visa"].includes(intentType) || Number(form.budget_max || 0) >= 5000000;
+      if (shouldOpenConcierge && lead?.id) {
+        await base44.functions.invoke("openConciergeCase", {
+          lead_id: lead.id,
+          full_name: form.full_name,
+          email: form.email,
+          mobile: form.mobile,
+          whatsapp: form.whatsapp,
+          country: form.country,
+          budget_min: Number(form.budget_min || 0),
+          budget_max: Number(form.budget_max || 0),
+          preferred_areas: form.preferred_area ? [form.preferred_area] : [],
+          property_objective: form.buyer_mode,
+          buying_timeframe: form.purchase_timeline,
+          summary: form.notes || title,
+          special_instructions: form.notes,
+          source: "buyer_intent",
+          intent_type: intentType,
+          is_private_inventory: intentType === "request_private_inventory",
+          is_hnw: intentType === "request_private_inventory" || Number(form.budget_max || 0) >= 5000000,
+          is_golden_visa_case: intentType === "golden_visa",
+          requires_nda: intentType === "request_private_inventory" || form.buyer_mode === "private",
+          service_tier: intentType === "request_private_inventory" || form.buyer_mode === "private" ? "private_client" : intentType === "golden_visa" ? "premium" : "standard"
+        });
+      }
+
+      return lead;
+    },
     onSuccess: () => {
       toast({ title: 'Request captured' });
       setForm(defaultForm);

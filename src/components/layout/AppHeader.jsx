@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Building2, LayoutDashboard, Menu, ShieldCheck } from "lucide-react";
+import { Bell, Building2, Menu, ShieldCheck } from "lucide-react";
 import AdminWorkspaceSwitcher from "@/components/layout/AdminWorkspaceSwitcher";
 import MobileWorkspaceDrawer from "@/components/layout/MobileWorkspaceDrawer";
 

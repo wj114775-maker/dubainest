@@ -5,8 +5,6 @@ import SectionHeading from "@/components/common/SectionHeading";
 import PayoutLedgerTable from "@/components/partner/PayoutLedgerTable";
 import AccessGuard from "@/components/admin/AccessGuard";
 import AdminRecordFormCard from "@/components/admin/AdminRecordFormCard";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 export default function OpsRevenue() {
   const queryClient = useQueryClient();
   const [payoutForm, setPayoutForm] = useState({ partner_agency_id: "", amount: "", currency: "AED", paid_on: "", status: "scheduled", immutable_reference: "" });

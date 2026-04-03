@@ -1,0 +1,206 @@
+{
+  "name": "ConciergeCase",
+  "type": "object",
+  "properties": {
+    "case_code": {
+      "type": "string"
+    },
+    "lead_id": {
+      "type": "string"
+    },
+    "buyer_user_id": {
+      "type": "string"
+    },
+    "case_type": {
+      "type": "string",
+      "enum": [
+        "private_inventory",
+        "concierge_standard",
+        "concierge_premium",
+        "relocation",
+        "hnw",
+        "family_office",
+        "golden_visa",
+        "multi_service"
+      ]
+    },
+    "case_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "intake_in_progress",
+        "qualification_complete",
+        "nda_pending",
+        "awaiting_documents",
+        "ready_for_matching",
+        "inventory_curation",
+        "partner_matching",
+        "viewing_planning",
+        "active_service",
+        "waiting_on_client",
+        "waiting_on_partner",
+        "deal_in_progress",
+        "post_deal_services",
+        "ready_for_closure",
+        "closed_won",
+        "closed_lost",
+        "archived"
+      ],
+      "default": "new"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "priority",
+        "premium",
+        "urgent",
+        "vip"
+      ],
+      "default": "standard"
+    },
+    "service_tier": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "premium",
+        "private_client",
+        "hnw"
+      ],
+      "default": "standard"
+    },
+    "budget_min": {
+      "type": "number"
+    },
+    "budget_max": {
+      "type": "number"
+    },
+    "preferred_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "property_objective": {
+      "type": "string"
+    },
+    "buying_timeframe": {
+      "type": "string"
+    },
+    "decision_complexity": {
+      "type": "string",
+      "enum": [
+        "single_decision_maker",
+        "multi_stakeholder",
+        "family_office",
+        "committee",
+        "high_touch"
+      ]
+    },
+    "is_private_inventory": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_hnw": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_family_office": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_relocation_case": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_golden_visa_case": {
+      "type": "boolean",
+      "default": false
+    },
+    "assigned_concierge_id": {
+      "type": "string"
+    },
+    "assigned_internal_team": {
+      "type": "string"
+    },
+    "primary_partner_id": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "special_instructions": {
+      "type": "string"
+    },
+    "confidentiality_level": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "confidential",
+        "restricted_private",
+        "strict_need_to_know"
+      ],
+      "default": "standard"
+    },
+    "case_visibility": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "restricted_private",
+        "hnw_restricted"
+      ],
+      "default": "standard"
+    },
+    "required_document_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sla_policy_code": {
+      "type": "string"
+    },
+    "sla_status": {
+      "type": "string",
+      "enum": [
+        "on_track",
+        "at_risk",
+        "breached"
+      ],
+      "default": "on_track"
+    },
+    "next_sla_due_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_client_touch_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_internal_touch_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "opened_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "case_code",
+    "case_type",
+    "case_status",
+    "priority",
+    "opened_at"
+  ]
+}

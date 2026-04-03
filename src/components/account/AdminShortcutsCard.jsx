@@ -1,12 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, Users, Briefcase, Lock, ScrollText, LayoutDashboard } from "lucide-react";
+import { ShieldCheck, Users, Briefcase, Lock, ScrollText, LayoutDashboard, Gem } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const shortcuts = [
   { label: "Open Internal OS", path: "/ops", icon: LayoutDashboard },
   { label: "Open Admin Console", path: "/ops/admin", icon: ShieldCheck },
   { label: "Open Leads", path: "/ops/leads", icon: Briefcase },
+  { label: "Open Concierge", path: "/ops/concierge", icon: Gem },
   { label: "Open Users", path: "/ops/users", icon: Users },
   { label: "Open Security", path: "/ops/security", icon: Lock },
   { label: "Open Audit", path: "/ops/audit", icon: ScrollText },

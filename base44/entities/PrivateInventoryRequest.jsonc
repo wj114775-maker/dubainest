@@ -1,0 +1,66 @@
+{
+  "name": "PrivateInventoryRequest",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "lead_id": {
+      "type": "string"
+    },
+    "request_status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "nda_required",
+        "under_review",
+        "approved_for_release",
+        "shared",
+        "fulfilled",
+        "rejected",
+        "revoked"
+      ],
+      "default": "open"
+    },
+    "request_scope": {
+      "type": "string"
+    },
+    "requested_by": {
+      "type": "string"
+    },
+    "assigned_to": {
+      "type": "string"
+    },
+    "request_summary": {
+      "type": "string"
+    },
+    "confidentiality_level": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "confidential",
+        "restricted_private"
+      ],
+      "default": "confidential"
+    },
+    "opened_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolved_by": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "request_status",
+    "opened_at"
+  ]
+}

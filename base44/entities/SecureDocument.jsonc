@@ -1,0 +1,62 @@
+{
+  "name": "SecureDocument",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "nda_id": {
+      "type": "string"
+    },
+    "document_type": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "internal_only",
+        "concierge_only",
+        "partner_visible",
+        "client_visible",
+        "restricted_private"
+      ],
+      "default": "internal_only"
+    },
+    "uploaded_by": {
+      "type": "string"
+    },
+    "uploaded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "security_level": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "confidential",
+        "restricted_private",
+        "hnw"
+      ],
+      "default": "standard"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "last_accessed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "case_id",
+    "document_type",
+    "title",
+    "file_url"
+  ]
+}

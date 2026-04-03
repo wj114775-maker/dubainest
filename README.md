@@ -28,6 +28,36 @@ VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
 
 Run the app: `npm run dev`
 
+**Phase 3 verification**
+
+Run the local verification bundle:
+
+```bash
+npm run verify:phase3
+```
+
+Phase 3 handoff docs:
+
+- `docs/phase3-signoff.md`
+- `docs/phase3-live-qa-checklist.md`
+- `docs/phase3-test-data-matrix.md`
+
+Phase 4 foundation docs:
+
+- `docs/phase4-foundation.md`
+- `docs/phase4-live-qa-checklist.md`
+
+Phase 5 foundation docs:
+
+- `docs/phase5-foundation.md`
+- `docs/phase5-live-qa-checklist.md`
+
+Run the local verification bundle:
+
+```bash
+npm run verify:phase5
+```
+
 **Publish your changes**
 
 Open [Base44.com](http://Base44.com) and click on Publish.

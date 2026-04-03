@@ -19,7 +19,7 @@ export default function GoldenVisa() {
 
       const visaLeads = leads.filter((lead) => lead.golden_visa_interest || lead.intent_type === "golden_visa" || lead.source === "guide");
       const publishedVisaGuides = guides.filter((guide) => guide.category === "golden_visa" && guide.status === "published").length;
-      const openConcierge = conciergeCases.filter((item) => !["closed", "resolved", "completed"].includes(item.status)).length;
+      const openConcierge = conciergeCases.filter((item) => !["closed_won", "closed_lost", "archived"].includes(item.case_status || item.status)).length;
 
       return {
         qualificationPath: visaLeads.length ? "Property" : "Not started",

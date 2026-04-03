@@ -1,0 +1,54 @@
+{
+  "name": "ViewingStop",
+  "type": "object",
+  "properties": {
+    "viewing_plan_id": {
+      "type": "string"
+    },
+    "case_id": {
+      "type": "string"
+    },
+    "listing_id": {
+      "type": "string"
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "duration_minutes": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "confirmed",
+        "completed",
+        "cancelled",
+        "rescheduled",
+        "no_show"
+      ],
+      "default": "draft"
+    },
+    "meeting_point": {
+      "type": "string"
+    },
+    "broker_id": {
+      "type": "string"
+    },
+    "area_label": {
+      "type": "string"
+    },
+    "order_index": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "viewing_plan_id",
+    "case_id",
+    "status"
+  ]
+}

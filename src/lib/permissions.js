@@ -41,8 +41,20 @@ export const permissionBundles = {
     "audit.read"
   ],
   revenueGovernance: [
+    "revenue.read",
+    "revenue.approve",
+    "revenue.adjust",
+    "revenue.reverse",
+    "revenue.writeoff",
+    "revenue.dispute.manage",
     "commission_rules.read",
     "commission_rules.manage",
+    "invoice.create",
+    "invoice.read",
+    "invoice.manage",
+    "payment.read",
+    "payment.manage",
+    "settlement.manage",
     "payouts.read",
     "payouts.manage",
     "audit.read"
@@ -60,22 +72,52 @@ export const permissionBundles = {
   ],
   conciergeAccess: [
     "users.read",
-    "leads.read"
+    "leads.read",
+    "concierge_cases.read",
+    "concierge_cases.create",
+    "concierge_cases.manage",
+    "concierge_tasks.manage",
+    "concierge_documents.manage",
+    "private_inventory.manage",
+    "nda.manage",
+    "viewing_plans.manage",
+    "service_referrals.manage",
+    "hnw_cases.read",
+    "hnw_cases.manage",
+    "private_documents.read",
+    "private_documents.manage"
   ],
   partnerAdminAccess: [
     "partners.read",
     "listings.read",
-    "leads.read"
+    "leads.read",
+    "partner_case.read",
+    "partner_case.update_limited",
+    "partner_viewings.manage_limited",
+    "partner_documents.upload_limited",
+    "partner_revenue.read",
+    "partner_invoice.read",
+    "partner_dispute.create",
+    "partner_payment_evidence.upload"
   ],
   partnerBrokerAccess: [
     "listings.read",
-    "leads.read"
+    "leads.read",
+    "partner_case.read",
+    "partner_case.update_limited",
+    "partner_viewings.manage_limited",
+    "partner_documents.upload_limited",
+    "partner_revenue.read",
+    "partner_invoice.read",
+    "partner_dispute.create",
+    "partner_payment_evidence.upload"
   ]
 };
 
 export const legacyRolePermissions = {
-  admin: [...permissionBundles.adminCore, ...permissionBundles.partnerGovernance, ...permissionBundles.complianceGovernance, ...permissionBundles.revenueGovernance],
-  ops: ["users.read", "users.update", "partners.read", "partners.manage", "assignments.read", "audit.read", "settings.read"],
+  admin: [...permissionBundles.adminCore, ...permissionBundles.partnerGovernance, ...permissionBundles.complianceGovernance, ...permissionBundles.revenueGovernance, ...permissionBundles.conciergeAccess],
+  ops: ["users.read", "users.update", "partners.read", "partners.manage", "assignments.read", "audit.read", "settings.read", ...permissionBundles.conciergeAccess],
+  concierge: [...permissionBundles.conciergeAccess],
   compliance: [...permissionBundles.complianceGovernance],
   finance: [...permissionBundles.revenueGovernance],
   content: [...permissionBundles.contentGovernance],

@@ -8,6 +8,36 @@
     "lead_id": {
       "type": "string"
     },
+    "listing_id": {
+      "type": "string"
+    },
+    "concierge_case_id": {
+      "type": "string"
+    },
+    "private_inventory_request_id": {
+      "type": "string"
+    },
+    "nda_tracking_id": {
+      "type": "string"
+    },
+    "viewing_plan_id": {
+      "type": "string"
+    },
+    "service_referral_id": {
+      "type": "string"
+    },
+    "entitlement_id": {
+      "type": "string"
+    },
+    "invoice_id": {
+      "type": "string"
+    },
+    "dispute_id": {
+      "type": "string"
+    },
+    "settlement_id": {
+      "type": "string"
+    },
     "title": {
       "type": "string"
     },
@@ -31,6 +61,12 @@
         "read"
       ],
       "default": "queued"
+    },
+    "category": {
+      "type": "string"
+    },
+    "route_path": {
+      "type": "string"
     }
   },
   "required": [

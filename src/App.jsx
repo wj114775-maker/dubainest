@@ -18,6 +18,7 @@ import GoldenVisa from '@/pages/GoldenVisa';
 import PartnerOverview from '@/pages/PartnerOverview';
 import PartnerLeads from '@/pages/PartnerLeads';
 import PartnerListings from '@/pages/PartnerListings';
+import PartnerConcierge from '@/pages/PartnerConcierge';
 import PartnerPayouts from '@/pages/PartnerPayouts';
 import PartnerDisputes from '@/pages/PartnerDisputes';
 import OpsDashboard from '@/pages/OpsDashboard';
@@ -26,7 +27,10 @@ import OpsLeadDetail from '@/pages/OpsLeadDetail';
 import OpsCompliance from '@/pages/OpsCompliance';
 import OpsListings from '@/pages/OpsListings';
 import OpsListingDetail from '@/pages/OpsListingDetail';
+import OpsConcierge from '@/pages/OpsConcierge';
+import OpsConciergeDetail from '@/pages/OpsConciergeDetail';
 import OpsRevenue from '@/pages/OpsRevenue';
+import OpsRevenueDetail from '@/pages/OpsRevenueDetail';
 import OpsContent from '@/pages/OpsContent';
 import OpsAudit from '@/pages/OpsAudit';
 import OpsSettings from '@/pages/OpsSettings';
@@ -101,6 +105,7 @@ const AuthenticatedApp = () => {
       <Route path="/partner" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerOverview /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/partner/leads" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerLeads /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/partner/listings" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerListings /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/partner/concierge" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerConcierge /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/partner/payouts" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerPayouts /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/partner/disputes" element={isPartner ? <AppFrame mode="partner" title="Partner OS"><PartnerDisputes /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsDashboard /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
@@ -118,7 +123,10 @@ const AuthenticatedApp = () => {
       <Route path="/ops/compliance" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsCompliance /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/listings" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsListings /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/listings/:id" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsListingDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/concierge" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsConcierge /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/concierge/:id" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsConciergeDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/revenue" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsRevenue /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/revenue/:id" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsRevenueDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/content" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsContent /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/audit" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsAudit /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/settings" element={isInternal ? <AppFrame mode="internal" title="Internal OS"><OpsSettings /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />

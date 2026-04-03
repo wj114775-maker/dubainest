@@ -1,0 +1,61 @@
+{
+  "name": "NDATracking",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "nda_status": {
+      "type": "string",
+      "enum": [
+        "not_required",
+        "pending",
+        "sent",
+        "signed",
+        "expired",
+        "revoked"
+      ],
+      "default": "pending"
+    },
+    "required_for": {
+      "type": "string"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "document_url": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "sent_by": {
+      "type": "string"
+    },
+    "signed_by": {
+      "type": "string"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "internal_only",
+        "client_visible",
+        "restricted_private"
+      ],
+      "default": "restricted_private"
+    }
+  },
+  "required": [
+    "case_id",
+    "nda_status"
+  ]
+}

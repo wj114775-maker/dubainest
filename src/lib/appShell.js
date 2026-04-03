@@ -10,7 +10,7 @@ export const defaultAppConfig = {
 export const roleGroups = {
   buyer: ["buyer"],
   partner: ["partner_admin", "partner_broker"],
-  internal: ["admin", "ops", "compliance", "finance", "content"]
+  internal: ["admin", "ops", "concierge", "compliance", "finance", "content"]
 };
 
 export const navItems = {
@@ -26,6 +26,7 @@ export const navItems = {
     { label: "Overview", path: "/partner" },
     { label: "Leads", path: "/partner/leads" },
     { label: "Listings", path: "/partner/listings" },
+    { label: "Concierge", path: "/partner/concierge" },
     { label: "Payouts", path: "/partner/payouts" },
     { label: "Disputes", path: "/partner/disputes" }
   ],
@@ -36,6 +37,7 @@ export const navItems = {
     { label: "Users", path: "/ops/users" },
     { label: "Compliance", path: "/ops/compliance" },
     { label: "Listings", path: "/ops/listings" },
+    { label: "Concierge", path: "/ops/concierge" },
     { label: "Revenue", path: "/ops/revenue" },
     { label: "Audit", path: "/ops/audit" },
     { label: "Settings", path: "/ops/settings" }

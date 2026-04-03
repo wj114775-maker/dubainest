@@ -15,7 +15,8 @@ Deno.serve(async (req) => {
     const permissionCodes = new Set(activeAssignments.flatMap((assignment) => [...(assignment.permission_codes || []), ...(assignment.bundle_codes || [])]));
     const scopePermissionMap = {
       compliance: ['admin', 'compliance_rules.manage', 'compliance_cases.manage'],
-      finance: ['admin', 'commission_rules.manage', 'payouts.manage'],
+      concierge: ['admin', 'concierge_cases.manage', 'concierge_tasks.manage', 'concierge_documents.manage', 'private_inventory.manage', 'nda.manage', 'viewing_plans.manage', 'service_referrals.manage', 'hnw_cases.manage', 'private_documents.manage'],
+      finance: ['admin', 'commission_rules.manage', 'revenue.approve', 'revenue.adjust', 'revenue.reverse', 'revenue.writeoff', 'revenue.dispute.manage', 'invoice.create', 'invoice.manage', 'payment.manage', 'settlement.manage', 'payouts.manage'],
       lead: ['admin', 'assignments.manage'],
       settings: ['admin', 'settings.manage']
     };
@@ -25,7 +26,7 @@ Deno.serve(async (req) => {
     if (!hasScopedAccess) {
       return Response.json({ error: 'Forbidden: Access denied' }, { status: 403 });
     }
-    const allowed = ['ComplianceRule', 'CommissionRule', 'LeadProtectionRule', 'Payout', 'ComplianceCase'];
+    const allowed = ['ComplianceRule', 'CommissionRule', 'LeadProtectionRule', 'Payout', 'PayoutRecord', 'InvoiceRecord', 'RevenueEntitlement', 'RevenueDispute', 'RevenueAdjustment', 'SettlementRecord', 'RevenueEvidence', 'ComplianceCase', 'ConciergeCase', 'ConciergeMilestone', 'ConciergeTask', 'CaseParticipant', 'PrivateInventoryRequest', 'NDATracking', 'SecureDocument', 'ServiceReferral', 'ViewingPlan', 'ViewingStop', 'ClientJourneyEvent', 'ConciergeNote', 'ClientPreferenceProfile'];
 
     if (!allowed.includes(entityName) || !action) {
       return Response.json({ error: 'Invalid entity or action' }, { status: 400 });

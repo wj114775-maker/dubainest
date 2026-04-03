@@ -1,0 +1,46 @@
+{
+  "name": "ConciergeMilestone",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "milestone_type": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_progress",
+        "blocked",
+        "completed",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_by": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "milestone_type",
+    "title",
+    "status"
+  ]
+}

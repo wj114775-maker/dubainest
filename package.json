@@ -9,7 +9,10 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify:phase3": "npm run lint && npm run typecheck && npm run build",
+    "verify:phase4": "npm run lint && npm run typecheck && npm run build",
+    "verify:phase5": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.24",

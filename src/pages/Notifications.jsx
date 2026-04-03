@@ -23,6 +23,23 @@ export default function Notifications() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications-inbox"] })
   });
 
+  const getActionLink = (item) => {
+    if (item.route_path) return item.route_path;
+    if (item.lead_id) return `/ops/leads/${item.lead_id}`;
+    if (item.concierge_case_id) return item.user_id ? "/partner/concierge" : `/ops/concierge/${item.concierge_case_id}`;
+    if (item.private_inventory_request_id || item.nda_tracking_id || item.viewing_plan_id || item.service_referral_id) {
+      return item.user_id ? "/partner/concierge" : `/ops/concierge/${item.concierge_case_id || ""}`;
+    }
+    if (item.listing_id) return item.user_id ? "/partner/listings" : `/ops/listings/${item.listing_id}`;
+    if (item.entitlement_id) return item.user_id ? "/partner/payouts" : `/ops/revenue/${item.entitlement_id}`;
+    if (item.invoice_id || item.dispute_id || item.settlement_id) return item.user_id ? "/partner/payouts" : "/ops/revenue";
+    if (item.body?.includes("listing") && item.user_id) return "/partner/listings";
+    if (/invoice|payment|revenue|settlement|dispute/i.test(`${item.title || ""} ${item.body || ""}`)) {
+      return item.user_id ? "/partner/payouts" : "/ops/revenue";
+    }
+    return "";
+  };
+
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Inbox" title="Operational notifications" description="Review alerts, reminders and workflow notices linked to lead and supply operations." />
@@ -37,8 +54,7 @@ export default function Notifications() {
                 <p className="mt-1 text-xs text-muted-foreground">{item.status || "queued"}</p>
               </div>
               <div className="flex gap-2">
-                {item.lead_id ? <Button variant="outline" asChild><Link to={`/ops/leads/${item.lead_id}`}>Open lead</Link></Button> : null}
-                {item.body?.includes("listing") && item.user_id ? <Button variant="outline" asChild><Link to="/partner/listings">Open listings</Link></Button> : null}
+                {getActionLink(item) ? <Button variant="outline" asChild><Link to={getActionLink(item)}>Open</Link></Button> : null}
                 {item.status !== "read" ? <Button variant="ghost" onClick={() => markRead.mutate(item.id)}>Mark read</Button> : null}
               </div>
             </div>

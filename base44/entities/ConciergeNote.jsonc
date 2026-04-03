@@ -1,0 +1,46 @@
+{
+  "name": "ConciergeNote",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "note_type": {
+      "type": "string",
+      "enum": [
+        "internal_update",
+        "client_preference",
+        "risk_note",
+        "service_note",
+        "viewing_note",
+        "escalation",
+        "partner_note"
+      ],
+      "default": "internal_update"
+    },
+    "content": {
+      "type": "string"
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "internal_only",
+        "concierge_only",
+        "partner_visible"
+      ],
+      "default": "internal_only"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "case_id",
+    "content",
+    "created_at"
+  ]
+}

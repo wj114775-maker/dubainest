@@ -1,0 +1,70 @@
+{
+  "name": "ConciergeTask",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "task_type": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "assigned_to": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "urgent"
+      ],
+      "default": "normal"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_progress",
+        "blocked",
+        "completed",
+        "cancelled"
+      ],
+      "default": "open"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_by": {
+      "type": "string"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "internal_only",
+        "partner_visible"
+      ],
+      "default": "internal_only"
+    },
+    "created_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "task_type",
+    "title",
+    "status"
+  ]
+}

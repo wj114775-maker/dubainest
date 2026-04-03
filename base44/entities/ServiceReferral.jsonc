@@ -1,0 +1,66 @@
+{
+  "name": "ServiceReferral",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "service_type": {
+      "type": "string",
+      "enum": [
+        "legal",
+        "mortgage",
+        "visa",
+        "company_setup",
+        "relocation",
+        "furnishing",
+        "property_management",
+        "school_advisory",
+        "tax",
+        "other"
+      ]
+    },
+    "partner_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "accepted",
+        "in_progress",
+        "completed",
+        "rejected",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "referred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string"
+    },
+    "assigned_contact_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "service_type",
+    "status"
+  ]
+}
