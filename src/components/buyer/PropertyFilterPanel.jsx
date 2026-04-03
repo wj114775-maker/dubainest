@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 const priceSteps = ["0", "1000000", "2000000", "3000000", "5000000", "7500000", "10000000", "15000000", "25000000", "50000000"];
 const areaSteps = ["0", "500", "1000", "1500", "2000", "3000", "5000", "7500", "10000", "15000"];
-const advancedKeys = ["parkingSpaces", "furnishingStatus", "keywords", "withFloorPlans", "privateInventoryOnly", "trustedOnly", "showcaseOnly"];
+const advancedKeys = ["parkingSpaces", "furnishingStatus", "keywords", "withFloorPlans", "privateInventoryOnly", "trustedOnly"];
 
 const formatPrice = (value) => {
   if (value === "0") return "Any";
@@ -263,13 +263,6 @@ export default function PropertyFilterPanel({
                   <Switch checked={filters.trustedOnly} onCheckedChange={(checked) => updateField("trustedOnly", checked)} />
                 </div>
 
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Showcase demos only</p>
-                    <p className="text-xs text-muted-foreground">Use this when you want to review the styled demo stock specifically.</p>
-                  </div>
-                  <Switch checked={filters.showcaseOnly} onCheckedChange={(checked) => updateField("showcaseOnly", checked)} />
-                </div>
               </div>
             </CollapsibleContent>
           </div>

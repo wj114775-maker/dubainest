@@ -300,6 +300,7 @@ function normalizeBuyerListing(listing) {
   const bathrooms = Number(listing.bathrooms || bedrooms || 0);
   const parkingSpaces = listing.parking_spaces ?? listing.car_spaces ?? Math.max(Math.min(bedrooms || 1, 4), 1);
   const completionStatus = listing.completion_status || "ready";
+  const description = String(listing.description || "").replace(/\bshowcase\b/gi, "listing");
 
   return {
     purpose: "buy",
@@ -311,6 +312,7 @@ function normalizeBuyerListing(listing) {
     handover_label: completionStatus === "off_plan" ? "Future handover" : "",
     developer_name: "",
     ...listing,
+    description,
     bedrooms,
     bathrooms,
     parking_spaces: parkingSpaces,

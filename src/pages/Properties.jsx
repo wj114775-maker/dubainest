@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpDown, ChevronDown, SlidersHorizontal } from "lucide-react";
-import { createSearchParams, useSearchParams } from "react-router-dom";
+import { ArrowUpDown, ChevronDown, List, Map, SlidersHorizontal } from "lucide-react";
+import { createSearchParams, Link, useSearchParams } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ListingListRow from "@/components/buyer/ListingListRow";
 import PropertyFilterPanel from "@/components/buyer/PropertyFilterPanel";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import useAppConfig from "@/hooks/useAppConfig";
 import { getShowcaseListings, isShowcaseListing, loadBuyerListings } from "@/lib/buyerListings";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,8 @@ const defaultFilters = {
   showcaseOnly: false,
   sortBy: "popular",
 };
+
+const getViewModeFromSearchParams = (searchParams) => searchParams.get("map_active") === "true" ? "map" : "list";
 
 const filtersFromSearchParams = (searchParams) => ({
   ...defaultFilters,
@@ -93,8 +96,8 @@ const formatAreaShort = (value) => {
   return `${number.toLocaleString()} sqft`;
 };
 
-const filterSummaryChips = (filters) => {
-  const chips = ["Buy", "List view"];
+const filterSummaryChips = (filters, viewMode) => {
+  const chips = ["Buy", viewMode === "map" ? "Map view" : "List view"];
 
   if (filters.location.trim()) chips.push(filters.location.trim());
   if (filters.completionStatus === "off_plan") chips.push("Off-Plan");
@@ -108,18 +111,19 @@ const filterSummaryChips = (filters) => {
   if (filters.privateInventoryOnly) chips.push("Private Inventory");
   if (filters.withFloorPlans) chips.push("Floor plans");
   if (filters.trustedOnly) chips.push("Trusted only");
-  if (filters.showcaseOnly) chips.push("Showcase only");
 
   return chips;
 };
 
 export default function Properties() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { data: appConfig } = useAppConfig();
   const [openIntent, setOpenIntent] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [locationsExpanded, setLocationsExpanded] = useState(false);
   const [filters, setFilters] = useState(() => filtersFromSearchParams(searchParams));
+  const [viewMode, setViewMode] = useState(() => getViewModeFromSearchParams(searchParams));
 
   const { data: listings = [] } = useQuery({
     queryKey: ["buyer-properties-v2"],
@@ -128,28 +132,46 @@ export default function Properties() {
   });
 
   useEffect(() => {
-    const next = filtersFromSearchParams(searchParams);
-    const nextString = JSON.stringify(next);
-    const currentString = JSON.stringify(filters);
-    if (nextString !== currentString) {
-      setFilters(next);
+    const nextFilters = filtersFromSearchParams(searchParams);
+    const nextViewMode = getViewModeFromSearchParams(searchParams);
+
+    if (JSON.stringify(nextFilters) !== JSON.stringify(filters)) {
+      setFilters(nextFilters);
+    }
+
+    if (nextViewMode !== viewMode) {
+      setViewMode(nextViewMode);
     }
   }, [searchParams]);
 
   useEffect(() => {
-    const nextParams = buildSearchParams(filters).toString();
-    const currentParams = searchParams.toString();
-    if (nextParams !== currentParams) {
+    const nextParams = buildSearchParams(filters);
+    if (viewMode === "map") {
+      nextParams.set("map_active", "true");
+    }
+
+    const nextString = nextParams.toString();
+    const currentString = searchParams.toString();
+    if (nextString !== currentString) {
       setSearchParams(nextParams, { replace: true });
     }
-  }, [filters]);
+  }, [filters, viewMode]);
 
   const propertyTypes = useMemo(
     () => Array.from(new Set(listings.map((listing) => listing.property_type).filter(Boolean))).sort(),
     [listings]
   );
 
-  const showcaseListings = useMemo(() => getShowcaseListings(4), []);
+  const featuredListings = useMemo(
+    () => [...listings]
+      .sort((left, right) => {
+        const leftScore = Number(Boolean(left.is_private_inventory)) * 20 + Number(Boolean(left.is_off_plan)) * 10 + Number(left.trust_score || 0);
+        const rightScore = Number(Boolean(right.is_private_inventory)) * 20 + Number(Boolean(right.is_off_plan)) * 10 + Number(right.trust_score || 0);
+        return rightScore - leftScore;
+      })
+      .slice(0, 4),
+    [listings]
+  );
 
   const areaOptions = useMemo(
     () => Array.from(new Set(listings.map((listing) => listing.area_name).filter(Boolean))).sort(),
@@ -186,22 +208,16 @@ export default function Properties() {
 
       const matchesLocation = !searchTerm || searchableText.includes(searchTerm);
       const matchesKeywords = !keywordTerm || searchableText.includes(keywordTerm);
-      const matchesCompletion =
-        filters.completionStatus === "all" || listing.completion_status === filters.completionStatus;
-      const matchesPropertyType =
-        filters.propertyType === "all" || listing.property_type === filters.propertyType;
-      const matchesBedrooms =
-        filters.bedrooms === "any" || Number(listing.bedrooms || 0) >= Number(filters.bedrooms);
-      const matchesBathrooms =
-        filters.bathrooms === "any" || Number(listing.bathrooms || 0) >= Number(filters.bathrooms);
+      const matchesCompletion = filters.completionStatus === "all" || listing.completion_status === filters.completionStatus;
+      const matchesPropertyType = filters.propertyType === "all" || listing.property_type === filters.propertyType;
+      const matchesBedrooms = filters.bedrooms === "any" || Number(listing.bedrooms || 0) >= Number(filters.bedrooms);
+      const matchesBathrooms = filters.bathrooms === "any" || Number(listing.bathrooms || 0) >= Number(filters.bathrooms);
       const matchesMinPrice = filters.minPrice === "0" || Number(listing.price || 0) >= Number(filters.minPrice);
       const matchesMaxPrice = filters.maxPrice === "0" || Number(listing.price || 0) <= Number(filters.maxPrice);
       const matchesMinArea = filters.minArea === "0" || Number(listing.built_up_area_sqft || 0) >= Number(filters.minArea);
       const matchesMaxArea = filters.maxArea === "0" || Number(listing.built_up_area_sqft || 0) <= Number(filters.maxArea);
-      const matchesParking =
-        filters.parkingSpaces === "any" || Number(listing.parking_spaces || 0) >= Number(filters.parkingSpaces);
-      const matchesFurnishing =
-        filters.furnishingStatus === "all" || listing.furnishing_status === filters.furnishingStatus;
+      const matchesParking = filters.parkingSpaces === "any" || Number(listing.parking_spaces || 0) >= Number(filters.parkingSpaces);
+      const matchesFurnishing = filters.furnishingStatus === "all" || listing.furnishing_status === filters.furnishingStatus;
       const matchesFloorPlans = !filters.withFloorPlans || Boolean(listing.floor_plan_available);
       const matchesPrivateInventory = !filters.privateInventoryOnly || Boolean(listing.is_private_inventory);
       const matchesTrusted = !filters.trustedOnly || Number(listing.trust_score || 0) >= 85;
@@ -228,38 +244,66 @@ export default function Properties() {
     return [...results].sort((left, right) => {
       switch (filters.sortBy) {
         case "price_low_high":
-          return Number(left.price || 0) - Number(right.price || 0);
+          return Number(left.price || 0) - Number(right.price || 0) || String(left.title || "").localeCompare(String(right.title || ""));
         case "price_high_low":
-          return Number(right.price || 0) - Number(left.price || 0);
+          return Number(right.price || 0) - Number(left.price || 0) || String(left.title || "").localeCompare(String(right.title || ""));
         case "size_large_small":
-          return Number(right.built_up_area_sqft || 0) - Number(left.built_up_area_sqft || 0);
+          return Number(right.built_up_area_sqft || 0) - Number(left.built_up_area_sqft || 0) || Number(right.price || 0) - Number(left.price || 0);
         case "off_plan_first":
-          return Number(Boolean(right.is_off_plan)) - Number(Boolean(left.is_off_plan));
+          return Number(Boolean(right.is_off_plan)) - Number(Boolean(left.is_off_plan)) || Number(right.price || 0) - Number(left.price || 0);
         case "popular":
         default:
-          return Number(right.trust_score || 0) - Number(left.trust_score || 0);
+          return Number(right.trust_score || 0) - Number(left.trust_score || 0) || Number(right.price || 0) - Number(left.price || 0);
       }
     });
   }, [filters, listings]);
 
-  const liveCount = listings.filter((listing) => !isShowcaseListing(listing)).length;
-  const filteredLiveCount = filteredListings.filter((listing) => !isShowcaseListing(listing)).length;
   const offPlanCount = filteredListings.filter((listing) => listing.is_off_plan).length;
-  const showingShowcaseOnly = listings.length > 0 && liveCount === 0;
-  const chips = useMemo(() => filterSummaryChips(filters), [filters]);
+  const privateInventoryCount = filteredListings.filter((listing) => listing.is_private_inventory).length;
+  const readyCount = filteredListings.filter((listing) => !listing.is_off_plan).length;
+  const chips = useMemo(() => filterSummaryChips(filters, viewMode), [filters, viewMode]);
+  const mapFocusLabel = filters.location.trim() || filteredListings[0]?.area_name || "Dubai";
+  const mapQuery = `${mapFocusLabel}, Dubai, UAE`;
 
   const resetFilters = () => {
     setFilters(defaultFilters);
     setAdvancedOpen(false);
   };
 
+  const viewToggle = (
+    <div className="inline-flex rounded-full border border-white/10 bg-background/70 p-1">
+      <button
+        type="button"
+        className={cn(
+          "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
+          viewMode === "list" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground hover:text-foreground"
+        )}
+        onClick={() => setViewMode("list")}
+      >
+        <List className="h-4 w-4" />
+        List
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
+          viewMode === "map" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground hover:text-foreground"
+        )}
+        onClick={() => setViewMode("map")}
+      >
+        <Map className="h-4 w-4" />
+        Map
+      </button>
+    </div>
+  );
+
   return (
     <>
-      <div className="space-y-8 pb-28">
+      <div className="space-y-6 pb-28">
         <SectionHeading
           eyebrow="Property purchase"
-          title="A purchase-first property directory shaped by Bayut and REA patterns"
-          description="Purpose stays fixed to buy. The filter stack follows the clearest market language: location, completion status, property type, beds & baths, price, area, and an expandable More Filters layer."
+          title="Properties for sale in Dubai"
+          description="Browse apartments, villas, penthouses, and off-plan opportunities with a clean list view, a market map toggle, and buyer-first filters."
           action={<Button className="rounded-full px-5" onClick={() => setOpenIntent(true)}>Request curated shortlist</Button>}
         />
 
@@ -267,15 +311,15 @@ export default function Properties() {
           <CardContent className="space-y-4 p-5 md:p-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Popular Dubai locations</p>
-                <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">Jump into a market the same way Bayut surfaces location-first buying paths</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Popular Dubai areas</p>
+                <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">Start with the market that best fits your search</p>
               </div>
               <Button
                 variant="outline"
                 className="rounded-full"
-                onClick={() => setFilters((current) => ({ ...current, showcaseOnly: true, sortBy: "off_plan_first" }))}
+                onClick={() => setFilters((current) => ({ ...current, completionStatus: "off_plan", sortBy: "off_plan_first" }))}
               >
-                Open demo stock
+                View off-plan collection
               </Button>
             </div>
 
@@ -319,7 +363,7 @@ export default function Properties() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{filteredListings.length} properties</p>
-                  <p className="text-sm text-muted-foreground">{offPlanCount} off-plan and {filteredLiveCount} live listings currently visible.</p>
+                  <p className="text-sm text-muted-foreground">{offPlanCount} off-plan · {privateInventoryCount} private inventory · {readyCount} ready</p>
                 </div>
                 <Button variant="outline" className="rounded-full" onClick={() => setMobileFiltersOpen(true)}>
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
@@ -327,74 +371,78 @@ export default function Properties() {
                 </Button>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-[1fr,220px]">
-                <div className="flex flex-wrap gap-2">
-                  {chips.map((chip) => <Badge key={chip} variant="outline" className="rounded-full">{chip}</Badge>)}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {viewToggle}
+                <div className="w-full sm:w-[220px]">
+                  <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
+                    <SelectTrigger className="rounded-full">
+                      <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="popular">Featured</SelectItem>
+                      <SelectItem value="price_low_high">Price: low to high</SelectItem>
+                      <SelectItem value="price_high_low">Price: high to low</SelectItem>
+                      <SelectItem value="size_large_small">Largest size</SelectItem>
+                      <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
-                  <SelectTrigger className="rounded-full">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="popular">Popular</SelectItem>
-                    <SelectItem value="price_low_high">Price low to high</SelectItem>
-                    <SelectItem value="price_high_low">Price high to low</SelectItem>
-                    <SelectItem value="size_large_small">Largest size</SelectItem>
-                    <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
-                  </SelectContent>
-                </Select>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {chips.map((chip) => <Badge key={chip} variant="outline" className="rounded-full">{chip}</Badge>)}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {liveCount > 0 ? (
+        {featuredListings.length ? (
           <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
             <CardContent className="space-y-4 p-5 md:p-6">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Featured demo stock</p>
-                  <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">Styled showcase listings are still available here</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Featured properties</p>
+                  <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">A quick read across apartments, villas, private inventory, and off-plan stock</p>
                 </div>
                 <Button
                   variant="outline"
                   className="rounded-full"
-                  onClick={() => setFilters((current) => ({ ...current, showcaseOnly: true }))}
+                  onClick={() => setFilters((current) => ({ ...current, completionStatus: "all", location: "", sortBy: "popular" }))}
                 >
-                  Show showcase only
+                  View featured selection
                 </Button>
               </div>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {showcaseListings.map((listing) => (
-                  <button
+                {featuredListings.map((listing) => (
+                  <Link
                     key={listing.id}
-                    type="button"
-                    onClick={() => setFilters((current) => ({
-                      ...current,
-                      showcaseOnly: true,
-                      completionStatus: listing.is_off_plan ? "off_plan" : current.completionStatus,
-                    }))}
+                    to={`/listing/${listing.id}`}
                     className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-background/70 text-left transition hover:border-primary/25 hover:bg-background"
                   >
                     <img src={listing.hero_image_url} alt={listing.title} className="h-40 w-full object-cover" />
                     <div className="space-y-2 p-4">
                       <div className="flex flex-wrap gap-2">
-                        {listing.is_off_plan ? <Badge className="bg-sky-950 text-white hover:bg-sky-950">Off-Plan</Badge> : <Badge className="bg-emerald-700 text-white hover:bg-emerald-700">Ready</Badge>}
-                        <Badge variant="outline" className="rounded-full">Showcase</Badge>
+                        {listing.is_off_plan ? (
+                          <Badge className="bg-sky-950 text-white hover:bg-sky-950">Off-Plan</Badge>
+                        ) : (
+                          <Badge className="bg-emerald-700 text-white hover:bg-emerald-700">Ready</Badge>
+                        )}
+                        <Badge variant="outline" className="rounded-full">{listing.property_type || "Property"}</Badge>
                       </div>
                       <p className="text-sm font-semibold text-foreground">{listing.title}</p>
                       <p className="text-sm text-muted-foreground">{listing.area_name}</p>
                       <p className="text-sm font-medium text-foreground">AED {Number(listing.price || 0).toLocaleString()}</p>
                     </div>
-                  </button>
+                  </Link>
                 ))}
               </div>
             </CardContent>
           </Card>
         ) : null}
 
-        <div className="grid gap-6 xl:grid-cols-[320px,1fr]">
-          <div className="hidden xl:block">
+        <div className={cn("grid gap-6", viewMode === "map" ? "xl:grid-cols-[320px,minmax(0,1fr),380px]" : "xl:grid-cols-[320px,1fr]")}>
+          <div className="hidden xl:block xl:sticky xl:top-24 xl:self-start">
             <PropertyFilterPanel
               filters={filters}
               setFilters={setFilters}
@@ -406,30 +454,33 @@ export default function Properties() {
             />
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-4">
             <Card className="hidden rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5 xl:block">
               <CardContent className="space-y-4 p-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-foreground">{filteredListings.length} purchase listings</p>
+                    <p className="text-sm font-semibold text-foreground">{filteredListings.length} properties for sale</p>
                     <p className="text-sm text-muted-foreground">
-                      {offPlanCount} off-plan options, {filteredListings.filter((listing) => listing.is_private_inventory).length} private inventory entries, and {filteredLiveCount} live records in the current catalogue.
+                      {offPlanCount} off-plan · {privateInventoryCount} private inventory · {readyCount} ready to move
                     </p>
                   </div>
-                  <div className="w-full lg:w-[240px]">
-                    <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
-                      <SelectTrigger className="rounded-full">
-                        <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="Sort by" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="popular">Popular</SelectItem>
-                        <SelectItem value="price_low_high">Price low to high</SelectItem>
-                        <SelectItem value="price_high_low">Price high to low</SelectItem>
-                        <SelectItem value="size_large_small">Largest size</SelectItem>
-                        <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {viewToggle}
+                    <div className="w-full lg:w-[240px]">
+                      <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
+                        <SelectTrigger className="rounded-full">
+                          <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="popular">Featured</SelectItem>
+                          <SelectItem value="price_low_high">Price: low to high</SelectItem>
+                          <SelectItem value="price_high_low">Price: high to low</SelectItem>
+                          <SelectItem value="size_large_small">Largest size</SelectItem>
+                          <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -438,21 +489,33 @@ export default function Properties() {
               </CardContent>
             </Card>
 
-            {showingShowcaseOnly ? (
-              <Card className="rounded-[2rem] border-primary/20 bg-primary/5">
-                <CardContent className="space-y-2 p-6">
-                  <p className="text-sm font-semibold text-foreground">Live partner stock is still being published.</p>
-                  <p className="text-sm text-muted-foreground">
-                    Showcase listings with real photography are filling the directory so the experience stays polished while the live feed grows.
-                  </p>
+            {viewMode === "map" ? (
+              <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5 xl:hidden">
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.26em] text-muted-foreground">Map</p>
+                      <p className="mt-1 text-sm font-semibold text-foreground">{mapFocusLabel}</p>
+                    </div>
+                    <Badge variant="outline" className="rounded-full">{filteredListings.length} results</Badge>
+                  </div>
+                  <div className="overflow-hidden rounded-[1.5rem] border border-white/10">
+                    <iframe
+                      title={`Property map for ${mapFocusLabel}`}
+                      src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`}
+                      className="h-[260px] w-full border-0"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
                 </CardContent>
               </Card>
             ) : null}
 
             {filteredListings.length ? (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {filteredListings.map((listing) => (
-                  <ListingListRow key={listing.id} listing={listing} />
+                  <ListingListRow key={listing.id} listing={listing} whatsappNumber={appConfig?.whatsapp_number} />
                 ))}
               </div>
             ) : (
@@ -470,6 +533,31 @@ export default function Properties() {
               </Card>
             )}
           </div>
+
+          {viewMode === "map" ? (
+            <div className="hidden xl:block xl:sticky xl:top-24 xl:self-start">
+              <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.26em] text-muted-foreground">Market map</p>
+                      <p className="mt-1 text-lg font-semibold tracking-tight text-foreground">{mapFocusLabel}</p>
+                    </div>
+                    <Badge variant="outline" className="rounded-full">{filteredListings.length} results</Badge>
+                  </div>
+                  <div className="overflow-hidden rounded-[1.5rem] border border-white/10">
+                    <iframe
+                      title={`Property map for ${mapFocusLabel}`}
+                      src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`}
+                      className="h-[640px] w-full border-0"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : null}
         </div>
       </div>
 

@@ -37,7 +37,7 @@ export default function ListingDetail() {
       <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            {showcase ? <Badge variant="outline">Showcase property</Badge> : null}
+            {showcase ? <Badge variant="outline">Featured property</Badge> : null}
             {listing.is_off_plan ? <Badge className="bg-sky-950 text-white hover:bg-sky-950">Off-Plan</Badge> : <Badge className="bg-emerald-700 text-white hover:bg-emerald-700">Ready</Badge>}
             <TrustBadge score={listing.trust_score || 0} />
             {listing.trust_band === 'verified' || listing.verification_status === 'verified' ? <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Verified</Badge> : null}
@@ -56,13 +56,12 @@ export default function ListingDetail() {
           <p className="text-sm text-muted-foreground">Guide price</p>
           <p className="mt-2 text-3xl font-semibold">AED {Number(listing.price || 0).toLocaleString()}</p>
           {listing.is_off_plan ? <p className="mt-2 text-sm text-muted-foreground">Completion status: Off-Plan{listing.handover_label ? ` · Handover ${listing.handover_label}` : ""}</p> : null}
-          {showcase ? <p className="mt-2 text-sm text-muted-foreground">This is a showcase property used to keep the catalogue alive while live stock is being published.</p> : null}
           <div className="mt-4 grid gap-2">
             <Button className="rounded-2xl" onClick={() => { setIntentType('request_callback'); setOpen(true); }}>
-              {showcase ? "Request similar live options" : "Request broker callback"}
+              {showcase ? "Request similar options" : "Request broker callback"}
             </Button>
             <Button variant="outline" className="rounded-2xl" onClick={() => { setIntentType('request_private_inventory'); setOpen(true); }}>
-              {showcase ? "Request curated private stock" : "Request private inventory access"}
+              {showcase ? "Request private stock" : "Request private inventory access"}
             </Button>
           </div>
         </div>
