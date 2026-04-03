@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpDown, SlidersHorizontal } from "lucide-react";
+import { ArrowUpDown, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { createSearchParams, useSearchParams } from "react-router-dom";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ListingListRow from "@/components/buyer/ListingListRow";
 import PropertyFilterPanel from "@/components/buyer/PropertyFilterPanel";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
@@ -11,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { isShowcaseListing, loadBuyerListings } from "@/lib/buyerListings";
+import { getShowcaseListings, isShowcaseListing, loadBuyerListings } from "@/lib/buyerListings";
+import { cn } from "@/lib/utils";
 
 const defaultFilters = {
   location: "",
@@ -29,6 +31,7 @@ const defaultFilters = {
   withFloorPlans: false,
   privateInventoryOnly: false,
   trustedOnly: false,
+  showcaseOnly: false,
   sortBy: "popular",
 };
 
@@ -49,6 +52,7 @@ const filtersFromSearchParams = (searchParams) => ({
   withFloorPlans: searchParams.get("floorPlans") === "1",
   privateInventoryOnly: searchParams.get("privateInventory") === "1",
   trustedOnly: searchParams.get("trustedOnly") === "1",
+  showcaseOnly: searchParams.get("showcaseOnly") === "1",
   sortBy: searchParams.get("sort") || "popular",
 });
 
@@ -70,6 +74,7 @@ const buildSearchParams = (filters) => {
   if (filters.withFloorPlans) params.floorPlans = "1";
   if (filters.privateInventoryOnly) params.privateInventory = "1";
   if (filters.trustedOnly) params.trustedOnly = "1";
+  if (filters.showcaseOnly) params.showcaseOnly = "1";
   if (filters.sortBy !== "popular") params.sort = filters.sortBy;
 
   return createSearchParams(params);
@@ -103,6 +108,7 @@ const filterSummaryChips = (filters) => {
   if (filters.privateInventoryOnly) chips.push("Private Inventory");
   if (filters.withFloorPlans) chips.push("Floor plans");
   if (filters.trustedOnly) chips.push("Trusted only");
+  if (filters.showcaseOnly) chips.push("Showcase only");
 
   return chips;
 };
@@ -112,6 +118,7 @@ export default function Properties() {
   const [openIntent, setOpenIntent] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [locationsExpanded, setLocationsExpanded] = useState(false);
   const [filters, setFilters] = useState(() => filtersFromSearchParams(searchParams));
 
   const { data: listings = [] } = useQuery({
@@ -142,10 +149,24 @@ export default function Properties() {
     [listings]
   );
 
+  const showcaseListings = useMemo(() => getShowcaseListings(4), []);
+
   const areaOptions = useMemo(
     () => Array.from(new Set(listings.map((listing) => listing.area_name).filter(Boolean))).sort(),
     [listings]
   );
+
+  const locationCounts = useMemo(() => {
+    const counts = listings.reduce((accumulator, listing) => {
+      const key = listing.area_name || "Dubai";
+      accumulator[key] = (accumulator[key] || 0) + 1;
+      return accumulator;
+    }, {});
+
+    return Object.entries(counts)
+      .sort((left, right) => right[1] - left[1])
+      .map(([name, count]) => ({ name, count }));
+  }, [listings]);
 
   const filteredListings = useMemo(() => {
     const searchTerm = filters.location.trim().toLowerCase();
@@ -184,6 +205,7 @@ export default function Properties() {
       const matchesFloorPlans = !filters.withFloorPlans || Boolean(listing.floor_plan_available);
       const matchesPrivateInventory = !filters.privateInventoryOnly || Boolean(listing.is_private_inventory);
       const matchesTrusted = !filters.trustedOnly || Number(listing.trust_score || 0) >= 85;
+      const matchesShowcase = !filters.showcaseOnly || Boolean(isShowcaseListing(listing));
 
       return matchesLocation
         && matchesKeywords
@@ -199,7 +221,8 @@ export default function Properties() {
         && matchesFurnishing
         && matchesFloorPlans
         && matchesPrivateInventory
-        && matchesTrusted;
+        && matchesTrusted
+        && matchesShowcase;
     });
 
     return [...results].sort((left, right) => {
@@ -240,6 +263,56 @@ export default function Properties() {
           action={<Button className="rounded-full px-5" onClick={() => setOpenIntent(true)}>Request curated shortlist</Button>}
         />
 
+        <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+          <CardContent className="space-y-4 p-5 md:p-6">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Popular Dubai locations</p>
+                <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">Jump into a market the same way Bayut surfaces location-first buying paths</p>
+              </div>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => setFilters((current) => ({ ...current, showcaseOnly: true, sortBy: "off_plan_first" }))}
+              >
+                Open demo stock
+              </Button>
+            </div>
+
+            <Collapsible open={locationsExpanded} onOpenChange={setLocationsExpanded}>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {(locationsExpanded ? locationCounts : locationCounts.slice(0, 6)).map((item) => (
+                  <button
+                    key={item.name}
+                    type="button"
+                    onClick={() => setFilters((current) => ({ ...current, location: item.name }))}
+                    className={cn(
+                      "flex items-center justify-between rounded-[1.3rem] border px-4 py-4 text-left transition",
+                      filters.location === item.name
+                        ? "border-primary/25 bg-primary/10"
+                        : "border-white/10 bg-background/60 hover:border-primary/20 hover:bg-background"
+                    )}
+                  >
+                    <span className="font-medium text-foreground">{item.name}</span>
+                    <span className="text-sm text-muted-foreground">({item.count})</span>
+                  </button>
+                ))}
+              </div>
+
+              <CollapsibleContent className="pt-3" />
+
+              {locationCounts.length > 6 ? (
+                <CollapsibleTrigger asChild>
+                  <button type="button" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary">
+                    {locationsExpanded ? "Show fewer locations" : "View all locations"}
+                    <ChevronDown className={cn("h-4 w-4 transition", locationsExpanded ? "rotate-180" : "")} />
+                  </button>
+                </CollapsibleTrigger>
+              ) : null}
+            </Collapsible>
+          </CardContent>
+        </Card>
+
         <div className="space-y-4 xl:hidden">
           <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
             <CardContent className="space-y-4 p-5">
@@ -274,6 +347,51 @@ export default function Properties() {
             </CardContent>
           </Card>
         </div>
+
+        {liveCount > 0 ? (
+          <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+            <CardContent className="space-y-4 p-5 md:p-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Featured demo stock</p>
+                  <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">Styled showcase listings are still available here</p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={() => setFilters((current) => ({ ...current, showcaseOnly: true }))}
+                >
+                  Show showcase only
+                </Button>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {showcaseListings.map((listing) => (
+                  <button
+                    key={listing.id}
+                    type="button"
+                    onClick={() => setFilters((current) => ({
+                      ...current,
+                      showcaseOnly: true,
+                      completionStatus: listing.is_off_plan ? "off_plan" : current.completionStatus,
+                    }))}
+                    className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-background/70 text-left transition hover:border-primary/25 hover:bg-background"
+                  >
+                    <img src={listing.hero_image_url} alt={listing.title} className="h-40 w-full object-cover" />
+                    <div className="space-y-2 p-4">
+                      <div className="flex flex-wrap gap-2">
+                        {listing.is_off_plan ? <Badge className="bg-sky-950 text-white hover:bg-sky-950">Off-Plan</Badge> : <Badge className="bg-emerald-700 text-white hover:bg-emerald-700">Ready</Badge>}
+                        <Badge variant="outline" className="rounded-full">Showcase</Badge>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">{listing.title}</p>
+                      <p className="text-sm text-muted-foreground">{listing.area_name}</p>
+                      <p className="text-sm font-medium text-foreground">AED {Number(listing.price || 0).toLocaleString()}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[320px,1fr]">
           <div className="hidden xl:block">
