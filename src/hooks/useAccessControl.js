@@ -13,14 +13,22 @@ export default function useAccessControl() {
       }
 
       const user = await base44.auth.me();
-      const assignments = await base44.entities.UserRoleAssignment.filter({ user_id: user.id, status: "active" });
-      const activeAssignments = assignments.filter((assignment) => !assignment.end_date || new Date(assignment.end_date) >= new Date());
-      const role = user?.role || "buyer";
+      let activeAssignments = [];
+
+      try {
+        const assignments = await base44.entities.UserRoleAssignment.filter({ user_id: user.id, status: "active" });
+        activeAssignments = assignments.filter((assignment) => !assignment.end_date || new Date(assignment.end_date) >= new Date());
+      } catch {
+        activeAssignments = [];
+      }
+
+      const role = user?.role || user?._app_role || "buyer";
       const permissions = getPermissionSet(activeAssignments.map((assignment) => ({
         permission_codes: assignment.permission_codes || [],
         bundle_codes: assignment.bundle_codes || []
       })), role);
       const isInternal = roleGroups.internal.includes(role);
+      const isAdmin = role === "admin";
 
       return {
         isAuthenticated: true,
@@ -28,7 +36,7 @@ export default function useAccessControl() {
         role,
         assignments: activeAssignments,
         permissions,
-        can: (permission) => isInternal || hasPermission(permissions, permission)
+        can: (permission) => isAdmin || isInternal || hasPermission(permissions, permission)
       };
     },
     initialData: { isAuthenticated: false, user: null, role: "buyer", assignments: [], permissions: [], can: () => false }

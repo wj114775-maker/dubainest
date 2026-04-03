@@ -124,7 +124,7 @@ export default function Properties() {
   const { data: listings = [] } = useQuery({
     queryKey: ["buyer-properties-v2"],
     queryFn: () => loadBuyerListings({ limit: 24, includeShowcase: true }),
-    initialData: [],
+    initialData: getShowcaseListings(24),
   });
 
   useEffect(() => {
