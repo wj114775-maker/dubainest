@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Listing not found' }, { status: 404 });
     }
 
-    const [permits, verifications, evidence, cases, authorityRecords, projectVerifications, brokerVerifications, allListings] = await Promise.all([
+    const [permits, verifications, evidence, cases, authorityRecords, projectVerifications, brokerVerifications, allListings, duplicateReviewRecords] = await Promise.all([
       base44.entities.ListingPermit.filter({ listing_id }),
       base44.entities.ListingVerification.filter({ listing_id }),
       base44.entities.ComplianceEvidence.filter({ listing_id }),
@@ -76,7 +76,8 @@ Deno.serve(async (req) => {
       base44.entities.ListingAuthorityRecord.filter({ listing_id }),
       listing.project_id ? base44.entities.ProjectVerification.filter({ project_id: listing.project_id }) : Promise.resolve([]),
       listing.broker_id ? base44.entities.BrokerVerification.filter({ broker_id: listing.broker_id }) : Promise.resolve([]),
-      base44.entities.Listing.list('-updated_date', 200)
+      base44.entities.Listing.list('-updated_date', 200),
+      base44.entities.ListingDuplicateReview.list('-updated_date', 500)
     ]);
 
     const latestPermit = permits.sort((a, b) => new Date(b.updated_date).getTime() - new Date(a.updated_date).getTime())[0];
@@ -86,31 +87,54 @@ Deno.serve(async (req) => {
     const brokerVerified = brokerVerifications.some((item) => item.status === 'passed');
     const projectVerified = projectVerifications.some((item) => item.status === 'passed');
     const openCases = cases.filter((item) => !['resolved', 'closed', 'approved'].includes(item.status));
-    const evidenceCount = evidence.length;
+    const validEvidence = evidence.filter((item) => ['submitted', 'accepted'].includes(item.status || 'submitted'));
+    const evidenceCount = validEvidence.length;
     const completenessScore = calculateCompleteness(listing);
     const freshness = calculateFreshness(listing.last_refreshed_at, Number(listing.stale_after_days || 30));
 
     const currentFingerprint = listingFingerprint(listing);
     const duplicateCandidates = allListings.filter((item) => item.id !== listing_id && listingFingerprint(item) === currentFingerprint);
-    const primaryListing = [listing, ...duplicateCandidates]
+    const duplicateCandidateIds = duplicateCandidates.map((item) => item.id);
+    const relevantDuplicateReviews = duplicateReviewRecords.filter((item) =>
+      [listing_id, ...duplicateCandidateIds].includes(item.listing_id) ||
+      [listing_id, ...duplicateCandidateIds].includes(item.matched_listing_id)
+    );
+
+    const getPairReview = (candidateId) =>
+      relevantDuplicateReviews.find((item) =>
+        (item.listing_id === listing_id && item.matched_listing_id === candidateId) ||
+        (item.listing_id === candidateId && item.matched_listing_id === listing_id)
+      );
+
+    const defaultPrimaryListing = [listing, ...duplicateCandidates]
       .sort((a, b) => (Number(b.trust_score || 0) - Number(a.trust_score || 0)) || new Date(a.created_date).getTime() - new Date(b.created_date).getTime())[0];
-    const duplicateRiskScore = duplicateCandidates.length ? 80 : 15;
 
     for (const candidate of duplicateCandidates) {
-      const existing = await base44.entities.ListingDuplicateReview.filter({ listing_id: listing_id, matched_listing_id: candidate.id });
-      if (!existing.length) {
-        await base44.entities.ListingDuplicateReview.create({
+      const existingPair = getPairReview(candidate.id);
+      if (!existingPair) {
+        const createdReview = await base44.entities.ListingDuplicateReview.create({
           listing_id,
           matched_listing_id: candidate.id,
           status: 'candidate',
           confidence_score: 92,
-          primary_listing_id: primaryListing.id,
+          primary_listing_id: defaultPrimaryListing.id,
           decision_reason: 'Automated duplicate fingerprint match'
         });
+        relevantDuplicateReviews.push(createdReview);
       }
     }
 
-    const duplicateBlocked = duplicateCandidates.length > 0 && primaryListing.id !== listing_id;
+    const duplicatePairs = duplicateCandidates.map((candidate) => ({
+      candidate,
+      review: getPairReview(candidate.id)
+    }));
+    const activeDuplicatePairs = duplicatePairs.filter(({ review }) => review?.status !== 'dismissed');
+    const primaryOverrideId = listing.duplicate_status === 'primary'
+      ? listing_id
+      : activeDuplicatePairs.map(({ review }) => review?.primary_listing_id).find((value) => value && [listing_id, ...duplicateCandidateIds].includes(value));
+    const primaryListing = [listing, ...duplicateCandidates].find((item) => item.id === primaryOverrideId) || defaultPrimaryListing;
+    const duplicateRiskScore = activeDuplicatePairs.length ? 80 : 15;
+    const duplicateBlocked = activeDuplicatePairs.length > 0 && primaryListing.id !== listing_id;
     const trustScore = clamp(
       (permitValid ? 25 : 0) +
       (brokerVerified ? 15 : 0) +
@@ -140,7 +164,7 @@ Deno.serve(async (req) => {
     const openIssueCodes = [
       ...openCases.map((item) => item.category),
       ...(permitExpired ? ['permit_expired'] : []),
-      ...(duplicateBlocked ? ['duplicate'] : []),
+      ...(activeDuplicatePairs.length ? ['duplicate'] : []),
       ...(freshness.status === 'expired' ? ['stale_expired'] : [])
     ];
 
@@ -164,9 +188,11 @@ Deno.serve(async (req) => {
       freshness_score: freshness.score,
       freshness_status: freshness.status,
       duplicate_risk_score: duplicateRiskScore,
-      duplicate_status: duplicateCandidates.length ? (duplicateBlocked ? 'suppressed' : 'candidate') : 'clear',
-      primary_listing_id: duplicateCandidates.length ? primaryListing.id : '',
-      duplicate_group_key: duplicateCandidates.length ? currentFingerprint : '',
+      duplicate_status: activeDuplicatePairs.length
+        ? (primaryListing.id === listing_id ? 'primary' : activeDuplicatePairs.some(({ review }) => review?.status === 'under_review') ? 'under_review' : 'suppressed')
+        : (listing.duplicate_status === 'primary' ? 'primary' : 'clear'),
+      primary_listing_id: activeDuplicatePairs.length || listing.duplicate_status === 'primary' ? primaryListing.id : '',
+      duplicate_group_key: activeDuplicatePairs.length ? currentFingerprint : '',
       issue_count: openIssueCodes.length,
       evidence_count: evidenceCount,
       missing_requirements: missingRequirements,
@@ -191,6 +217,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (evidence.some((item) => item.status === 'accepted')) {
+      const evidenceCases = openCases.filter((item) => item.category === 'evidence_missing');
+      await Promise.all(
+        evidenceCases.map((item) =>
+          base44.entities.ComplianceCase.update(item.id, {
+            status: 'resolved',
+            resolution_notes: 'Evidence accepted and governance requirements satisfied.',
+            resolved_at: new Date().toISOString(),
+            freeze_active: false
+          })
+        )
+      );
+    } else if (validEvidence.length) {
+      const evidenceCases = openCases.filter((item) => item.category === 'evidence_missing' && item.status === 'awaiting_evidence');
+      await Promise.all(
+        evidenceCases.map((item) =>
+          base44.entities.ComplianceCase.update(item.id, {
+            status: 'under_review',
+            resolution_notes: 'Evidence submitted by partner and waiting for internal review.'
+          })
+        )
+      );
+    }
+
     if (duplicateBlocked && !openCases.find((item) => item.category === 'duplicate')) {
       await base44.entities.ComplianceCase.create({
         listing_id,
@@ -201,6 +251,20 @@ Deno.serve(async (req) => {
         status: 'triage',
         trust_impact: 15
       });
+    }
+
+    if (!activeDuplicatePairs.length) {
+      const duplicateCases = openCases.filter((item) => item.category === 'duplicate');
+      await Promise.all(
+        duplicateCases.map((item) =>
+          base44.entities.ComplianceCase.update(item.id, {
+            status: 'resolved',
+            resolution_notes: 'Duplicate review cleared for this listing.',
+            resolved_at: new Date().toISOString(),
+            freeze_active: false
+          })
+        )
+      );
     }
 
     const notifications = [];
@@ -234,7 +298,7 @@ Deno.serve(async (req) => {
         freshness_status: freshness.status,
         publication_status: publicationStatus,
         missing_requirements: missingRequirements,
-        duplicate_candidates: duplicateCandidates.map((item) => item.id)
+        duplicate_candidates: activeDuplicatePairs.map(({ candidate }) => candidate.id)
       }
     });
 

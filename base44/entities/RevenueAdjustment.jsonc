@@ -1,0 +1,41 @@
+{
+  "name": "RevenueAdjustment",
+  "type": "object",
+  "properties": {
+    "entitlement_id": {
+      "type": "string"
+    },
+    "adjustment_type": {
+      "type": "string",
+      "enum": [
+        "manual_adjustment",
+        "reversal",
+        "clawback",
+        "writeoff",
+        "settlement_adjustment"
+      ]
+    },
+    "amount_delta": {
+      "type": "number"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "approved_by": {
+      "type": "string"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "entitlement_id",
+    "adjustment_type",
+    "amount_delta",
+    "reason"
+  ]
+}

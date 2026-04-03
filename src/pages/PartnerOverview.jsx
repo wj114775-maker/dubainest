@@ -18,7 +18,7 @@ export default function PartnerOverview() {
         base44.entities.Lead.list("-updated_date", 200),
         base44.entities.LeadAssignment.list("-updated_date", 200),
         base44.entities.Listing.list("-updated_date", 200),
-        base44.entities.Dispute.list("-updated_date", 200),
+        base44.entities.RevenueDispute.list("-updated_date", 200),
       ]);
 
       const profile = profiles[0] || { membership_type: "broker", status: "active" };
@@ -27,7 +27,7 @@ export default function PartnerOverview() {
       const partnerLeadIds = new Set(partnerAssignments.map((item) => item.lead_id));
       const partnerLeads = leads.filter((lead) => lead.partner_agency_id === profile.partner_agency_id || lead.assigned_partner_id === profile.partner_agency_id || partnerLeadIds.has(lead.id));
       const activeListings = listings.filter((listing) => listing.partner_agency_id === profile.partner_agency_id && listing.status === "published");
-      const openDisputes = disputes.filter((item) => item.partner_agency_id === profile.partner_agency_id && !["resolved", "dismissed", "closed"].includes(item.status));
+      const openDisputes = disputes.filter((item) => item.partner_id === profile.partner_agency_id && !["resolved", "rejected", "closed"].includes(item.status));
       const acceptedAssignments = partnerAssignments.filter((item) => item.assignment_status === "accepted" && item.accepted_at && item.assigned_at);
       const medianResponseMinutes = acceptedAssignments.length
         ? Math.round(

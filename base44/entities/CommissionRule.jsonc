@@ -1,0 +1,134 @@
+{
+  "name": "CommissionRule",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "rule_code": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "inactive",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "applies_to": {
+      "type": "string",
+      "enum": [
+        "global",
+        "partner",
+        "project",
+        "listing_type",
+        "lead_type",
+        "buyer_type",
+        "manual"
+      ],
+      "default": "global"
+    },
+    "trigger_type": {
+      "type": "string",
+      "enum": [
+        "lead_accepted",
+        "qualified_appointment_booked",
+        "viewing_completed",
+        "reservation_made",
+        "offer_accepted",
+        "deal_exchanged",
+        "deal_completed",
+        "partner_commission_received",
+        "milestone_payment_received",
+        "manual"
+      ]
+    },
+    "fee_type": {
+      "type": "string",
+      "enum": [
+        "flat_referral_fee",
+        "partner_commission_share",
+        "sale_price_share",
+        "milestone_fee",
+        "hybrid_fee",
+        "premium_private_inventory",
+        "manual_override"
+      ]
+    },
+    "calculation_method": {
+      "type": "string",
+      "enum": [
+        "flat_amount",
+        "percentage_of_partner_commission",
+        "percentage_of_sale_price",
+        "milestone_flat",
+        "hybrid",
+        "manual"
+      ]
+    },
+    "currency": {
+      "type": "string",
+      "default": "AED"
+    },
+    "percentage_rate": {
+      "type": "number"
+    },
+    "flat_amount": {
+      "type": "number"
+    },
+    "minimum_amount": {
+      "type": "number"
+    },
+    "maximum_amount": {
+      "type": "number"
+    },
+    "partner_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "listing_type": {
+      "type": "string"
+    },
+    "lead_type": {
+      "type": "string"
+    },
+    "buyer_type": {
+      "type": "string"
+    },
+    "private_inventory_only": {
+      "type": "boolean",
+      "default": false
+    },
+    "high_value_only": {
+      "type": "boolean",
+      "default": false
+    },
+    "conditions_json": {
+      "type": "object"
+    },
+    "priority": {
+      "type": "number",
+      "default": 0
+    },
+    "effective_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "effective_to": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "name",
+    "rule_code",
+    "trigger_type",
+    "fee_type",
+    "calculation_method"
+  ]
+}

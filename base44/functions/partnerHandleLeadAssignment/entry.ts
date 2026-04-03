@@ -1,5 +1,224 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+function toNumber(value, fallback = 0) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function roundAmount(value) {
+  return Math.round(toNumber(value) * 100) / 100;
+}
+
+function buildRuleScore(rule, context) {
+  const now = Date.now();
+  if ((rule.status || 'draft') !== 'active') return -1;
+  if (rule.trigger_type !== context.event_type && rule.trigger_type !== 'manual') return -1;
+  if (rule.effective_from && new Date(rule.effective_from).getTime() > now) return -1;
+  if (rule.effective_to && new Date(rule.effective_to).getTime() < now) return -1;
+  if (rule.partner_id && rule.partner_id !== context.partner_id) return -1;
+  if (rule.project_id && rule.project_id !== context.project_id) return -1;
+  if (rule.listing_type && rule.listing_type !== context.listing_type) return -1;
+  if (rule.lead_type && rule.lead_type !== context.lead_type) return -1;
+  if (rule.buyer_type && rule.buyer_type !== context.buyer_type) return -1;
+  if (rule.private_inventory_only && !context.is_private_inventory) return -1;
+  if (rule.high_value_only && !context.is_high_value) return -1;
+
+  let score = Number(rule.priority || 0);
+  if (rule.partner_id) score += 40;
+  if (rule.project_id) score += 25;
+  if (rule.listing_type) score += 10;
+  if (rule.lead_type) score += 10;
+  if (rule.buyer_type) score += 10;
+  if (rule.private_inventory_only) score += 20;
+  if (rule.high_value_only) score += 20;
+  if (rule.trigger_type === context.event_type) score += 30;
+  return score;
+}
+
+function calculateAmount(rule, context) {
+  const flatAmount = toNumber(rule.flat_amount);
+  const percentageRate = toNumber(rule.percentage_rate);
+  const dealValue = toNumber(context.deal_value);
+  const partnerCommissionAmount = toNumber(context.partner_commission_amount);
+  let calculated = 0;
+  let basis = 'flat_amount';
+
+  switch (rule.calculation_method) {
+    case 'flat_amount':
+    case 'milestone_flat':
+      calculated = flatAmount;
+      break;
+    case 'percentage_of_partner_commission':
+      calculated = partnerCommissionAmount * (percentageRate / 100);
+      basis = 'partner_commission_amount';
+      break;
+    case 'percentage_of_sale_price':
+      calculated = dealValue * (percentageRate / 100);
+      basis = 'deal_value';
+      break;
+    case 'hybrid': {
+      const baseValue = partnerCommissionAmount || dealValue;
+      calculated = flatAmount + (baseValue * (percentageRate / 100));
+      basis = partnerCommissionAmount ? 'partner_commission_amount_plus_flat' : 'deal_value_plus_flat';
+      break;
+    }
+    default:
+      calculated = flatAmount;
+  }
+
+  if (rule.minimum_amount != null) calculated = Math.max(calculated, toNumber(rule.minimum_amount));
+  if (rule.maximum_amount != null && toNumber(rule.maximum_amount) > 0) calculated = Math.min(calculated, toNumber(rule.maximum_amount));
+
+  const grossAmount = roundAmount(calculated);
+  return {
+    grossAmount,
+    taxAmount: 0,
+    netAmount: grossAmount,
+    snapshot: {
+      rule_code: rule.rule_code,
+      rule_name: rule.name,
+      trigger_type: rule.trigger_type,
+      fee_type: rule.fee_type,
+      calculation_method: rule.calculation_method,
+      basis,
+      percentage_rate: percentageRate,
+      flat_amount: flatAmount,
+      input_values: {
+        deal_value: dealValue,
+        partner_commission_amount: partnerCommissionAmount,
+        listing_type: context.listing_type || '',
+        lead_type: context.lead_type || '',
+        buyer_type: context.buyer_type || '',
+        is_private_inventory: Boolean(context.is_private_inventory),
+        is_high_value: Boolean(context.is_high_value)
+      },
+      conditions_json: rule.conditions_json || {}
+    }
+  };
+}
+
+async function maybeCreateRevenueTrigger(base44, user, lead, partnerAgencyId, triggerType, triggerDate, summary, details = {}) {
+  const existingEvents = await base44.asServiceRole.entities.RevenueEvent.filter({
+    lead_id: lead.id,
+    partner_id: partnerAgencyId,
+    event_type: triggerType
+  });
+
+  if (existingEvents.length) {
+    return { skipped: 'existing_trigger' };
+  }
+
+  const context = {
+    event_type: triggerType,
+    partner_id: partnerAgencyId,
+    project_id: lead.project_id || '',
+    listing_type: lead.listing_type || '',
+    lead_type: lead.intent_type || lead.source || '',
+    buyer_type: lead.intent_type || '',
+    is_private_inventory: Boolean(lead.is_private_inventory),
+    is_high_value: Boolean(lead.is_high_value),
+    deal_value: toNumber(lead.budget_max || lead.budget_min || 0),
+    partner_commission_amount: 0
+  };
+
+  const rules = await base44.asServiceRole.entities.CommissionRule.list('-updated_date', 200);
+  const selectedRule = rules
+    .map((rule) => ({ rule, score: buildRuleScore(rule, context) }))
+    .filter((item) => item.score >= 0)
+    .sort((a, b) => b.score - a.score)[0]?.rule;
+
+  if (!selectedRule) {
+    return { skipped: 'no_matching_rule' };
+  }
+
+  const calculated = calculateAmount(selectedRule, context);
+  const revenueEvent = await base44.asServiceRole.entities.RevenueEvent.create({
+    lead_id: lead.id,
+    partner_id: partnerAgencyId,
+    event_type: triggerType,
+    event_date: triggerDate,
+    trigger_source: 'partner_workflow',
+    summary,
+    payload_json: details,
+    created_by: user.id,
+    deal_value: context.deal_value,
+    partner_commission_amount: context.partner_commission_amount,
+    currency: 'AED',
+    is_private_inventory: context.is_private_inventory,
+    is_high_value: context.is_high_value,
+    listing_type: context.listing_type,
+    lead_type: context.lead_type,
+    buyer_type: context.buyer_type
+  });
+
+  const entitlement = await base44.asServiceRole.entities.RevenueEntitlement.create({
+    lead_id: lead.id,
+    partner_id: partnerAgencyId,
+    commission_rule_id: selectedRule.id,
+    revenue_event_id: revenueEvent.id,
+    entitlement_status: 'pending_review',
+    trigger_type: triggerType,
+    trigger_date: triggerDate,
+    calculation_snapshot_json: calculated.snapshot,
+    gross_amount: calculated.grossAmount,
+    tax_amount: calculated.taxAmount,
+    net_amount: calculated.netAmount,
+    paid_amount: 0,
+    currency: 'AED',
+    notes: summary
+  });
+
+  const ledgerEntry = await base44.asServiceRole.entities.RevenueLedger.create({
+    lead_id: lead.id,
+    partner_id: partnerAgencyId,
+    entitlement_id: entitlement.id,
+    entry_type: 'accrual',
+    amount: calculated.netAmount,
+    currency: 'AED',
+    status: 'pending',
+    entry_date: triggerDate,
+    reference_code: `REV-${Date.now()}`,
+    summary,
+    balance_effect: 'credit',
+    metadata_json: {
+      revenue_event_id: revenueEvent.id,
+      commission_rule_id: selectedRule.id,
+      source: 'partner_workflow'
+    }
+  });
+
+  await base44.asServiceRole.entities.Notification.create({
+    title: 'Revenue entitlement created',
+    body: `${summary} created a pending finance entitlement for ${partnerAgencyId}.`,
+    entitlement_id: entitlement.id,
+    category: 'revenue',
+    route_path: `/ops/revenue/${entitlement.id}`,
+    channel: 'in_app',
+    status: 'queued'
+  });
+
+  await base44.asServiceRole.entities.AuditLog.create({
+    entity_name: 'RevenueEntitlement',
+    entity_id: entitlement.id,
+    action: 'revenue_entitlement_auto_created',
+    actor_id: user.id,
+    actor_user_id: user.id,
+    summary: `${triggerType} created a revenue entitlement automatically.`,
+    immutable: true,
+    scope: 'finance',
+    metadata: {
+      lead_id: lead.id,
+      partner_id: partnerAgencyId,
+      revenue_event_id: revenueEvent.id,
+      commission_rule_id: selectedRule.id,
+      gross_amount: calculated.grossAmount,
+      net_amount: calculated.netAmount
+    }
+  });
+
+  return { revenueEvent, entitlement, ledgerEntry, rule: selectedRule.id };
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -11,6 +230,12 @@ Deno.serve(async (req) => {
 
     const { lead_id, assignment_id, action, notes, outcome, scheduled_at } = await req.json();
     const noteRequiredActions = ['reject', 'request_reassignment', 'mark_lost', 'mark_invalid', 'log_contact_attempt', 'log_viewing_completed'];
+    const revenueTriggerMap = {
+      accept: 'lead_accepted',
+      log_callback_booked: 'qualified_appointment_booked',
+      log_viewing_completed: 'viewing_completed',
+      mark_won: 'deal_completed'
+    };
 
     if (!lead_id || !assignment_id || !action) {
       return Response.json({ error: 'lead_id, assignment_id and action are required' }, { status: 400 });
@@ -223,7 +448,26 @@ Deno.serve(async (req) => {
       status: 'queued',
     });
 
-    return Response.json({ lead: updatedLead, assignment: updatedAssignment, event, reassignment });
+    const revenueTrigger = revenueTriggerMap[action]
+      ? await maybeCreateRevenueTrigger(
+          base44,
+          user,
+          updatedLead,
+          partnerAgencyId,
+          revenueTriggerMap[action],
+          ['log_callback_booked', 'log_viewing_completed'].includes(action) ? parsedSchedule : now,
+          `${selected.summary} Revenue trigger: ${revenueTriggerMap[action]}.`,
+          {
+            assignment_id,
+            action,
+            notes: notes || '',
+            outcome: outcome || '',
+            scheduled_at: scheduled_at || ''
+          }
+        )
+      : null;
+
+    return Response.json({ lead: updatedLead, assignment: updatedAssignment, event, reassignment, revenueTrigger });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

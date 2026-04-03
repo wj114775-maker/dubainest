@@ -25,6 +25,9 @@ export default function PartnerLeads() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["partner-leads", current.user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["partner-revenue-workspace", current.user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["partner-disputes", current.user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-inbox"] });
       toast({ title: "Lead updated" });
     },
   });

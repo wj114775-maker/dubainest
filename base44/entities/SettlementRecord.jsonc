@@ -1,0 +1,62 @@
+{
+  "name": "SettlementRecord",
+  "type": "object",
+  "properties": {
+    "partner_id": {
+      "type": "string"
+    },
+    "lead_id": {
+      "type": "string"
+    },
+    "entitlement_id": {
+      "type": "string"
+    },
+    "settlement_type": {
+      "type": "string",
+      "enum": [
+        "commercial_settlement",
+        "dispute_resolution",
+        "clawback_plan",
+        "writeoff_settlement"
+      ]
+    },
+    "settlement_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending_signoff",
+        "agreed",
+        "partially_paid",
+        "paid",
+        "failed",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "agreed_amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "AED"
+    },
+    "agreed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "partner_id",
+    "entitlement_id",
+    "settlement_type",
+    "settlement_status",
+    "currency"
+  ]
+}

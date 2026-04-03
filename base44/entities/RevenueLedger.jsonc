@@ -1,0 +1,83 @@
+{
+  "name": "RevenueLedger",
+  "type": "object",
+  "properties": {
+    "lead_id": {
+      "type": "string"
+    },
+    "partner_id": {
+      "type": "string"
+    },
+    "entitlement_id": {
+      "type": "string"
+    },
+    "invoice_id": {
+      "type": "string"
+    },
+    "payout_id": {
+      "type": "string"
+    },
+    "adjustment_id": {
+      "type": "string"
+    },
+    "settlement_id": {
+      "type": "string"
+    },
+    "entry_type": {
+      "type": "string",
+      "enum": [
+        "accrual",
+        "adjustment",
+        "reversal",
+        "clawback",
+        "settlement",
+        "manual_credit",
+        "manual_debit"
+      ]
+    },
+    "amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "AED"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "posted",
+        "reversed"
+      ],
+      "default": "pending"
+    },
+    "entry_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reference_code": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "balance_effect": {
+      "type": "string",
+      "enum": [
+        "credit",
+        "debit",
+        "neutral"
+      ]
+    },
+    "metadata_json": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "partner_id",
+    "entry_type",
+    "amount",
+    "currency",
+    "entry_date"
+  ]
+}

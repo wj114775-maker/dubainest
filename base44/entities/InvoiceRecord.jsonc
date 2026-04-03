@@ -1,0 +1,69 @@
+{
+  "name": "InvoiceRecord",
+  "type": "object",
+  "properties": {
+    "partner_id": {
+      "type": "string"
+    },
+    "entitlement_id": {
+      "type": "string"
+    },
+    "invoice_number": {
+      "type": "string"
+    },
+    "invoice_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "issued",
+        "acknowledged",
+        "partially_paid",
+        "paid",
+        "overdue",
+        "disputed",
+        "void"
+      ],
+      "default": "draft"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "currency": {
+      "type": "string",
+      "default": "AED"
+    },
+    "gross_amount": {
+      "type": "number"
+    },
+    "tax_amount": {
+      "type": "number"
+    },
+    "net_amount": {
+      "type": "number"
+    },
+    "pdf_url": {
+      "type": "string"
+    },
+    "external_reference": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "acknowledged_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "partner_id",
+    "invoice_number",
+    "invoice_status",
+    "currency"
+  ]
+}

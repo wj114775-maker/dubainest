@@ -1,0 +1,91 @@
+{
+  "name": "RevenueEntitlement",
+  "type": "object",
+  "properties": {
+    "lead_id": {
+      "type": "string"
+    },
+    "deal_id": {
+      "type": "string"
+    },
+    "partner_id": {
+      "type": "string"
+    },
+    "commission_rule_id": {
+      "type": "string"
+    },
+    "revenue_event_id": {
+      "type": "string"
+    },
+    "invoice_id": {
+      "type": "string"
+    },
+    "payout_id": {
+      "type": "string"
+    },
+    "entitlement_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending_review",
+        "approved",
+        "rejected",
+        "invoiced",
+        "awaiting_payment",
+        "partially_paid",
+        "paid",
+        "disputed",
+        "adjusted",
+        "reversed",
+        "written_off"
+      ],
+      "default": "draft"
+    },
+    "trigger_type": {
+      "type": "string"
+    },
+    "trigger_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "calculation_snapshot_json": {
+      "type": "object"
+    },
+    "gross_amount": {
+      "type": "number"
+    },
+    "tax_amount": {
+      "type": "number"
+    },
+    "net_amount": {
+      "type": "number"
+    },
+    "paid_amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "AED"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "approved_by": {
+      "type": "string"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "partner_id",
+    "trigger_type",
+    "trigger_date",
+    "currency"
+  ]
+}

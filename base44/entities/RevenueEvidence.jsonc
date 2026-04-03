@@ -1,0 +1,46 @@
+{
+  "name": "RevenueEvidence",
+  "type": "object",
+  "properties": {
+    "entitlement_id": {
+      "type": "string"
+    },
+    "dispute_id": {
+      "type": "string"
+    },
+    "invoice_id": {
+      "type": "string"
+    },
+    "evidence_type": {
+      "type": "string",
+      "enum": [
+        "deal_proof",
+        "partner_statement",
+        "payment_receipt",
+        "internal_approval_note",
+        "agreement_addendum",
+        "invoice_pdf",
+        "settlement_note",
+        "commercial_note",
+        "other"
+      ]
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "uploaded_by": {
+      "type": "string"
+    },
+    "uploaded_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "evidence_type",
+    "summary"
+  ]
+}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import TrustBadge from "@/components/common/TrustBadge";
 import PartnerListingActionBar from "@/components/partner/PartnerListingActionBar";
 
-export default function PartnerListingsTable({ listings, onEvaluate, evaluatingId, onAction, actionLoading }) {
+export default function PartnerListingsTable({ listings, onEvaluate, evaluatingId, onAction, onEdit, onRespond, onEvidence, actionLoading }) {
   return (
     <Card className="rounded-[2rem] border-white/10 bg-card/80">
       <CardHeader><CardTitle>Permit-aware listing control</CardTitle></CardHeader>
@@ -31,7 +31,14 @@ export default function PartnerListingsTable({ listings, onEvaluate, evaluatingI
                 <TrustBadge score={listing.trust_score} />
                 <Button variant="outline" onClick={() => onEvaluate?.(listing.id)} disabled={evaluatingId === listing.id}>Refresh readiness</Button>
               </div>
-              <PartnerListingActionBar listing={listing} onSubmit={onAction} loading={actionLoading === listing.id} />
+              <PartnerListingActionBar
+                listing={listing}
+                onSubmit={onAction}
+                onEdit={onEdit}
+                onRespond={onRespond}
+                onEvidence={onEvidence}
+                loading={actionLoading === listing.id}
+              />
             </div>
           </div>
         )) : <p className="text-sm text-muted-foreground">No listings found yet.</p>}

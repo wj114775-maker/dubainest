@@ -1,0 +1,65 @@
+{
+  "name": "RevenueEvent",
+  "type": "object",
+  "properties": {
+    "lead_id": {
+      "type": "string"
+    },
+    "deal_id": {
+      "type": "string"
+    },
+    "partner_id": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trigger_source": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "payload_json": {
+      "type": "object"
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "deal_value": {
+      "type": "number"
+    },
+    "partner_commission_amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "AED"
+    },
+    "is_private_inventory": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_high_value": {
+      "type": "boolean",
+      "default": false
+    },
+    "listing_type": {
+      "type": "string"
+    },
+    "lead_type": {
+      "type": "string"
+    },
+    "buyer_type": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_type",
+    "event_date"
+  ]
+}

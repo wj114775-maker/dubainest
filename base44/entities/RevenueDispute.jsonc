@@ -1,0 +1,87 @@
+{
+  "name": "RevenueDispute",
+  "type": "object",
+  "properties": {
+    "partner_id": {
+      "type": "string"
+    },
+    "lead_id": {
+      "type": "string"
+    },
+    "entitlement_id": {
+      "type": "string"
+    },
+    "invoice_id": {
+      "type": "string"
+    },
+    "dispute_type": {
+      "type": "string",
+      "enum": [
+        "attribution_dispute",
+        "lead_ownership_dispute",
+        "fee_amount_dispute",
+        "trigger_dispute",
+        "duplicate_lead_dispute",
+        "partner_bypass_dispute",
+        "partial_payment_dispute",
+        "cancellation_dispute",
+        "clawback_dispute",
+        "documentation_dispute"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "under_review",
+        "awaiting_partner_response",
+        "resolved",
+        "rejected",
+        "closed"
+      ],
+      "default": "open"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium"
+    },
+    "opened_by": {
+      "type": "string"
+    },
+    "assigned_reviewer_id": {
+      "type": "string"
+    },
+    "opened_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolution_notes": {
+      "type": "string"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolved_by": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "partner_id",
+    "dispute_type",
+    "summary",
+    "status"
+  ]
+}
