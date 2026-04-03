@@ -15,6 +15,7 @@ import { roleGroups } from "@/lib/appShell";
 export default function Account() {
   const { data } = useCurrentUserRole();
   const isInternal = roleGroups.internal.includes(data.role) || (data.permissions || []).length > 0;
+  const loginTarget = typeof window !== "undefined" ? new URL("/workspace", window.location.origin).toString() : "/workspace";
   const { data: profile } = useQuery({
     queryKey: ["buyer-profile", data.user?.id],
     enabled: !!data.user?.id,
@@ -45,7 +46,7 @@ export default function Account() {
           <p className="text-sm text-muted-foreground">Current state</p>
           <p className="text-2xl font-semibold">{data.isAuthenticated ? `Signed in as ${data.user?.full_name || data.user?.email}` : "Browsing anonymously"}</p>
           <div className="flex gap-3">
-            {!data.isAuthenticated ? <Button onClick={() => base44.auth.redirectToLogin()}>Continue with sign in</Button> : <Button variant="outline" onClick={() => base44.auth.logout()}>Logout</Button>}
+            {!data.isAuthenticated ? <Button onClick={() => base44.auth.redirectToLogin(loginTarget)}>Continue with sign in</Button> : <Button variant="outline" onClick={() => base44.auth.logout()}>Logout</Button>}
           </div>
         </CardContent>
       </Card>

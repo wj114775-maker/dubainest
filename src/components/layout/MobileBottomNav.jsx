@@ -9,6 +9,7 @@ const icons = {
   Compare: Scale,
   Guides: BookOpen,
   Account: User,
+  Workspace: LayoutDashboard,
   Dashboard: LayoutDashboard,
   Leads: Briefcase,
   Admin: ShieldCheck,

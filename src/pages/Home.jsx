@@ -11,7 +11,7 @@ import MetricCard from "@/components/common/MetricCard";
 import GuideCard from "@/components/content/GuideCard";
 import { Button } from "@/components/ui/button";
 import useAppConfig from "@/hooks/useAppConfig";
-import { isShowcaseListing, loadBuyerListings } from "@/lib/buyerListings";
+import { getShowcaseListings, isShowcaseListing, loadBuyerListings } from "@/lib/buyerListings";
 
 
 export default function Home() {
@@ -45,6 +45,7 @@ export default function Home() {
     initialData: { verifiedListings: 0, activePartners: 0, averageTrust: 0, callbackSla: 0 },
   });
   const liveListings = listings.filter((listing) => !isShowcaseListing(listing)).length;
+  const showcaseListings = getShowcaseListings(3);
 
   return (
     <div className="space-y-10 pb-32">
@@ -54,6 +55,16 @@ export default function Home() {
         <MetricCard label="Partner agencies" value={String(homeMetrics.activePartners)} hint="Licensed execution partners" />
         <MetricCard label="Average trust score" value={`${homeMetrics.averageTrust}/100`} hint="Listing + partner + broker weighted" />
         <MetricCard label="Callback SLA" value={homeMetrics.callbackSla ? `${homeMetrics.callbackSla} min` : "—"} hint="Tracked across partner OS" />
+      </section>
+      <section className="space-y-6">
+        <SectionHeading
+          eyebrow="Showcase stock"
+          title="Demo properties with real imagery so the site does not feel empty"
+          description="These are curated showcase listings designed to keep the front-end alive and enterprise-presentable while more live partner stock is added."
+        />
+        <div className="space-y-5">
+          {showcaseListings.map((listing) => <ListingListRow key={listing.id} listing={listing} />)}
+        </div>
       </section>
       <section className="space-y-6">
         <SectionHeading

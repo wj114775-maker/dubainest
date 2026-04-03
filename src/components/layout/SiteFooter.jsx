@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Building2, Compass, Gem, ShieldCheck } from "lucide-react";
+import { Building2 } from "lucide-react";
 
 const publicGroups = [
   {
@@ -31,10 +31,10 @@ const publicGroups = [
   }
 ];
 
-export default function SiteFooter({ appName, showInternalAccess = false }) {
+export default function SiteFooter({ appName }) {
   return (
     <footer className="border-t border-white/10 bg-card/40">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-[1.4fr,1fr,1fr,1fr] md:px-6">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-[1.2fr,1fr,1fr,1fr] md:px-6">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
@@ -47,25 +47,9 @@ export default function SiteFooter({ appName, showInternalAccess = false }) {
               </p>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[1.4rem] border border-white/10 bg-background/70 p-4">
-              <Compass className="h-4 w-4 text-primary" />
-              <p className="mt-3 text-sm font-medium text-foreground">Buyer-friendly navigation</p>
-              <p className="mt-1 text-sm text-muted-foreground">Explore, search, shortlist, and move forward without guessing where to click next.</p>
-            </div>
-            <div className="rounded-[1.4rem] border border-white/10 bg-background/70 p-4">
-              <Gem className="h-4 w-4 text-primary" />
-              <p className="mt-3 text-sm font-medium text-foreground">Premium pathways</p>
-              <p className="mt-1 text-sm text-muted-foreground">Private inventory, concierge, and HNW handling stay discoverable but controlled.</p>
-            </div>
-            <div className="rounded-[1.4rem] border border-white/10 bg-background/70 p-4">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              <p className="mt-3 text-sm font-medium text-foreground">Workspace separation</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {showInternalAccess ? "Your internal workspace is linked above through Workspace." : "Internal operations stay separate from the public browsing layer."}
-              </p>
-            </div>
-          </div>
+          <p className="max-w-md text-sm text-muted-foreground">
+            Browse the public application here. Use the workspace route only when you are signed in with internal or partner access.
+          </p>
         </div>
 
         {publicGroups.map((group) => (
