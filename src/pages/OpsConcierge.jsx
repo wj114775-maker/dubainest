@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
@@ -15,6 +14,7 @@ import { compactLabel, conciergeCaseTypeOptions, conciergePriorityOptions, isOpe
 export default function OpsConcierge() {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState({ search: "", status: "all", caseType: "all", priority: "all", owner: "all" });
+  const [showPlanningPanels, setShowPlanningPanels] = useState(false);
 
   const { data: workspace = { cases: [], tasks: [], ndaRecords: [], inventoryRequests: [], viewingPlans: [], viewingStops: [], referrals: [] } } = useQuery({
     queryKey: ["ops-concierge-workspace"],
@@ -156,7 +156,7 @@ export default function OpsConcierge() {
       <SectionHeading
         eyebrow="Premium cases"
         title="Private client, concierge, and HNW case delivery"
-        description="Use this workspace for premium buyer journeys, private inventory, NDA flow, itineraries, and service coordination."
+        description="This page now keeps the active case desk and today’s tasks up front. Planning panels stay secondary until you need them."
         action={(
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => reconcileSla.mutate()} disabled={reconcileSla.isPending}>Reconcile SLA</Button>
@@ -200,7 +200,9 @@ export default function OpsConcierge() {
             >
               <Button>Open concierge case</Button>
             </WorkflowDialog>
-            <Button variant="outline" asChild><Link to="/ops/leads">Lead workspace</Link></Button>
+            <Button variant="outline" onClick={() => setShowPlanningPanels((current) => !current)}>
+              {showPlanningPanels ? "Hide planning panels" : "Show planning panels"}
+            </Button>
           </div>
         )}
       />
@@ -221,9 +223,15 @@ export default function OpsConcierge() {
         <div className="grid gap-6 xl:grid-cols-2">
           <QueueCard title="Case registry" items={caseItems} emptyMessage="No concierge cases yet." formatStatus={compactLabel} />
           <QueueCard title="Task board" items={taskItems} emptyMessage="No open concierge tasks." formatStatus={compactLabel} />
-          <QueueCard title="Viewing planner" items={viewingItems} emptyMessage="No itinerary plans yet." formatStatus={compactLabel} />
-          <QueueCard title="Service referrals" items={referralItems} emptyMessage="No active service referrals." formatStatus={compactLabel} />
         </div>
+      </AccessGuard>
+      <AccessGuard permission="concierge_cases.read">
+        {showPlanningPanels ? (
+          <div className="grid gap-6 xl:grid-cols-2">
+            <QueueCard title="Viewing planner" items={viewingItems} emptyMessage="No itinerary plans yet." formatStatus={compactLabel} />
+            <QueueCard title="Service referrals" items={referralItems} emptyMessage="No active service referrals." formatStatus={compactLabel} />
+          </div>
+        ) : null}
       </AccessGuard>
     </div>
   );
