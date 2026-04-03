@@ -69,7 +69,7 @@ export default function OpsRevenueDetail() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        eyebrow="Revenue detail"
+        eyebrow="Money desk detail"
         title={entitlement.notes || entitlement.id}
         description="Review trigger basis, calculation snapshot, ledger history, invoice, payment, disputes, adjustments, settlements, evidence, and audit from one governed workspace."
       />

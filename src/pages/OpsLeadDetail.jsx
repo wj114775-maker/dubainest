@@ -89,7 +89,7 @@ export default function OpsLeadDetail() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Internal OS" title={data.lead?.lead_code || "Lead detail"} description="Review the full operating record across routing, protection, partner handling and audit trail." action={<div className="flex gap-2"><Button variant="outline" asChild><Link to="/ops/leads">Back</Link></Button><Button onClick={() => manageLead.mutate({ action: "lock" })}>Lock</Button><Button variant="outline" onClick={() => manageLead.mutate({ action: "release" })}>Release</Button></div>} />
+      <SectionHeading eyebrow="Buyer pipeline" title={data.lead?.lead_code || "Lead detail"} description="Review the full buyer record across qualification, protection, routing, partner handling, and audit trail." action={<div className="flex gap-2"><Button variant="outline" asChild><Link to="/ops/leads">Back</Link></Button><Button onClick={() => manageLead.mutate({ action: "lock" })}>Lock</Button><Button variant="outline" onClick={() => manageLead.mutate({ action: "release" })}>Release</Button></div>} />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div>
         <Tabs defaultValue="overview" className="space-y-4">

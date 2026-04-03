@@ -117,7 +117,7 @@ export default function OpsListingDetail() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Listing workspace" title={listing.title} description="Review verification, trust, freshness, authority, evidence and publication history from one place." />
+      <SectionHeading eyebrow="Supply review detail" title={listing.title} description="Review verification, trust, freshness, authority, evidence, and publication history from one place." />
 
       <Card className="rounded-[2rem] border-white/10 bg-card/80">
         <CardContent className="flex flex-wrap items-center gap-3 p-5">

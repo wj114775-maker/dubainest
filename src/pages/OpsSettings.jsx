@@ -28,7 +28,7 @@ export default function OpsSettings() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Settings" title="Editable app identity" description="The app name and core brand details are controlled here so they can be amended globally later." />
+      <SectionHeading eyebrow="System control" title="Brand and platform settings" description="Use this page for global app identity and configuration. Daily staff should not need to work here often." />
       <AccessGuard permission="settings.manage">
         <Card className="rounded-[2rem] border-white/10 bg-card/80">
           <CardContent className="grid gap-4 p-6 md:grid-cols-2">

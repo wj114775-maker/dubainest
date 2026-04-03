@@ -65,7 +65,7 @@ export default function OpsCompliance() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Compliance" title="Verification, permit and publishing controls" description="Compliance teams control what can go live, what is flagged, and what needs evidence before partner execution continues." />
+      <SectionHeading eyebrow="Verification" title="Permits, evidence, and publishing controls" description="Use this desk for exceptions and trust issues that must be resolved before listings or partner execution can proceed." />
       <AccessGuard permission="compliance_cases.read">
         <ComplianceFilters filters={filters} onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))} />
       </AccessGuard>

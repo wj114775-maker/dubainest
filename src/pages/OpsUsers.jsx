@@ -74,7 +74,7 @@ export default function OpsUsers() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Administration" title="Users and access control" description="Manage identity status, legacy roles, role assignments, security state and future permission bundles from one registry." />
+      <SectionHeading eyebrow="System control" title="Team, roles, and access control" description="Use this page to manage staff access, assignments, and security state. It is setup work, not daily pipeline handling." />
       <AccessGuard permission="users.read">
         <div className="space-y-6">
           <UserRegistryFilters search={search} onSearchChange={setSearch} status={status} onStatusChange={setStatus} />

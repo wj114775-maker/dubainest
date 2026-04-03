@@ -3,26 +3,48 @@ import { Link, useLocation } from "react-router-dom";
 
 export default function SideRail({ title, items }) {
   const location = useLocation();
+  const sections = items.reduce((acc, item) => {
+    const key = item.section || "Workspace";
+    acc[key] = acc[key] || [];
+    acc[key].push(item);
+    return acc;
+  }, {});
+
+  const isActive = (path) => location.pathname === path || (path !== "/ops" && location.pathname.startsWith(`${path}/`));
 
   return (
     <aside className="hidden w-72 shrink-0 border-r border-white/10 bg-card/40 p-4 md:block">
       <div className="mb-6 px-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Workspace</p>
+        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Operating system</p>
         <h2 className="mt-2 text-xl font-semibold tracking-tight">{title}</h2>
       </div>
-      <div className="space-y-1">
-        {items.map((item) => {
-          const active = location.pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`block rounded-2xl px-4 py-3 text-sm transition ${active ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
+      <div className="space-y-5">
+        {Object.entries(sections).map(([section, sectionItems]) => (
+          <div key={section} className="space-y-2">
+            <p className="px-2 text-[11px] font-medium uppercase tracking-[0.26em] text-muted-foreground/80">{section}</p>
+            <div className="space-y-1">
+              {sectionItems.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`block rounded-[1.4rem] border px-4 py-3 text-sm transition ${
+                      active
+                        ? "border-primary/20 bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                        : "border-transparent text-muted-foreground hover:border-white/10 hover:bg-muted/60 hover:text-foreground"
+                    }`}
+                  >
+                    <div className="font-medium">{item.label}</div>
+                    {item.description ? (
+                      <p className={`mt-1 text-xs ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{item.description}</p>
+                    ) : null}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </aside>
   );

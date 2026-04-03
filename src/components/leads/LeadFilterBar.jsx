@@ -1,6 +1,7 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { buyerPipelineStages } from "@/lib/buyerPipeline";
 
 export default function LeadFilterBar({ filters, onChange }) {
   const update = (key, value) => onChange({ ...filters, [key]: value });
@@ -12,11 +13,9 @@ export default function LeadFilterBar({ filters, onChange }) {
         <SelectTrigger><SelectValue placeholder="Stage" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All stages</SelectItem>
-          <SelectItem value="new">New</SelectItem>
-          <SelectItem value="assigned">Assigned</SelectItem>
-          <SelectItem value="accepted">Accepted</SelectItem>
-          <SelectItem value="won">Won</SelectItem>
-          <SelectItem value="lost">Lost</SelectItem>
+          {buyerPipelineStages.map((stage) => (
+            <SelectItem key={stage.id} value={stage.id}>{stage.label}</SelectItem>
+          ))}
         </SelectContent>
       </Select>
       <Select value={filters.ownership} onValueChange={(value) => update("ownership", value)}>

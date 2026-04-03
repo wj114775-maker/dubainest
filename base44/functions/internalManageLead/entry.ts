@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { lead_id, action, notes, partner_id, target_lead_id, severity, approval } = await req.json();
+    const { lead_id, action, notes, partner_id, target_lead_id, severity, approval, stage, outcome_status } = await req.json();
     const now = new Date().toISOString();
     const runtimeRuleMatches = [];
 
@@ -113,6 +113,16 @@ Deno.serve(async (req) => {
         },
         event_type: 'lead_merged',
         summary: 'Internal ops merged the lead.'
+      },
+      update_stage: {
+        updates: {
+          current_stage: stage || lead.current_stage || 'capture',
+          status: stage === 'closed'
+            ? (outcome_status || (['won', 'lost', 'blocked'].includes(lead.status || '') ? lead.status : 'lost'))
+            : (['won', 'lost', 'blocked'].includes(lead.status || '') ? 'active' : lead.status)
+        },
+        event_type: 'lead_stage_updated',
+        summary: `Internal ops moved the lead to ${stage || lead.current_stage || 'capture'}.`
       }
     };
 
@@ -127,6 +137,18 @@ Deno.serve(async (req) => {
 
     if (action === 'merge' && !target_lead_id) {
       return Response.json({ error: 'target_lead_id is required for merge' }, { status: 400 });
+    }
+
+    if (action === 'update_stage' && !stage) {
+      return Response.json({ error: 'stage is required for update_stage' }, { status: 400 });
+    }
+
+    if (action === 'update_stage' && !['capture', 'protect', 'supply', 'journey', 'money', 'closed'].includes(stage || '')) {
+      return Response.json({ error: 'Unsupported stage' }, { status: 400 });
+    }
+
+    if (action === 'update_stage' && stage === 'closed' && !['won', 'lost', 'blocked'].includes(outcome_status || '')) {
+      return Response.json({ error: 'outcome_status must be won, lost or blocked when closing a lead' }, { status: 400 });
     }
 
     if ([...requireNotes, 'renew_protection', 'request_override'].includes(action) && !notes?.trim()) {
@@ -155,6 +177,10 @@ Deno.serve(async (req) => {
 
     if ((action === 'lock' || action === 'mark_duplicate' || action === 'merge') && lead.status === 'merged') {
       return Response.json({ error: 'Merged leads cannot use this action' }, { status: 400 });
+    }
+
+    if (action === 'update_stage' && lead.status === 'merged') {
+      return Response.json({ error: 'Merged leads cannot be moved to another stage' }, { status: 400 });
     }
 
     if ((action === 'assign' || action === 'reassign') && ['won', 'lost', 'merged', 'blocked'].includes(lead.status || '')) {
@@ -392,7 +418,7 @@ Deno.serve(async (req) => {
       actor_user_id: user.id,
       summary: selected.summary,
       reason: notes || '',
-      event_payload_json: { action, notes: notes || '', partner_id: partner_id || '', target_lead_id: target_lead_id || '' },
+      event_payload_json: { action, notes: notes || '', partner_id: partner_id || '', target_lead_id: target_lead_id || '', stage: stage || '', outcome_status: outcome_status || '' },
       immutable: true,
     });
 
@@ -413,7 +439,7 @@ Deno.serve(async (req) => {
       summary: selected.summary,
       immutable: true,
       scope: 'lead',
-      metadata: { notes: notes || '', partner_id: partner_id || '', target_lead_id: target_lead_id || '', severity: severity || '', merge_confidence: action === 'merge' ? 0.9 : null }
+      metadata: { notes: notes || '', partner_id: partner_id || '', target_lead_id: target_lead_id || '', severity: severity || '', stage: stage || '', outcome_status: outcome_status || '', merge_confidence: action === 'merge' ? 0.9 : null }
     });
 
     return Response.json({ lead: updatedLead, event, audit });

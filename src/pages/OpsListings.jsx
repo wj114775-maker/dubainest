@@ -25,7 +25,7 @@ export default function OpsListings() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Supply governance" title="Listing trust, verification and publication control" description="Internal teams review supply quality, authority, freshness and publishing readiness here." />
+      <SectionHeading eyebrow="Supply review" title="Listing trust, verification, and publication" description="Use this workspace to decide whether supply is ready to go live, needs correction, or should be frozen." />
       <AccessGuard permission="compliance_cases.read">
         <AdminSummaryStrip items={summary} />
       </AccessGuard>

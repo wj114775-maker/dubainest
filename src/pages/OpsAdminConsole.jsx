@@ -40,7 +40,7 @@ export default function OpsAdminConsole() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Admin Console" title="Enterprise governance modules" description="A dedicated control plane for identity, permissions, security, workflows, auditability and policy management." />
+      <SectionHeading eyebrow="System control" title="Platform setup, permissions, and governance" description="This area is for configuration, access, rules, and security. Daily staff work should stay in the operations workspace." />
       <AdminSummaryStrip items={data.summary} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {data.modules.map((module) => <AdminModuleCard key={module.href} {...module} />)}

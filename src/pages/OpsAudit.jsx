@@ -22,7 +22,7 @@ export default function OpsAudit() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Audit" title="Immutable event history across leads, payouts and controls" description="Audit visibility is core to enterprise trust, investigation and partner governance." />
+      <SectionHeading eyebrow="Risk and quality" title="Audit log across buyers, supply, money, and control actions" description="Use this page to review the event trail after the fact. It is a review layer, not a daily pipeline workspace." />
       <AccessGuard permission="audit.read">
         <div className="space-y-6">
           <AdminSummaryStrip items={summary} />

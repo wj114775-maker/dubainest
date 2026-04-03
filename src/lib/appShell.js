@@ -31,16 +31,54 @@ export const navItems = {
     { label: "Disputes", path: "/partner/disputes" }
   ],
   internal: [
-    { label: "Dashboard", path: "/ops" },
-    { label: "Leads", path: "/ops/leads" },
-    { label: "Admin", path: "/ops/admin" },
-    { label: "Users", path: "/ops/users" },
-    { label: "Compliance", path: "/ops/compliance" },
-    { label: "Listings", path: "/ops/listings" },
-    { label: "Concierge", path: "/ops/concierge" },
-    { label: "Revenue", path: "/ops/revenue" },
-    { label: "Audit", path: "/ops/audit" },
-    { label: "Settings", path: "/ops/settings" }
+    {
+      label: "Workspace",
+      path: "/ops",
+      section: "Daily work",
+      description: "Start here. See what needs action first."
+    },
+    {
+      label: "Buyer pipeline",
+      path: "/ops/leads",
+      section: "Daily work",
+      description: "Qualify, protect, assign, and progress buyers."
+    },
+    {
+      label: "Supply review",
+      path: "/ops/listings",
+      section: "Daily work",
+      description: "Control listing trust, freshness, and publication."
+    },
+    {
+      label: "Premium cases",
+      path: "/ops/concierge",
+      section: "Daily work",
+      description: "Run private, HNW, and concierge journeys."
+    },
+    {
+      label: "Money desk",
+      path: "/ops/revenue",
+      section: "Daily work",
+      description: "Track fee claims, invoices, payments, and disputes."
+    },
+    {
+      label: "Verification",
+      path: "/ops/compliance",
+      section: "Risk and quality",
+      description: "Resolve permits, evidence, and publishing issues."
+    },
+    {
+      label: "Audit log",
+      path: "/ops/audit",
+      section: "Risk and quality",
+      description: "Review the activity trail across the platform."
+    },
+    {
+      label: "Control center",
+      path: "/ops/admin",
+      section: "System control",
+      description: "Rules, roles, security, team access, and setup."
+    }
   ]
 };
 

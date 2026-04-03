@@ -20,7 +20,7 @@ export default function AppHeader({ appName, tagline, onMenuClick, internalItems
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight">{appName}</h1>
-              <p className="text-sm text-muted-foreground">{showInternalAccess ? "Internal tools available" : tagline}</p>
+              <p className="text-sm text-muted-foreground">{showInternalAccess ? "Operations workspace available" : tagline}</p>
             </div>
           </Link>
         </div>
@@ -28,13 +28,13 @@ export default function AppHeader({ appName, tagline, onMenuClick, internalItems
           {showInternalAccess ? (
             <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/5 px-4 py-2 text-xs text-foreground">
               <ShieldCheck className="mr-2 h-3.5 w-3.5 text-primary" />
-              Internal access
+              Internal operations access
             </Badge>
           ) : null}
         </div>
         <div className="flex items-center gap-2">
           {showInternalAccess ? <MobileWorkspaceDrawer items={internalItems} /> : null}
-          {showInternalAccess ? <AdminWorkspaceSwitcher items={internalItems.filter((item) => item.path !== "/ops")} /> : null}
+          {showInternalAccess ? <AdminWorkspaceSwitcher items={internalItems} /> : null}
           <Button variant="ghost" size="icon" asChild><Link to="/notifications"><Bell className="h-4 w-4" /></Link></Button>
           <Button asChild variant={showInternalAccess ? "outline" : "default"} className="rounded-full px-5"><Link to="/account">Account</Link></Button>
         </div>

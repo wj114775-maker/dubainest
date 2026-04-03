@@ -153,9 +153,9 @@ export default function OpsConcierge() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        eyebrow="Concierge"
-        title="Premium buyer, private inventory, and service orchestration workspace"
-        description="Manage HNW cases, restricted inventory handling, NDA flow, viewing itineraries, and cross-service coordination from one internal operating layer."
+        eyebrow="Premium cases"
+        title="Private client, concierge, and HNW case delivery"
+        description="Use this workspace for premium buyer journeys, private inventory, NDA flow, itineraries, and service coordination."
         action={(
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => reconcileSla.mutate()} disabled={reconcileSla.isPending}>Reconcile SLA</Button>

@@ -203,9 +203,9 @@ export default function OpsRevenue() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        eyebrow="Revenue"
-        title="Entitlement, invoice, payout, dispute, and settlement control"
-        description="Finance teams manage the full commercial lifecycle from governed trigger to settlement, with calculation snapshots and defendable audit history."
+        eyebrow="Money desk"
+        title="Fee claims, invoices, payouts, disputes, and settlements"
+        description="Use this workspace for the commercial lifecycle after a governed trigger exists: approval, invoicing, collection, dispute handling, and settlement."
         action={(
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild><Link to="/ops/commission-rules">Commission rules</Link></Button>

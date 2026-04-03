@@ -54,12 +54,13 @@ import { navItems, roleGroups } from '@/lib/appShell';
 const AppFrame = ({ children, mode = 'buyer', title, showInternalAccess = false }) => {
   const { data: appConfig } = useAppConfig();
   const items = navItems[mode];
+  const railTitle = mode === "internal" ? "Operations" : title;
 
   return (
     <div className="min-h-screen bg-background">
       <AppHeader appName={appConfig.app_name} tagline={appConfig.tagline} internalItems={navItems.internal} showInternalAccess={showInternalAccess} />
       <div className="mx-auto flex max-w-7xl">
-        {mode !== 'buyer' ? <SideRail title={title} items={items} /> : null}
+        {mode !== 'buyer' ? <SideRail title={railTitle} items={items} /> : null}
         <main className="min-h-screen flex-1 px-4 py-6 md:px-6 md:py-8">{children}</main>
       </div>
       {mode === 'buyer' ? <MobileBottomNav items={items} /> : null}

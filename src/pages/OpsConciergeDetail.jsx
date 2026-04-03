@@ -128,7 +128,7 @@ export default function OpsConciergeDetail() {
     <AccessGuard permission="concierge_cases.read">
       <div className="space-y-6">
         <SectionHeading
-          eyebrow="Concierge detail"
+          eyebrow="Premium case detail"
           title={caseRecord.case_code}
           description="Run the premium client case across NDA, tasks, private inventory, itinerary planning, service referrals, secure documents, and audit history."
         />
