@@ -10,9 +10,16 @@ export default function useCurrentUserRole() {
       const authed = await base44.auth.isAuthenticated();
       if (!authed) return { isAuthenticated: false, role: "buyer", user: null, permissions: [] };
       const user = await base44.auth.me();
-      const assignments = await base44.entities.UserRoleAssignment.filter({ user_id: user.id, status: "active" });
-      const activeAssignments = assignments.filter((assignment) => !assignment.end_date || new Date(assignment.end_date) >= new Date());
-      const role = user?.role || "buyer";
+      let activeAssignments = [];
+
+      try {
+        const assignments = await base44.entities.UserRoleAssignment.filter({ user_id: user.id, status: "active" });
+        activeAssignments = assignments.filter((assignment) => !assignment.end_date || new Date(assignment.end_date) >= new Date());
+      } catch {
+        activeAssignments = [];
+      }
+
+      const role = user?.role || user?._app_role || "buyer";
       const permissions = getPermissionSet(activeAssignments.map((assignment) => ({
         permission_codes: assignment.permission_codes || [],
         bundle_codes: assignment.bundle_codes || []

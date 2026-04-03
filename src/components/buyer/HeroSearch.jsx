@@ -9,6 +9,7 @@ import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 export default function HeroSearch({ appName }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const listingDirectoryPath = query.trim() ? `/properties?q=${encodeURIComponent(query.trim())}` : "/properties";
 
   return (
     <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(218,165,32,0.18),transparent_30%),linear-gradient(135deg,rgba(12,18,28,1),rgba(18,28,44,0.95))] p-6 text-white shadow-2xl shadow-black/20 md:p-10">
@@ -22,7 +23,12 @@ export default function HeroSearch({ appName }) {
         </div>
         <div className="flex flex-col gap-3 rounded-3xl bg-white/10 p-3 backdrop-blur md:flex-row">
           <Input placeholder="Search by area, project or intent" value={query} onChange={(event) => setQuery(event.target.value)} className="h-12 rounded-2xl border-white/10 bg-white/10 text-white placeholder:text-white/50" />
-          <Button asChild className="h-12 rounded-2xl bg-white text-slate-950 hover:bg-white/90"><Link to={query ? `/guides` : `/` }><Search className="mr-2 h-4 w-4" /> Explore verified listings</Link></Button>
+          <Button asChild className="h-12 rounded-2xl bg-white text-slate-950 hover:bg-white/90">
+            <Link to={listingDirectoryPath}>
+              <Search className="mr-2 h-4 w-4" />
+              Explore verified listings
+            </Link>
+          </Button>
         </div>
         <div className="flex flex-wrap gap-2 text-xs text-white/70">
           <span className="rounded-full border border-white/10 px-3 py-1">Golden Visa workflow</span>

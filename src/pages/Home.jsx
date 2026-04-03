@@ -1,19 +1,26 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import HeroSearch from "@/components/buyer/HeroSearch";
-import ListingCard from "@/components/buyer/ListingCard";
+import ListingListRow from "@/components/buyer/ListingListRow";
 import AreaSpotlightCard from "@/components/buyer/AreaSpotlightCard";
 import StickyInquiryBar from "@/components/buyer/StickyInquiryBar";
 import SectionHeading from "@/components/common/SectionHeading";
 import MetricCard from "@/components/common/MetricCard";
 import GuideCard from "@/components/content/GuideCard";
+import { Button } from "@/components/ui/button";
 import useAppConfig from "@/hooks/useAppConfig";
+import { isShowcaseListing, loadBuyerListings } from "@/lib/buyerListings";
 
 
 export default function Home() {
   const { data: appConfig } = useAppConfig();
-  const { data: listings = [] } = useQuery({ queryKey: ["home-listings"], queryFn: () => base44.entities.Listing.filter({ status: "published" }, "-updated_date", 6), initialData: [] });
+  const { data: listings = [] } = useQuery({
+    queryKey: ["home-listings"],
+    queryFn: () => loadBuyerListings({ limit: 4, includeShowcase: true }),
+    initialData: []
+  });
   const { data: areas = [] } = useQuery({ queryKey: ["home-areas"], queryFn: () => base44.entities.Area.list("-updated_date", 6), initialData: [] });
   const { data: guides = [] } = useQuery({ queryKey: ["home-guides"], queryFn: () => base44.entities.Guide.filter({ status: "published" }, "-updated_date", 3), initialData: [] });
   const { data: homeMetrics } = useQuery({
@@ -37,6 +44,7 @@ export default function Home() {
     },
     initialData: { verifiedListings: 0, activePartners: 0, averageTrust: 0, callbackSla: 0 },
   });
+  const liveListings = listings.filter((listing) => !isShowcaseListing(listing)).length;
 
   return (
     <div className="space-y-10 pb-32">
@@ -48,8 +56,22 @@ export default function Home() {
         <MetricCard label="Callback SLA" value={homeMetrics.callbackSla ? `${homeMetrics.callbackSla} min` : "—"} hint="Tracked across partner OS" />
       </section>
       <section className="space-y-6">
-        <SectionHeading eyebrow="Buyer App" title="Verified opportunities with enterprise trust signals" description="Listings are screened for permit evidence, broker verification, duplicate risk and stale inventory before publishing." />
-        {listings.length ? <div className="grid gap-5 md:grid-cols-3">{listings.slice(0,3).map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div> : <p className="text-sm text-muted-foreground">No published listings yet.</p>}
+        <SectionHeading
+          eyebrow="Buyer App"
+          title="Verified opportunities presented in a cleaner, list-first format"
+          description="The browse layer now behaves more like a proper property application: easy to scan, trust-forward, and less dependent on hidden backend knowledge."
+          action={<Button asChild className="rounded-full px-5"><Link to="/properties">Open property directory</Link></Button>}
+        />
+        {liveListings === 0 && listings.length ? (
+          <p className="rounded-[1.6rem] border border-primary/15 bg-primary/5 px-5 py-4 text-sm text-muted-foreground">
+            Live partner listings are still being populated. The rows below are showcase properties with real imagery so the homepage still feels alive and absorbable.
+          </p>
+        ) : null}
+        {listings.length ? (
+          <div className="space-y-5">
+            {listings.map((listing) => <ListingListRow key={listing.id} listing={listing} />)}
+          </div>
+        ) : <p className="text-sm text-muted-foreground">No published listings yet.</p>}
       </section>
       <section className="space-y-6">
         <SectionHeading eyebrow="Area Intelligence" title="Where demand, yield and family fit intersect" description="Area pages become a premium intelligence surface for movers, investors and private clients." />

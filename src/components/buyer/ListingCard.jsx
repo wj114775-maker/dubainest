@@ -7,9 +7,11 @@ import { BedDouble, Building2, Heart, MapPin, Scale } from "lucide-react";
 import TrustBadge from "@/components/common/TrustBadge";
 import { useToast } from '@/components/ui/use-toast';
 import { saveListingToShortlist, saveListingToCompare } from '@/components/leads/buyerLeadActions';
+import { isShowcaseListing } from "@/lib/buyerListings";
 
 export default function ListingCard({ listing }) {
   const { toast } = useToast();
+  const showcase = isShowcaseListing(listing);
 
   return (
     <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-card/80 shadow-xl shadow-black/5">
@@ -30,6 +32,7 @@ export default function ListingCard({ listing }) {
           <span className="flex items-center gap-1"><Building2 className="h-4 w-4" /> {listing.permit_verified ? 'Permit verified' : 'Permit pending'}</span>
         </div>
         <div className="flex flex-wrap gap-2">
+          {showcase ? <Badge variant="outline" className="rounded-full">Showcase</Badge> : null}
           {listing.trust_band === 'verified' || listing.verification_status === 'verified' ? <Badge variant="outline" className="rounded-full">Verified</Badge> : null}
           <Badge variant="outline" className="rounded-full">Freshness {listing.freshness_status || 'fresh'}</Badge>
           {listing.partner_verified ? <Badge variant="outline" className="rounded-full">Partner verified</Badge> : null}
@@ -43,9 +46,31 @@ export default function ListingCard({ listing }) {
           <Badge variant="outline" className="rounded-full">{listing.listing_type === "private_inventory" ? "Private" : "Published"}</Badge>
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <Button variant="outline" className="rounded-2xl" onClick={async () => { await saveListingToShortlist(listing); toast({ title: 'Saved to shortlist' }); }}><Heart className="mr-2 h-4 w-4" /> Save</Button>
-          <Button variant="outline" className="rounded-2xl" onClick={async () => { await saveListingToCompare(listing); toast({ title: 'Added to compare' }); }}><Scale className="mr-2 h-4 w-4" /> Compare</Button>
-          <Button asChild className="rounded-2xl"><Link to={`/listing/${listing.id}`}>View</Link></Button>
+          <Button
+            variant="outline"
+            className="rounded-2xl"
+            disabled={showcase}
+            onClick={async () => {
+              if (showcase) return;
+              await saveListingToShortlist(listing);
+              toast({ title: 'Saved to shortlist' });
+            }}
+          >
+            <Heart className="mr-2 h-4 w-4" /> Save
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-2xl"
+            disabled={showcase}
+            onClick={async () => {
+              if (showcase) return;
+              await saveListingToCompare(listing);
+              toast({ title: 'Added to compare' });
+            }}
+          >
+            <Scale className="mr-2 h-4 w-4" /> Compare
+          </Button>
+          <Button asChild className="rounded-2xl"><Link to={`/listing/${listing.id}`}>{showcase ? "Preview" : "View"}</Link></Button>
         </div>
       </CardContent>
     </Card>

@@ -4,6 +4,7 @@ import { Building2, Heart, Scale, BookOpen, User, LayoutDashboard, Briefcase, Us
 
 const icons = {
   Explore: Building2,
+  Properties: Building2,
   Shortlist: Heart,
   Compare: Scale,
   Guides: BookOpen,

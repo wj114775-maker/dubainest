@@ -18,11 +18,10 @@ export const roleGroups = {
 export const navItems = {
   buyer: [
     { label: "Explore", path: "/" },
-    { label: "Shortlist", path: "/shortlist" },
-    { label: "Compare", path: "/compare" },
+    { label: "Properties", path: "/properties" },
     { label: "Guides", path: "/guides" },
-    { label: "Account", path: "/account" },
-    { label: "Notifications", path: "/notifications" }
+    { label: "Shortlist", path: "/shortlist" },
+    { label: "Account", path: "/account" }
   ],
   partner: [
     { label: "Overview", path: "/partner" },

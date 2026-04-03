@@ -1,17 +1,22 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import TrustBadge from "@/components/common/TrustBadge";
 import BuyerIntentSheet from '@/components/leads/BuyerIntentSheet';
+import { isShowcaseListing, loadBuyerListingById } from "@/lib/buyerListings";
 
 export default function ListingDetail() {
   const { id } = useParams();
   const [intentType, setIntentType] = useState('request_callback');
   const [open, setOpen] = useState(false);
-  const { data: listing, isLoading } = useQuery({ queryKey: ["listing", id], queryFn: async () => base44.entities.Listing.get(id), enabled: !!id, initialData: null });
+  const { data: listing, isLoading } = useQuery({
+    queryKey: ["listing", id],
+    queryFn: async () => loadBuyerListingById(id),
+    enabled: !!id,
+    initialData: null
+  });
 
   if (isLoading) {
     return <div className="pb-28 text-sm text-muted-foreground">Loading listing...</div>;
@@ -20,6 +25,8 @@ export default function ListingDetail() {
   if (!listing) {
     return <div className="pb-28 text-sm text-muted-foreground">Listing not found.</div>;
   }
+
+  const showcase = isShowcaseListing(listing);
 
   return (
     <>
@@ -30,6 +37,7 @@ export default function ListingDetail() {
       <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
+            {showcase ? <Badge variant="outline">Showcase property</Badge> : null}
             <TrustBadge score={listing.trust_score || 0} />
             {listing.trust_band === 'verified' || listing.verification_status === 'verified' ? <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Verified</Badge> : null}
             <Badge variant="outline">Freshness {listing.freshness_status || 'fresh'}</Badge>
@@ -45,14 +53,19 @@ export default function ListingDetail() {
         <div className="rounded-[2rem] border border-white/10 bg-card/80 p-5">
           <p className="text-sm text-muted-foreground">Guide price</p>
           <p className="mt-2 text-3xl font-semibold">AED {Number(listing.price || 0).toLocaleString()}</p>
+          {showcase ? <p className="mt-2 text-sm text-muted-foreground">This is a showcase property used to keep the catalogue alive while live stock is being published.</p> : null}
           <div className="mt-4 grid gap-2">
-            <Button className="rounded-2xl" onClick={() => { setIntentType('request_callback'); setOpen(true); }}>Request broker callback</Button>
-            <Button variant="outline" className="rounded-2xl" onClick={() => { setIntentType('request_private_inventory'); setOpen(true); }}>Request private inventory access</Button>
+            <Button className="rounded-2xl" onClick={() => { setIntentType('request_callback'); setOpen(true); }}>
+              {showcase ? "Request similar live options" : "Request broker callback"}
+            </Button>
+            <Button variant="outline" className="rounded-2xl" onClick={() => { setIntentType('request_private_inventory'); setOpen(true); }}>
+              {showcase ? "Request curated private stock" : "Request private inventory access"}
+            </Button>
           </div>
         </div>
       </div>
     </div>
-    <BuyerIntentSheet open={open} onOpenChange={setOpen} intentType={intentType} listingId={listing.id} title={listing.title} />
+    <BuyerIntentSheet open={open} onOpenChange={setOpen} intentType={intentType} listingId={showcase ? "" : listing.id} title={listing.title} />
     </>
   );
 }

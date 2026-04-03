@@ -1,11 +1,12 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Home from '@/pages/Home';
+import Properties from '@/pages/Properties';
 import Shortlist from '@/pages/Shortlist';
 import Compare from '@/pages/Compare';
 import Guides from '@/pages/Guides';
@@ -15,6 +16,7 @@ import AreaDetail from '@/pages/AreaDetail';
 import ProjectDetail from '@/pages/ProjectDetail';
 import BuyerQuiz from '@/pages/BuyerQuiz';
 import GoldenVisa from '@/pages/GoldenVisa';
+import SiteMap from '@/pages/SiteMap';
 import PartnerOverview from '@/pages/PartnerOverview';
 import PartnerLeads from '@/pages/PartnerLeads';
 import PartnerListings from '@/pages/PartnerListings';
@@ -47,6 +49,7 @@ import Notifications from '@/pages/Notifications';
 import AppHeader from '@/components/layout/AppHeader';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import SideRail from '@/components/layout/SideRail';
+import SiteFooter from '@/components/layout/SiteFooter';
 import useAppConfig from '@/hooks/useAppConfig';
 import useCurrentUserRole from '@/hooks/useCurrentUserRole';
 import { navItems, roleGroups } from '@/lib/appShell';
@@ -55,24 +58,34 @@ const AppFrame = ({ children, mode = 'buyer', title, showInternalAccess = false 
   const { data: appConfig } = useAppConfig();
   const items = navItems[mode];
   const railTitle = mode === "internal" ? "Operations" : title;
+  const homePath = mode === "internal" ? "/ops" : mode === "partner" ? "/partner" : "/";
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader appName={appConfig.app_name} tagline={appConfig.tagline} internalItems={navItems.internal} showInternalAccess={showInternalAccess} />
+      <AppHeader
+        appName={appConfig.app_name}
+        tagline={appConfig.tagline}
+        internalItems={navItems.internal}
+        buyerItems={navItems.buyer}
+        showInternalAccess={showInternalAccess}
+        homePath={homePath}
+        mode={mode}
+      />
       <div className="mx-auto flex max-w-7xl">
         {mode !== 'buyer' ? <SideRail title={railTitle} items={items} /> : null}
         <main className="min-h-screen flex-1 px-4 py-6 md:px-6 md:py-8">{children}</main>
       </div>
+      {mode === 'buyer' ? <SiteFooter appName={appConfig.app_name} showInternalAccess={showInternalAccess} /> : null}
       {mode === 'buyer' ? <MobileBottomNav items={items} /> : null}
     </div>
   );
 };
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
-  const { data: current } = useCurrentUserRole();
+  const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
+  const { data: current, isLoading: isLoadingRole } = useCurrentUserRole();
 
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  if (isLoadingPublicSettings || isLoadingAuth || isLoadingRole) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
@@ -89,15 +102,19 @@ const AuthenticatedApp = () => {
   const isInternal = current?.isInternal || roleGroups.internal.includes(role) || permissions.length > 0;
   const isPartner = roleGroups.partner.includes(role) || permissions.includes('listings.read') || permissions.includes('leads.read');
   const headerInternalAccess = isInternal;
+  const workspaceTarget = isInternal ? "/ops" : isPartner ? "/partner" : "/account";
 
   return (
     <Routes>
       <Route path="/" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Home /></AppFrame>} />
+      <Route path="/properties" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Properties /></AppFrame>} />
       <Route path="/shortlist" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Shortlist /></AppFrame>} />
       <Route path="/compare" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Compare /></AppFrame>} />
       <Route path="/guides" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Guides /></AppFrame>} />
       <Route path="/account" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Account /></AppFrame>} />
       <Route path="/notifications" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Notifications /></AppFrame>} />
+      <Route path="/sitemap" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><SiteMap /></AppFrame>} />
+      <Route path="/workspace" element={<Navigate to={workspaceTarget} replace />} />
       <Route path="/listing/:id" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><ListingDetail /></AppFrame>} />
       <Route path="/areas/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><AreaDetail /></AppFrame>} />
       <Route path="/projects/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><ProjectDetail /></AppFrame>} />

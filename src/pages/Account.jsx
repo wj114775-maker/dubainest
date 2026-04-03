@@ -1,7 +1,9 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import SectionHeading from "@/components/common/SectionHeading";
@@ -47,7 +49,40 @@ export default function Account() {
           </div>
         </CardContent>
       </Card>
-      {isInternal ? <><AdminDebugCard data={data} internalFromPage={isInternal} /><AdminShortcutsCard /></> : null}
+      {isInternal ? (
+        <>
+          <Card className="rounded-[2rem] border-primary/15 bg-primary/5 shadow-lg shadow-primary/5">
+            <CardHeader>
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge className="rounded-full bg-primary/10 text-primary hover:bg-primary/10">Internal access active</Badge>
+                <Badge variant="outline" className="rounded-full">Role {data.role || "admin"}</Badge>
+              </div>
+              <CardTitle className="text-2xl">Open the workspace, not just the account page</CardTitle>
+              <CardDescription>
+                Your Google account is signed in correctly. Use the workspace launcher below to reach the operational backend directly.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 sm:flex-row">
+              <Button asChild className="rounded-full px-5">
+                <Link to="/workspace">Open workspace</Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full px-5">
+                <Link to="/ops/leads">Open buyers desk</Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full px-5">
+                <Link to="/ops/admin">Open control center</Link>
+              </Button>
+            </CardContent>
+          </Card>
+          <AdminShortcutsCard />
+          <details className="rounded-[2rem] border border-dashed border-primary/25 bg-card/70 p-5">
+            <summary className="cursor-pointer text-sm font-medium text-foreground">Show technical runtime details</summary>
+            <div className="mt-4">
+              <AdminDebugCard data={data} internalFromPage={isInternal} />
+            </div>
+          </details>
+        </>
+      ) : null}
       {data.isAuthenticated ? <BuyerProfileCard profile={profile} /> : null}
     </div>
   );
