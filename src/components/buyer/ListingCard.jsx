@@ -33,6 +33,7 @@ export default function ListingCard({ listing }) {
         </div>
         <div className="flex flex-wrap gap-2">
           {showcase ? <Badge variant="outline" className="rounded-full">Showcase</Badge> : null}
+          {listing.is_off_plan ? <Badge className="rounded-full bg-sky-950 text-white hover:bg-sky-950">Off-Plan</Badge> : null}
           {listing.trust_band === 'verified' || listing.verification_status === 'verified' ? <Badge variant="outline" className="rounded-full">Verified</Badge> : null}
           <Badge variant="outline" className="rounded-full">Freshness {listing.freshness_status || 'fresh'}</Badge>
           {listing.partner_verified ? <Badge variant="outline" className="rounded-full">Partner verified</Badge> : null}

@@ -1,216 +1,321 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
-import { Filter, RotateCcw } from "lucide-react";
-import SectionHeading from "@/components/common/SectionHeading";
+import { ArrowUpDown, SlidersHorizontal } from "lucide-react";
+import { createSearchParams, useSearchParams } from "react-router-dom";
 import ListingListRow from "@/components/buyer/ListingListRow";
+import PropertyFilterPanel from "@/components/buyer/PropertyFilterPanel";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
+import SectionHeading from "@/components/common/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { isShowcaseListing, loadBuyerListings } from "@/lib/buyerListings";
 
 const defaultFilters = {
-  query: "",
-  listingType: "all",
+  location: "",
+  completionStatus: "all",
   propertyType: "all",
-  minBedrooms: "any",
-  trust: "all",
-  privateOnly: "all",
+  bedrooms: "any",
+  bathrooms: "any",
+  minPrice: "0",
+  maxPrice: "0",
+  minArea: "0",
+  maxArea: "0",
+  parkingSpaces: "any",
+  furnishingStatus: "all",
+  keywords: "",
+  withFloorPlans: false,
+  privateInventoryOnly: false,
+  trustedOnly: false,
+  sortBy: "popular",
+};
+
+const filtersFromSearchParams = (searchParams) => ({
+  ...defaultFilters,
+  location: searchParams.get("q") || "",
+  completionStatus: searchParams.get("completion") || "all",
+  propertyType: searchParams.get("propertyType") || "all",
+  bedrooms: searchParams.get("beds") || "any",
+  bathrooms: searchParams.get("baths") || "any",
+  minPrice: searchParams.get("minPrice") || "0",
+  maxPrice: searchParams.get("maxPrice") || "0",
+  minArea: searchParams.get("minArea") || "0",
+  maxArea: searchParams.get("maxArea") || "0",
+  parkingSpaces: searchParams.get("parkingSpaces") || "any",
+  furnishingStatus: searchParams.get("furnishing") || "all",
+  keywords: searchParams.get("keywords") || "",
+  withFloorPlans: searchParams.get("floorPlans") === "1",
+  privateInventoryOnly: searchParams.get("privateInventory") === "1",
+  trustedOnly: searchParams.get("trustedOnly") === "1",
+  sortBy: searchParams.get("sort") || "popular",
+});
+
+const buildSearchParams = (filters) => {
+  const params = {};
+
+  if (filters.location.trim()) params.q = filters.location.trim();
+  if (filters.completionStatus !== "all") params.completion = filters.completionStatus;
+  if (filters.propertyType !== "all") params.propertyType = filters.propertyType;
+  if (filters.bedrooms !== "any") params.beds = filters.bedrooms;
+  if (filters.bathrooms !== "any") params.baths = filters.bathrooms;
+  if (filters.minPrice !== "0") params.minPrice = filters.minPrice;
+  if (filters.maxPrice !== "0") params.maxPrice = filters.maxPrice;
+  if (filters.minArea !== "0") params.minArea = filters.minArea;
+  if (filters.maxArea !== "0") params.maxArea = filters.maxArea;
+  if (filters.parkingSpaces !== "any") params.parkingSpaces = filters.parkingSpaces;
+  if (filters.furnishingStatus !== "all") params.furnishing = filters.furnishingStatus;
+  if (filters.keywords.trim()) params.keywords = filters.keywords.trim();
+  if (filters.withFloorPlans) params.floorPlans = "1";
+  if (filters.privateInventoryOnly) params.privateInventory = "1";
+  if (filters.trustedOnly) params.trustedOnly = "1";
+  if (filters.sortBy !== "popular") params.sort = filters.sortBy;
+
+  return createSearchParams(params);
+};
+
+const formatMoneyShort = (value) => {
+  const number = Number(value || 0);
+  if (!number) return "Any";
+  if (number >= 1000000) return `AED ${(number / 1000000).toFixed(number % 1000000 === 0 ? 0 : 1)}M`;
+  return `AED ${number.toLocaleString()}`;
+};
+
+const formatAreaShort = (value) => {
+  const number = Number(value || 0);
+  if (!number) return "Any";
+  return `${number.toLocaleString()} sqft`;
+};
+
+const filterSummaryChips = (filters) => {
+  const chips = ["Buy", "List view"];
+
+  if (filters.location.trim()) chips.push(filters.location.trim());
+  if (filters.completionStatus === "off_plan") chips.push("Off-Plan");
+  if (filters.completionStatus === "ready") chips.push("Ready");
+  if (filters.propertyType !== "all") chips.push(filters.propertyType);
+  if (filters.bedrooms !== "any") chips.push(`${filters.bedrooms}+ beds`);
+  if (filters.bathrooms !== "any") chips.push(`${filters.bathrooms}+ baths`);
+  if (filters.minPrice !== "0" || filters.maxPrice !== "0") chips.push(`${formatMoneyShort(filters.minPrice)} - ${formatMoneyShort(filters.maxPrice)}`);
+  if (filters.minArea !== "0" || filters.maxArea !== "0") chips.push(`${formatAreaShort(filters.minArea)} - ${formatAreaShort(filters.maxArea)}`);
+  if (filters.keywords.trim()) chips.push(`Keyword: ${filters.keywords.trim()}`);
+  if (filters.privateInventoryOnly) chips.push("Private Inventory");
+  if (filters.withFloorPlans) chips.push("Floor plans");
+  if (filters.trustedOnly) chips.push("Trusted only");
+
+  return chips;
 };
 
 export default function Properties() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [openIntent, setOpenIntent] = useState(false);
-  const initialQuery = searchParams.get("q") || "";
-  const [filters, setFilters] = useState({ ...defaultFilters, query: initialQuery });
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [filters, setFilters] = useState(() => filtersFromSearchParams(searchParams));
 
   const { data: listings = [] } = useQuery({
-    queryKey: ["buyer-properties"],
-    queryFn: () => loadBuyerListings({ limit: 18, includeShowcase: true }),
+    queryKey: ["buyer-properties-v2"],
+    queryFn: () => loadBuyerListings({ limit: 24, includeShowcase: true }),
     initialData: [],
   });
+
+  useEffect(() => {
+    const next = filtersFromSearchParams(searchParams);
+    const nextString = JSON.stringify(next);
+    const currentString = JSON.stringify(filters);
+    if (nextString !== currentString) {
+      setFilters(next);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = buildSearchParams(filters).toString();
+    const currentParams = searchParams.toString();
+    if (nextParams !== currentParams) {
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [filters]);
 
   const propertyTypes = useMemo(
     () => Array.from(new Set(listings.map((listing) => listing.property_type).filter(Boolean))).sort(),
     [listings]
   );
 
+  const areaOptions = useMemo(
+    () => Array.from(new Set(listings.map((listing) => listing.area_name).filter(Boolean))).sort(),
+    [listings]
+  );
+
   const filteredListings = useMemo(() => {
-    return listings.filter((listing) => {
-      const query = filters.query.trim().toLowerCase();
-      const matchesQuery =
-        !query ||
-        [listing.title, listing.area_name, listing.property_type, listing.description]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(query));
+    const searchTerm = filters.location.trim().toLowerCase();
+    const keywordTerm = filters.keywords.trim().toLowerCase();
 
-      const matchesListingType =
-        filters.listingType === "all" ||
-        (filters.listingType === "private_inventory"
-          ? listing.is_private_inventory || listing.listing_type === "private_inventory"
-          : listing.listing_type === filters.listingType);
+    const results = listings.filter((listing) => {
+      const searchableText = [
+        listing.title,
+        listing.area_name,
+        listing.description,
+        listing.property_type,
+        listing.developer_name,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
+      const matchesLocation = !searchTerm || searchableText.includes(searchTerm);
+      const matchesKeywords = !keywordTerm || searchableText.includes(keywordTerm);
+      const matchesCompletion =
+        filters.completionStatus === "all" || listing.completion_status === filters.completionStatus;
       const matchesPropertyType =
         filters.propertyType === "all" || listing.property_type === filters.propertyType;
-
       const matchesBedrooms =
-        filters.minBedrooms === "any" || Number(listing.bedrooms || 0) >= Number(filters.minBedrooms);
+        filters.bedrooms === "any" || Number(listing.bedrooms || 0) >= Number(filters.bedrooms);
+      const matchesBathrooms =
+        filters.bathrooms === "any" || Number(listing.bathrooms || 0) >= Number(filters.bathrooms);
+      const matchesMinPrice = filters.minPrice === "0" || Number(listing.price || 0) >= Number(filters.minPrice);
+      const matchesMaxPrice = filters.maxPrice === "0" || Number(listing.price || 0) <= Number(filters.maxPrice);
+      const matchesMinArea = filters.minArea === "0" || Number(listing.built_up_area_sqft || 0) >= Number(filters.minArea);
+      const matchesMaxArea = filters.maxArea === "0" || Number(listing.built_up_area_sqft || 0) <= Number(filters.maxArea);
+      const matchesParking =
+        filters.parkingSpaces === "any" || Number(listing.parking_spaces || 0) >= Number(filters.parkingSpaces);
+      const matchesFurnishing =
+        filters.furnishingStatus === "all" || listing.furnishing_status === filters.furnishingStatus;
+      const matchesFloorPlans = !filters.withFloorPlans || Boolean(listing.floor_plan_available);
+      const matchesPrivateInventory = !filters.privateInventoryOnly || Boolean(listing.is_private_inventory);
+      const matchesTrusted = !filters.trustedOnly || Number(listing.trust_score || 0) >= 85;
 
-      const matchesTrust =
-        filters.trust === "all" ||
-        (filters.trust === "verified" ? Number(listing.trust_score || 0) >= 90 : Number(listing.trust_score || 0) >= 80);
+      return matchesLocation
+        && matchesKeywords
+        && matchesCompletion
+        && matchesPropertyType
+        && matchesBedrooms
+        && matchesBathrooms
+        && matchesMinPrice
+        && matchesMaxPrice
+        && matchesMinArea
+        && matchesMaxArea
+        && matchesParking
+        && matchesFurnishing
+        && matchesFloorPlans
+        && matchesPrivateInventory
+        && matchesTrusted;
+    });
 
-      const matchesPrivate =
-        filters.privateOnly === "all" ||
-        (filters.privateOnly === "private"
-          ? listing.is_private_inventory
-          : !listing.is_private_inventory);
-
-      return matchesQuery && matchesListingType && matchesPropertyType && matchesBedrooms && matchesTrust && matchesPrivate;
+    return [...results].sort((left, right) => {
+      switch (filters.sortBy) {
+        case "price_low_high":
+          return Number(left.price || 0) - Number(right.price || 0);
+        case "price_high_low":
+          return Number(right.price || 0) - Number(left.price || 0);
+        case "size_large_small":
+          return Number(right.built_up_area_sqft || 0) - Number(left.built_up_area_sqft || 0);
+        case "off_plan_first":
+          return Number(Boolean(right.is_off_plan)) - Number(Boolean(left.is_off_plan));
+        case "popular":
+        default:
+          return Number(right.trust_score || 0) - Number(left.trust_score || 0);
+      }
     });
   }, [filters, listings]);
 
   const liveCount = listings.filter((listing) => !isShowcaseListing(listing)).length;
-  const showcaseCount = listings.length - liveCount;
+  const filteredLiveCount = filteredListings.filter((listing) => !isShowcaseListing(listing)).length;
+  const offPlanCount = filteredListings.filter((listing) => listing.is_off_plan).length;
   const showingShowcaseOnly = listings.length > 0 && liveCount === 0;
+  const chips = useMemo(() => filterSummaryChips(filters), [filters]);
 
   const resetFilters = () => {
     setFilters(defaultFilters);
-    setSearchParams({}, { replace: true });
-  };
-
-  const updateQuery = (value) => {
-    setFilters((current) => ({ ...current, query: value }));
-    if (value.trim()) {
-      setSearchParams({ q: value.trim() }, { replace: true });
-      return;
-    }
-    setSearchParams({}, { replace: true });
+    setAdvancedOpen(false);
   };
 
   return (
     <>
       <div className="space-y-8 pb-28">
         <SectionHeading
-          eyebrow="Property directory"
-          title="A clearer, list-first property browse experience"
-          description="Designed to feel more like a real property application: filters on the left, absorptive list rows on the right, and trust signals visible before the click."
-          action={<Button className="rounded-full px-5" onClick={() => setOpenIntent(true)}>Speak to an adviser</Button>}
+          eyebrow="Property purchase"
+          title="A purchase-first property directory shaped by Bayut and REA patterns"
+          description="Purpose stays fixed to buy. The filter stack follows the clearest market language: location, completion status, property type, beds & baths, price, area, and an expandable More Filters layer."
+          action={<Button className="rounded-full px-5" onClick={() => setOpenIntent(true)}>Request curated shortlist</Button>}
         />
 
-        <div className="grid gap-6 xl:grid-cols-[320px,1fr]">
-          <Card className="h-fit rounded-[2rem] border-white/10 bg-card/90 xl:sticky xl:top-28">
-            <CardContent className="space-y-5 p-6">
-              <div className="flex items-center justify-between">
+        <div className="space-y-4 xl:hidden">
+          <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+            <CardContent className="space-y-4 p-5">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Refine listings</p>
-                  <p className="text-sm text-muted-foreground">Keep everything on one page.</p>
+                  <p className="text-sm font-semibold text-foreground">{filteredListings.length} properties</p>
+                  <p className="text-sm text-muted-foreground">{offPlanCount} off-plan and {filteredLiveCount} live listings currently visible.</p>
                 </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <Filter className="h-4 w-4" />
+                <Button variant="outline" className="rounded-full" onClick={() => setMobileFiltersOpen(true)}>
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Filters
+                </Button>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-[1fr,220px]">
+                <div className="flex flex-wrap gap-2">
+                  {chips.map((chip) => <Badge key={chip} variant="outline" className="rounded-full">{chip}</Badge>)}
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Search</p>
-                <Input
-                  value={filters.query}
-                  onChange={(event) => updateQuery(event.target.value)}
-                  placeholder="Area, property type, or keyword"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Transaction</p>
-                <Select value={filters.listingType} onValueChange={(value) => setFilters((current) => ({ ...current, listingType: value }))}>
-                  <SelectTrigger><SelectValue placeholder="Any transaction" /></SelectTrigger>
+                <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
+                  <SelectTrigger className="rounded-full">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Any transaction</SelectItem>
-                    <SelectItem value="sale">For sale</SelectItem>
-                    <SelectItem value="private_inventory">Private inventory</SelectItem>
+                    <SelectItem value="popular">Popular</SelectItem>
+                    <SelectItem value="price_low_high">Price low to high</SelectItem>
+                    <SelectItem value="price_high_low">Price high to low</SelectItem>
+                    <SelectItem value="size_large_small">Largest size</SelectItem>
+                    <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Property type</p>
-                <Select value={filters.propertyType} onValueChange={(value) => setFilters((current) => ({ ...current, propertyType: value }))}>
-                  <SelectTrigger><SelectValue placeholder="Any property type" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Any property type</SelectItem>
-                    {propertyTypes.map((type) => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Bedrooms</p>
-                <Select value={filters.minBedrooms} onValueChange={(value) => setFilters((current) => ({ ...current, minBedrooms: value }))}>
-                  <SelectTrigger><SelectValue placeholder="Any size" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any size</SelectItem>
-                    <SelectItem value="1">1+ bedrooms</SelectItem>
-                    <SelectItem value="2">2+ bedrooms</SelectItem>
-                    <SelectItem value="3">3+ bedrooms</SelectItem>
-                    <SelectItem value="4">4+ bedrooms</SelectItem>
-                    <SelectItem value="5">5+ bedrooms</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Trust level</p>
-                <Select value={filters.trust} onValueChange={(value) => setFilters((current) => ({ ...current, trust: value }))}>
-                  <SelectTrigger><SelectValue placeholder="Any trust level" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Any trust level</SelectItem>
-                    <SelectItem value="strong">Strong trust 80+</SelectItem>
-                    <SelectItem value="verified">Verified trust 90+</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Inventory mode</p>
-                <Select value={filters.privateOnly} onValueChange={(value) => setFilters((current) => ({ ...current, privateOnly: value }))}>
-                  <SelectTrigger><SelectValue placeholder="All inventory" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All inventory</SelectItem>
-                    <SelectItem value="private">Private inventory only</SelectItem>
-                    <SelectItem value="public">Published only</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button variant="outline" className="w-full rounded-full" onClick={resetFilters}>
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Clear filters
-              </Button>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[320px,1fr]">
+          <div className="hidden xl:block">
+            <PropertyFilterPanel
+              filters={filters}
+              setFilters={setFilters}
+              propertyTypes={propertyTypes}
+              areaOptions={areaOptions}
+              advancedOpen={advancedOpen}
+              setAdvancedOpen={setAdvancedOpen}
+              onReset={resetFilters}
+            />
+          </div>
 
           <div className="space-y-5">
-            <Card className="rounded-[2rem] border-white/10 bg-card/90">
-              <CardContent className="flex flex-col gap-4 p-6 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {filteredListings.length} properties available
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {liveCount} live listings
-                    {showcaseCount ? ` and ${showcaseCount} showcase entries` : ""}
-                    {" "}currently visible.
-                  </p>
+            <Card className="hidden rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5 xl:block">
+              <CardContent className="space-y-4 p-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{filteredListings.length} purchase listings</p>
+                    <p className="text-sm text-muted-foreground">
+                      {offPlanCount} off-plan options, {filteredListings.filter((listing) => listing.is_private_inventory).length} private inventory entries, and {filteredLiveCount} live records in the current catalogue.
+                    </p>
+                  </div>
+                  <div className="w-full lg:w-[240px]">
+                    <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
+                      <SelectTrigger className="rounded-full">
+                        <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="popular">Popular</SelectItem>
+                        <SelectItem value="price_low_high">Price low to high</SelectItem>
+                        <SelectItem value="price_high_low">Price high to low</SelectItem>
+                        <SelectItem value="size_large_small">Largest size</SelectItem>
+                        <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="rounded-full">List view</Badge>
-                  <Badge variant="outline" className="rounded-full">Trust-first</Badge>
-                  <Badge variant="outline" className="rounded-full">Enterprise-style absorption</Badge>
+                  {chips.map((chip) => <Badge key={chip} variant="outline" className="rounded-full">{chip}</Badge>)}
                 </div>
               </CardContent>
             </Card>
@@ -218,9 +323,9 @@ export default function Properties() {
             {showingShowcaseOnly ? (
               <Card className="rounded-[2rem] border-primary/20 bg-primary/5">
                 <CardContent className="space-y-2 p-6">
-                  <p className="text-sm font-semibold text-foreground">Live partner stock is still being populated.</p>
+                  <p className="text-sm font-semibold text-foreground">Live partner stock is still being published.</p>
                   <p className="text-sm text-muted-foreground">
-                    The listings below are showcase examples with real imagery so the product stays usable and presentable while live inventory is being published.
+                    Showcase listings with real photography are filling the directory so the experience stays polished while the live feed grows.
                   </p>
                 </CardContent>
               </Card>
@@ -233,13 +338,13 @@ export default function Properties() {
                 ))}
               </div>
             ) : (
-              <Card className="rounded-[2rem] border-white/10 bg-card/90">
+              <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
                 <CardContent className="space-y-3 p-8">
-                  <p className="text-lg font-semibold text-foreground">No properties match those filters.</p>
+                  <p className="text-xl font-semibold tracking-tight text-foreground">No properties match those filters.</p>
                   <p className="text-sm text-muted-foreground">
-                    Broaden the search or ask the advisory team to curate options for you.
+                    Broaden the range or ask the team to build a curated purchase shortlist.
                   </p>
-                  <div className="flex gap-3">
+                  <div className="flex flex-wrap gap-3">
                     <Button variant="outline" className="rounded-full" onClick={resetFilters}>Reset filters</Button>
                     <Button className="rounded-full" onClick={() => setOpenIntent(true)}>Request curated options</Button>
                   </div>
@@ -249,6 +354,27 @@ export default function Properties() {
           </div>
         </div>
       </div>
+
+      <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Refine your property search</SheetTitle>
+            <SheetDescription>Keep the essentials visible first, then expand More Filters only when you need deeper control.</SheetDescription>
+          </SheetHeader>
+          <div className="mt-6">
+            <PropertyFilterPanel
+              filters={filters}
+              setFilters={setFilters}
+              propertyTypes={propertyTypes}
+              areaOptions={areaOptions}
+              advancedOpen={advancedOpen}
+              setAdvancedOpen={setAdvancedOpen}
+              onReset={resetFilters}
+              className="border-none bg-transparent shadow-none"
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <BuyerIntentSheet
         open={openIntent}

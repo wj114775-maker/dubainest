@@ -1,26 +1,76 @@
-import React from "react";
-import { base44 } from "@/api/base44Client";
+import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import {
+  BookOpen,
+  BriefcaseBusiness,
+  Building2,
+  Gem,
+  Globe2,
+  KeyRound,
+  Sparkles,
+} from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import HeroSearch from "@/components/buyer/HeroSearch";
-import ListingListRow from "@/components/buyer/ListingListRow";
 import AreaSpotlightCard from "@/components/buyer/AreaSpotlightCard";
 import StickyInquiryBar from "@/components/buyer/StickyInquiryBar";
+import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import SectionHeading from "@/components/common/SectionHeading";
 import MetricCard from "@/components/common/MetricCard";
 import GuideCard from "@/components/content/GuideCard";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import useAppConfig from "@/hooks/useAppConfig";
-import { getShowcaseListings, isShowcaseListing, loadBuyerListings } from "@/lib/buyerListings";
 
+const pathCards = [
+  {
+    title: "Property purchase",
+    description: "Open the list-first property directory built for clean buying decisions.",
+    path: "/properties",
+    action: "Browse listings",
+    icon: Building2,
+  },
+  {
+    title: "Off-Plan opportunities",
+    description: "Jump directly into future-delivery stock with dedicated off-plan badging and filters.",
+    path: "/properties?completion=off_plan",
+    action: "View off-plan",
+    icon: Sparkles,
+  },
+  {
+    title: "Private inventory",
+    description: "Request access to discreet stock, concierge handling, and private client workflows.",
+    action: "Request access",
+    icon: Gem,
+    intentType: "request_private_inventory",
+  },
+  {
+    title: "Golden Visa",
+    description: "Start with the residency pathway and let property discovery follow the right route.",
+    path: "/golden-visa",
+    action: "Start assessment",
+    icon: Globe2,
+  },
+  {
+    title: "Guides and research",
+    description: "Use area intelligence, investment content, and relocation guides before committing.",
+    path: "/guides",
+    action: "Open guides",
+    icon: BookOpen,
+  },
+  {
+    title: "Business dealings",
+    description: "Speak to the team about investment support, partner-led execution, or premium deal handling.",
+    action: "Speak to advisory",
+    icon: BriefcaseBusiness,
+    intentType: "request_callback",
+  },
+];
 
 export default function Home() {
   const { data: appConfig } = useAppConfig();
-  const { data: listings = [] } = useQuery({
-    queryKey: ["home-listings"],
-    queryFn: () => loadBuyerListings({ limit: 4, includeShowcase: true }),
-    initialData: []
-  });
+  const [intentConfig, setIntentConfig] = useState({ open: false, type: "request_callback", title: "Request a callback" });
+
   const { data: areas = [] } = useQuery({ queryKey: ["home-areas"], queryFn: () => base44.entities.Area.list("-updated_date", 6), initialData: [] });
   const { data: guides = [] } = useQuery({ queryKey: ["home-guides"], queryFn: () => base44.entities.Guide.filter({ status: "published" }, "-updated_date", 3), initialData: [] });
   const { data: homeMetrics } = useQuery({
@@ -32,67 +82,139 @@ export default function Home() {
       ]);
 
       const verifiedListings = allListings.filter((item) => item.status === "published" && item.permit_verified).length;
+      const offPlanListings = allListings.filter((item) => item.status === "published" && item.completion_status === "off_plan").length;
       const activePartners = agencies.filter((item) => item.status === "active");
       const averageTrust = allListings.length
         ? Math.round(allListings.reduce((sum, item) => sum + Number(item.trust_score || 0), 0) / allListings.length)
         : 0;
-      const callbackSla = activePartners.length
-        ? Math.round(activePartners.reduce((sum, item) => sum + Number(item.sla_response_minutes || 0), 0) / activePartners.length)
-        : 0;
 
-      return { verifiedListings, activePartners: activePartners.length, averageTrust, callbackSla };
+      return {
+        verifiedListings,
+        offPlanListings,
+        activePartners: activePartners.length,
+        averageTrust,
+      };
     },
-    initialData: { verifiedListings: 0, activePartners: 0, averageTrust: 0, callbackSla: 0 },
+    initialData: { verifiedListings: 0, offPlanListings: 0, activePartners: 0, averageTrust: 0 },
   });
-  const liveListings = listings.filter((listing) => !isShowcaseListing(listing)).length;
-  const showcaseListings = getShowcaseListings(3);
+
+  const featuredGuideSet = useMemo(() => guides.slice(0, 3), [guides]);
+  const featuredAreas = useMemo(() => areas.slice(0, 2), [areas]);
 
   return (
-    <div className="space-y-10 pb-32">
-      <HeroSearch appName={appConfig.app_name} />
-      <section className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="Verified active listings" value={String(homeMetrics.verifiedListings)} hint="Permit-aware publishing only" />
-        <MetricCard label="Partner agencies" value={String(homeMetrics.activePartners)} hint="Licensed execution partners" />
-        <MetricCard label="Average trust score" value={`${homeMetrics.averageTrust}/100`} hint="Listing + partner + broker weighted" />
-        <MetricCard label="Callback SLA" value={homeMetrics.callbackSla ? `${homeMetrics.callbackSla} min` : "—"} hint="Tracked across partner OS" />
-      </section>
-      <section className="space-y-6">
-        <SectionHeading
-          eyebrow="Showcase stock"
-          title="Demo properties with real imagery so the site does not feel empty"
-          description="These are curated showcase listings designed to keep the front-end alive and enterprise-presentable while more live partner stock is added."
-        />
-        <div className="space-y-5">
-          {showcaseListings.map((listing) => <ListingListRow key={listing.id} listing={listing} />)}
-        </div>
-      </section>
-      <section className="space-y-6">
-        <SectionHeading
-          eyebrow="Buyer App"
-          title="Verified opportunities presented in a cleaner, list-first format"
-          description="The browse layer now behaves more like a proper property application: easy to scan, trust-forward, and less dependent on hidden backend knowledge."
-          action={<Button asChild className="rounded-full px-5"><Link to="/properties">Open property directory</Link></Button>}
-        />
-        {liveListings === 0 && listings.length ? (
-          <p className="rounded-[1.6rem] border border-primary/15 bg-primary/5 px-5 py-4 text-sm text-muted-foreground">
-            Live partner listings are still being populated. The rows below are showcase properties with real imagery so the homepage still feels alive and absorbable.
-          </p>
-        ) : null}
-        {listings.length ? (
-          <div className="space-y-5">
-            {listings.map((listing) => <ListingListRow key={listing.id} listing={listing} />)}
+    <>
+      <div className="space-y-10 pb-32">
+        <HeroSearch appName={appConfig.app_name} />
+
+        <section className="grid gap-4 md:grid-cols-4">
+          <MetricCard label="Verified active listings" value={String(homeMetrics.verifiedListings)} hint="Purchase-ready and trust screened" />
+          <MetricCard label="Off-plan opportunities" value={String(homeMetrics.offPlanListings)} hint="Future-delivery stock tracked separately" />
+          <MetricCard label="Partner agencies" value={String(homeMetrics.activePartners)} hint="Licensed execution partners" />
+          <MetricCard label="Average trust score" value={`${homeMetrics.averageTrust}/100`} hint="Listing + partner + broker weighted" />
+        </section>
+
+        <section className="space-y-6">
+          <SectionHeading
+            eyebrow="Explore"
+            title="Choose the right entry path before you browse"
+            description="This page is now an overview surface. The actual property stock lives in the property directory, while this page helps buyers choose their route."
+          />
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {pathCards.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Card key={item.title} className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+                  <CardContent className="flex h-full flex-col justify-between gap-6 p-6">
+                    <div className="space-y-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-[1.2rem] bg-primary/10 text-primary">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold tracking-tight text-foreground">{item.title}</h3>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+                      </div>
+                    </div>
+                    {item.path ? (
+                      <Button asChild className="w-full rounded-full">
+                        <Link to={item.path}>{item.action}</Link>
+                      </Button>
+                    ) : (
+                      <Button
+                        className="w-full rounded-full"
+                        onClick={() => setIntentConfig({ open: true, type: item.intentType, title: item.title })}
+                      >
+                        {item.action}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-        ) : <p className="text-sm text-muted-foreground">No published listings yet.</p>}
-      </section>
-      <section className="space-y-6">
-        <SectionHeading eyebrow="Area Intelligence" title="Where demand, yield and family fit intersect" description="Area pages become a premium intelligence surface for movers, investors and private clients." />
-        {areas.length ? <div className="grid gap-5 md:grid-cols-2">{areas.slice(0,2).map((area) => <AreaSpotlightCard key={area.id} area={area} />)}</div> : <p className="text-sm text-muted-foreground">No area intelligence published yet.</p>}
-      </section>
-      <section className="space-y-6">
-        <SectionHeading eyebrow="Content OS" title="Decision content built to capture and qualify demand" description="Investor guides, relocation content and visa explainers work as acquisition surfaces and downstream qualification tools." />
-        {guides.length ? <div className="grid gap-5 md:grid-cols-3">{guides.slice(0,3).map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div> : <p className="text-sm text-muted-foreground">No published guides yet.</p>}
-      </section>
-      <StickyInquiryBar />
-    </div>
+        </section>
+
+        <section className="space-y-6">
+          <SectionHeading
+            eyebrow="Area intelligence"
+            title="Start with the neighbourhood if the location decision comes first"
+            description="Area pages stay visible from the overview page because many buyers decide by location before they decide by stock."
+          />
+          {featuredAreas.length ? (
+            <div className="grid gap-5 md:grid-cols-2">
+              {featuredAreas.map((area) => <AreaSpotlightCard key={area.id} area={area} />)}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No area intelligence published yet.</p>
+          )}
+        </section>
+
+        <section className="space-y-6">
+          <SectionHeading
+            eyebrow="Guides"
+            title="Research and guidance remain a first-class entry route"
+            description="Keep content visible on the Explore page so buyers who are not ready for property search can still progress intelligently."
+          />
+          {featuredGuideSet.length ? (
+            <div className="grid gap-5 md:grid-cols-3">
+              {featuredGuideSet.map((guide) => <GuideCard key={guide.id} guide={guide} />)}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No published guides yet.</p>
+          )}
+        </section>
+
+        <section className="rounded-[2rem] border border-white/10 bg-card/95 p-6 shadow-xl shadow-black/5">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs uppercase tracking-[0.3em] text-primary">Purchase pathway</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">When the buyer is ready, send them into the property directory</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                The property page now carries the heavier Bayut-style filter work. Explore stays lighter and acts as the business overview page.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button asChild className="rounded-full px-5">
+                <Link to="/properties">
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Open property directory
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full px-5">
+                <Link to="/properties?completion=off_plan">View off-plan only</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <StickyInquiryBar />
+      </div>
+
+      <BuyerIntentSheet
+        open={intentConfig.open}
+        onOpenChange={(open) => setIntentConfig((current) => ({ ...current, open }))}
+        intentType={intentConfig.type}
+        title={intentConfig.title}
+      />
+    </>
   );
 }

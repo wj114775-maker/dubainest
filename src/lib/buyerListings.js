@@ -37,6 +37,11 @@ const demoListings = [
     bedrooms: 4,
     bathrooms: 5,
     built_up_area_sqft: 3680,
+    parking_spaces: 2,
+    furnishing_status: "furnished",
+    floor_plan_available: true,
+    completion_status: "ready",
+    developer_name: "Emaar",
     status: "published",
     publication_status: "published",
     verification_status: "verified",
@@ -115,6 +120,11 @@ const demoListings = [
     bedrooms: 3,
     bathrooms: 4,
     built_up_area_sqft: 2680,
+    parking_spaces: 2,
+    furnishing_status: "furnished",
+    floor_plan_available: true,
+    completion_status: "ready",
+    developer_name: "Omniyat",
     status: "published",
     publication_status: "published",
     verification_status: "verified",
@@ -159,14 +169,20 @@ const demoListings = [
   },
   {
     id: "demo-city-walk-penthouse",
-    title: "City Walk Terrace Penthouse",
-    description: "A modern penthouse showcase for buyers who want walkable retail, hospitality, and terrace-led entertaining close to the city core.",
+    title: "City Walk Off-Plan Terrace Penthouse",
+    description: "An off-plan penthouse showcase for buyers who want walkable retail, hospitality, and terrace-led entertaining close to the city core with future handover upside.",
     listing_type: "sale",
     property_type: "Penthouse",
     price: 13900000,
     bedrooms: 4,
     bathrooms: 5,
     built_up_area_sqft: 4310,
+    parking_spaces: 3,
+    furnishing_status: "unfurnished",
+    floor_plan_available: true,
+    completion_status: "off_plan",
+    handover_label: "Q4 2028",
+    developer_name: "Meraas",
     status: "published",
     publication_status: "published",
     verification_status: "verified",
@@ -185,14 +201,20 @@ const demoListings = [
   },
   {
     id: "demo-creek-harbour-investor-suite",
-    title: "Dubai Creek Harbour Investor Suite",
-    description: "A compact premium apartment showcase positioned for buyers who care about skyline views, a newer master community, and resilient investor demand.",
+    title: "Dubai Creek Harbour Off-Plan Investor Suite",
+    description: "An off-plan apartment showcase positioned for buyers who care about skyline views, a newer master community, and resilient investor demand with staged payment plans.",
     listing_type: "sale",
     property_type: "Apartment",
     price: 2890000,
     bedrooms: 2,
     bathrooms: 2,
     built_up_area_sqft: 1360,
+    parking_spaces: 1,
+    furnishing_status: "unfurnished",
+    floor_plan_available: true,
+    completion_status: "off_plan",
+    handover_label: "Q2 2029",
+    developer_name: "Emaar",
     status: "published",
     publication_status: "published",
     verification_status: "verified",
@@ -237,14 +259,20 @@ const demoListings = [
   },
   {
     id: "demo-bluewaters-branded-apartment",
-    title: "Bluewaters Branded Corner Apartment",
-    description: "A branded apartment showcase for lifestyle buyers seeking waterfront retail, skyline views, and hotel-linked amenity access on Bluewaters.",
+    title: "Bluewaters Branded Off-Plan Corner Apartment",
+    description: "A branded off-plan apartment showcase for lifestyle buyers seeking waterfront retail, skyline views, and hotel-linked amenity access on Bluewaters.",
     listing_type: "sale",
     property_type: "Apartment",
     price: 7580000,
     bedrooms: 3,
     bathrooms: 4,
     built_up_area_sqft: 2260,
+    parking_spaces: 2,
+    furnishing_status: "furnished",
+    floor_plan_available: true,
+    completion_status: "off_plan",
+    handover_label: "Q1 2028",
+    developer_name: "Meraas",
     status: "published",
     publication_status: "published",
     verification_status: "verified",
@@ -264,6 +292,32 @@ const demoListings = [
 ];
 
 const demoListingsById = Object.fromEntries(demoListings.map((listing) => [listing.id, listing]));
+
+function normalizeBuyerListing(listing) {
+  if (!listing) return null;
+
+  const bedrooms = Number(listing.bedrooms || 0);
+  const bathrooms = Number(listing.bathrooms || bedrooms || 0);
+  const parkingSpaces = listing.parking_spaces ?? listing.car_spaces ?? Math.max(Math.min(bedrooms || 1, 4), 1);
+  const completionStatus = listing.completion_status || "ready";
+
+  return {
+    purpose: "buy",
+    area_unit: "sqft",
+    furnishing_status: "unfurnished",
+    floor_plan_available: false,
+    keywords: "",
+    completion_status: completionStatus,
+    handover_label: completionStatus === "off_plan" ? "Future handover" : "",
+    developer_name: "",
+    ...listing,
+    bedrooms,
+    bathrooms,
+    parking_spaces: parkingSpaces,
+    completion_status: completionStatus,
+    is_off_plan: completionStatus === "off_plan",
+  };
+}
 
 async function fetchLivePublishedListings(limit = 24) {
   try {
@@ -292,25 +346,25 @@ function topUpWithShowcaseListings(liveListings = [], limit = 24) {
 export async function loadBuyerListings({ limit = 24, includeShowcase = true } = {}) {
   const liveListings = await fetchLivePublishedListings(limit);
   if (!includeShowcase) {
-    return liveListings.slice(0, limit);
+    return liveListings.slice(0, limit).map(normalizeBuyerListing);
   }
-  return topUpWithShowcaseListings(liveListings, limit);
+  return topUpWithShowcaseListings(liveListings, limit).map(normalizeBuyerListing);
 }
 
 export async function loadBuyerListingById(id) {
   if (demoListingsById[id]) {
-    return demoListingsById[id];
+    return normalizeBuyerListing(demoListingsById[id]);
   }
 
   try {
-    return await base44.entities.Listing.get(id);
+    return normalizeBuyerListing(await base44.entities.Listing.get(id));
   } catch {
-    return demoListingsById[id] || null;
+    return normalizeBuyerListing(demoListingsById[id] || null);
   }
 }
 
 export function getShowcaseListings(limit = demoListings.length) {
-  return demoListings.slice(0, limit);
+  return demoListings.slice(0, limit).map(normalizeBuyerListing);
 }
 
 export function isShowcaseListing(listing) {
