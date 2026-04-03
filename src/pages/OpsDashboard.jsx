@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -88,6 +88,7 @@ function WorkflowStageCard({ step, title, description, count, helper, path, acti
 }
 
 export default function OpsDashboard() {
+  const [showSystemMap, setShowSystemMap] = useState(false);
   const { data } = useQuery({
     queryKey: ["ops-dashboard-data"],
     queryFn: async () => {
@@ -407,41 +408,16 @@ export default function OpsDashboard() {
       <SectionHeading
         eyebrow="Operations workspace"
         title="One clear operating flow from inquiry to cash"
-        description="Start here every day. This page separates daily staff work from partner access, buyer experience, and admin-only setup so the platform feels like one business flow instead of scattered tools."
+        description="Start here every day. This page now puts today's work first. The broader platform map stays secondary unless you need it."
         action={(
           <div className="flex flex-wrap gap-2">
             <Button asChild><Link to="/ops/leads">Open buyer pipeline</Link></Button>
-            <Button variant="outline" asChild><Link to="/ops/admin">Open control center</Link></Button>
+            <Button variant="outline" onClick={() => setShowSystemMap((current) => !current)}>
+              {showSystemMap ? "Hide platform map" : "Show platform map"}
+            </Button>
           </div>
         )}
       />
-
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-        {portalCards.map((item) => (
-          <WorkspacePortalCard key={item.title} {...item} />
-        ))}
-      </div>
-
-      <Card className="rounded-[2rem] border-white/10 bg-card/75 shadow-xl shadow-black/5">
-        <CardContent className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.26em] text-primary">Use this rule</p>
-            <h3 className="mt-3 text-2xl font-semibold tracking-tight">Staff do daily work in operations. Admins do setup in control.</h3>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Operations staff</p>
-            <p className="mt-2">Start in Workspace, then go to Buyer Pipeline, Supply Review, Premium Cases, or Money Desk.</p>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Partners</p>
-            <p className="mt-2">Stay in the Partner workspace for assigned leads, listings, concierge coordination, payouts, and disputes.</p>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Admins</p>
-            <p className="mt-2">Use Control Center, Team, Security, and Settings only for governance, permissions, and platform setup.</p>
-          </div>
-        </CardContent>
-      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {metrics.map((metric) => (
@@ -481,6 +457,37 @@ export default function OpsDashboard() {
           />
         </AccessGuard>
       </div>
+
+      {showSystemMap ? (
+        <div className="space-y-6">
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            {portalCards.map((item) => (
+              <WorkspacePortalCard key={item.title} {...item} />
+            ))}
+          </div>
+
+          <Card className="rounded-[2rem] border-white/10 bg-card/75 shadow-xl shadow-black/5">
+            <CardContent className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.26em] text-primary">Use this rule</p>
+                <h3 className="mt-3 text-2xl font-semibold tracking-tight">Staff do daily work in operations. Admins do setup in control.</h3>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Operations staff</p>
+                <p className="mt-2">Start in Home, then go to Buyers, Listings, Premium, or Money.</p>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Partners</p>
+                <p className="mt-2">Stay in the Partner workspace for assigned leads, listings, concierge coordination, payouts, and disputes.</p>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Admins</p>
+                <p className="mt-2">Use Control Center only for governance, permissions, and platform setup.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -9,12 +9,15 @@ import ComplianceFilters from "@/components/ops/ComplianceFilters";
 import ListingGovernanceQueue from "@/components/ops/ListingGovernanceQueue";
 import AccessGuard from "@/components/admin/AccessGuard";
 import AdminRecordFormCard from "@/components/admin/AdminRecordFormCard";
+import { Button } from "@/components/ui/button";
 
 export default function OpsCompliance() {
   const queryClient = useQueryClient();
   const [caseForm, setCaseForm] = useState({ summary: "", category: "permit", severity: "low", status: "open" });
   const [ruleForm, setRuleForm] = useState({ name: "", rule_type: "publishing_gate", status: "active", conditions: "{}", actions: "{}" });
   const [filters, setFilters] = useState({ severity: "all", trustBand: "all", freshness: "all", permit: "all", partner: "all", scope: "all" });
+  const [showCaseList, setShowCaseList] = useState(false);
+  const [showCreateTools, setShowCreateTools] = useState(false);
 
   const { data: cases = [] } = useQuery({
     queryKey: ["ops-compliance-cases"],
@@ -65,7 +68,21 @@ export default function OpsCompliance() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Verification" title="Permits, evidence, and publishing controls" description="Use this desk for exceptions and trust issues that must be resolved before listings or partner execution can proceed." />
+      <SectionHeading
+        eyebrow="Verification"
+        title="Permits, evidence, and publishing controls"
+        description="This page now stays focused on the live exceptions desk. The long case list and governance create tools stay hidden until you need them."
+        action={(
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setShowCaseList((current) => !current)}>
+              {showCaseList ? "Hide detailed cases" : "Show detailed cases"}
+            </Button>
+            <Button variant="outline" onClick={() => setShowCreateTools((current) => !current)}>
+              {showCreateTools ? "Hide create tools" : "Show create tools"}
+            </Button>
+          </div>
+        )}
+      />
       <AccessGuard permission="compliance_cases.read">
         <ComplianceFilters filters={filters} onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))} />
       </AccessGuard>
@@ -79,29 +96,33 @@ export default function OpsCompliance() {
         {filters.scope !== "cases" ? <ListingGovernanceQueue listings={filteredListings.filter((item) => ["flagged", "frozen", "stale", "verification_pending", "under_review"].includes(item.status)).slice(0, 8)} /> : null}
       </AccessGuard>
       <AccessGuard permission="compliance_cases.read">
-        <div className="grid gap-4 md:grid-cols-2">
-          {filteredCases.map((item) => <ComplianceCaseCard key={item.id} item={item} />)}
-        </div>
+        {showCaseList ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {filteredCases.map((item) => <ComplianceCaseCard key={item.id} item={item} />)}
+          </div>
+        ) : null}
       </AccessGuard>
       <AccessGuard permission="compliance_cases.manage">
-        <div className="grid gap-6 xl:grid-cols-2">
-          <AdminRecordFormCard
-            title="Create compliance case"
-            values={caseForm}
-            onChange={(key, value) => setCaseForm((current) => ({ ...current, [key]: value }))}
-            fields={[{ key: "summary", label: "Summary", multiline: true }, { key: "category", label: "Category" }, { key: "severity", label: "Severity" }, { key: "status", label: "Status" }]}
-            onSubmit={() => manageRecord.mutate({ entityName: "ComplianceCase", payload: caseForm, summary: "Compliance case created" })}
-            submitLabel="Create case"
-          />
-          <AdminRecordFormCard
-            title="Create compliance rule"
-            values={ruleForm}
-            onChange={(key, value) => setRuleForm((current) => ({ ...current, [key]: value }))}
-            fields={[{ key: "name", label: "Rule name" }, { key: "rule_type", label: "Rule type" }, { key: "status", label: "Status" }, { key: "conditions", label: "Conditions JSON", multiline: true }, { key: "actions", label: "Actions JSON", multiline: true }]}
-            onSubmit={() => manageRecord.mutate({ entityName: "ComplianceRule", payload: { ...ruleForm, conditions: JSON.parse(ruleForm.conditions || "{}"), actions: JSON.parse(ruleForm.actions || "{}") }, summary: "Compliance rule created" })}
-            submitLabel="Create rule"
-          />
-        </div>
+        {showCreateTools ? (
+          <div className="grid gap-6 xl:grid-cols-2">
+            <AdminRecordFormCard
+              title="Create compliance case"
+              values={caseForm}
+              onChange={(key, value) => setCaseForm((current) => ({ ...current, [key]: value }))}
+              fields={[{ key: "summary", label: "Summary", multiline: true }, { key: "category", label: "Category" }, { key: "severity", label: "Severity" }, { key: "status", label: "Status" }]}
+              onSubmit={() => manageRecord.mutate({ entityName: "ComplianceCase", payload: caseForm, summary: "Compliance case created" })}
+              submitLabel="Create case"
+            />
+            <AdminRecordFormCard
+              title="Create compliance rule"
+              values={ruleForm}
+              onChange={(key, value) => setRuleForm((current) => ({ ...current, [key]: value }))}
+              fields={[{ key: "name", label: "Rule name" }, { key: "rule_type", label: "Rule type" }, { key: "status", label: "Status" }, { key: "conditions", label: "Conditions JSON", multiline: true }, { key: "actions", label: "Actions JSON", multiline: true }]}
+              onSubmit={() => manageRecord.mutate({ entityName: "ComplianceRule", payload: { ...ruleForm, conditions: JSON.parse(ruleForm.conditions || "{}"), actions: JSON.parse(ruleForm.actions || "{}") }, summary: "Compliance rule created" })}
+              submitLabel="Create rule"
+            />
+          </div>
+        ) : null}
       </AccessGuard>
     </div>
   );

@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LeadRecordPanel from "@/components/leads/LeadRecordPanel";
 import InternalLeadActionPanel from "@/components/leads/InternalLeadActionPanel";
 import LeadNotesCard from "@/components/leads/LeadNotesCard";
@@ -21,6 +21,7 @@ export default function OpsLeadDetail() {
   const { id } = useParams();
   const queryClient = useQueryClient();
   const { data: access } = useAccessControl();
+  const [showFullRecord, setShowFullRecord] = useState(false);
   const manageLead = useMutation({
     mutationFn: ({ action, notes, partner_id, target_lead_id, severity, approval }) => base44.functions.invoke("internalManageLead", { lead_id: id, action, notes, partner_id, target_lead_id, severity, approval }),
     onSuccess: () => {
@@ -89,35 +90,47 @@ export default function OpsLeadDetail() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Buyer pipeline" title={data.lead?.lead_code || "Lead detail"} description="Review the full buyer record across qualification, protection, routing, partner handling, and audit trail." action={<div className="flex gap-2"><Button variant="outline" asChild><Link to="/ops/leads">Back</Link></Button><Button onClick={() => manageLead.mutate({ action: "lock" })}>Lock</Button><Button variant="outline" onClick={() => manageLead.mutate({ action: "release" })}>Release</Button></div>} />
+      <SectionHeading
+        eyebrow="Buyer pipeline"
+        title={data.lead?.lead_code || "Lead detail"}
+        description="This page is now one vertical lead workspace. The live workflow stays visible first, while the raw record stays secondary."
+        action={(
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild><Link to="/ops/leads">Back</Link></Button>
+            <Button variant="outline" onClick={() => setShowFullRecord((current) => !current)}>
+              {showFullRecord ? "Hide full record" : "Show full record"}
+            </Button>
+            <Button onClick={() => manageLead.mutate({ action: "lock" })}>Lock</Button>
+            <Button variant="outline" onClick={() => manageLead.mutate({ action: "release" })}>Release</Button>
+          </div>
+        )}
+      />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div>
-        <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-2xl bg-muted/70 p-2">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="attribution">Attribution</TabsTrigger>
-          <TabsTrigger value="identity">Identity</TabsTrigger>
-          <TabsTrigger value="assignments">Assignments</TabsTrigger>
-          <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="attempts">Contact</TabsTrigger>
-          <TabsTrigger value="viewings">Viewings</TabsTrigger>
-          <TabsTrigger value="protection">Protection</TabsTrigger>
-          <TabsTrigger value="alerts">Alerts</TabsTrigger>
-          <TabsTrigger value="rules">Rules</TabsTrigger>
-          <TabsTrigger value="audit">Audit</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview"><LeadRecordPanel title="Lead overview" items={overviewItems} /></TabsContent>
-        <TabsContent value="attribution"><LeadRecordPanel title="Attribution" items={data.attributions.map((item) => ({ id: item.id, label: item.utm_source || item.first_referrer || "Attribution", value: item.landing_page || "—" }))} /></TabsContent>
-        <TabsContent value="identity"><LeadRecordPanel title="Identity" items={data.identities.map((item) => ({ id: item.id, label: item.full_name || item.email_normalised || "Identity", value: [item.mobile_normalised, item.whatsapp_normalised, item.country].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
-        <TabsContent value="assignments"><LeadRecordPanel title="Assignments" items={data.assignments.map((item) => ({ id: item.id, label: item.assignment_status || "pending", value: [item.partner_id, item.assignment_reason, item.sla_due_at].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
-        <TabsContent value="events"><LeadTimelinePanel title="Lead activity timeline" items={timelineItems} /></TabsContent>
-        <TabsContent value="attempts"><LeadRecordPanel title="Contact attempts" items={data.attempts.map((item) => ({ id: item.id, label: item.channel || "contact", value: [item.outcome, item.notes, item.attempt_at].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
-        <TabsContent value="viewings"><LeadRecordPanel title="Viewings" items={data.viewings.map((item) => ({ id: item.id, label: item.status || "requested", value: [item.listing_id, item.scheduled_at].filter(Boolean).join(" · ") || "—" }))} /></TabsContent>
-        <TabsContent value="protection"><div className="space-y-4"><LeadRecordPanel title="Protection windows" items={data.windows.map((item) => ({ id: item.id, label: item.status || "active", value: [item.lock_reason, item.protected_until, item.override_reason].filter(Boolean).join(" · ") || "—" }))} /><DuplicateReviewPanel candidates={duplicateCandidates} />{duplicateCandidates[0] ? <LeadComparisonReviewCard currentLead={data.lead} selectedCandidate={duplicateCandidates[0]?.id} candidates={duplicateCandidates} /> : null}</div></TabsContent>
-        <TabsContent value="alerts"><div className="space-y-4"><LeadRecordPanel title="Circumvention alerts" items={data.alerts.map((item) => ({ id: item.id, label: item.alert_type || "alert", value: [item.severity, item.status, item.summary].filter(Boolean).join(" · ") || "—" }))} /><LeadEvidencePanel alerts={data.alerts} /></div></TabsContent>
-        <TabsContent value="rules"><LeadRuleEvaluationPanel items={data.evaluations.map((item) => ({ id: item.id, ruleLabel: item.rule_id || "Runtime rule", matched: item.matched, summary: [item.result_payload_json?.result, item.result_payload_json?.rule_type, item.result_payload_json?.matched_partner_id].filter(Boolean).join(" · ") || "Evaluation recorded", trigger: item.trigger_event || "runtime" }))} /></TabsContent>
-        <TabsContent value="audit"><LeadRecordPanel title="Audit history" items={data.audits.map((item) => ({ id: item.id, label: item.action || "audit", value: item.summary || "—" }))} /></TabsContent>
-        </Tabs>
+          <div className="space-y-4">
+            <LeadRecordPanel title="Lead overview" items={overviewItems} />
+            <LeadTimelinePanel title="Live timeline" items={timelineItems} />
+            <LeadRecordPanel title="Assignments and routing" items={data.assignments.map((item) => ({ id: item.id, label: item.assignment_status || "pending", value: [item.partner_id, item.assignment_reason, item.sla_due_at].filter(Boolean).join(" · ") || "—" }))} />
+            <LeadRuleEvaluationPanel items={data.evaluations.map((item) => ({ id: item.id, ruleLabel: item.rule_id || "Runtime rule", matched: item.matched, summary: [item.result_payload_json?.result, item.result_payload_json?.rule_type, item.result_payload_json?.matched_partner_id].filter(Boolean).join(" · ") || "Evaluation recorded", trigger: item.trigger_event || "runtime" }))} />
+            <LeadRecordPanel title="Protection windows" items={data.windows.map((item) => ({ id: item.id, label: item.status || "active", value: [item.lock_reason, item.protected_until, item.override_reason].filter(Boolean).join(" · ") || "—" }))} />
+            <DuplicateReviewPanel candidates={duplicateCandidates} />
+            {duplicateCandidates[0] ? <LeadComparisonReviewCard currentLead={data.lead} selectedCandidate={duplicateCandidates[0]?.id} candidates={duplicateCandidates} /> : null}
+            <LeadRecordPanel title="Alerts" items={data.alerts.map((item) => ({ id: item.id, label: item.alert_type || "alert", value: [item.severity, item.status, item.summary].filter(Boolean).join(" · ") || "—" }))} />
+            <LeadEvidencePanel alerts={data.alerts} />
+
+            {showFullRecord ? (
+              <Card className="rounded-[2rem] border-white/10 bg-card/80">
+                <CardHeader><CardTitle>Full record</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <LeadRecordPanel title="Attribution" items={data.attributions.map((item) => ({ id: item.id, label: item.utm_source || item.first_referrer || "Attribution", value: item.landing_page || "—" }))} />
+                  <LeadRecordPanel title="Identity" items={data.identities.map((item) => ({ id: item.id, label: item.full_name || item.email_normalised || "Identity", value: [item.mobile_normalised, item.whatsapp_normalised, item.country].filter(Boolean).join(" · ") || "—" }))} />
+                  <LeadRecordPanel title="Contact attempts" items={data.attempts.map((item) => ({ id: item.id, label: item.channel || "contact", value: [item.outcome, item.notes, item.attempt_at].filter(Boolean).join(" · ") || "—" }))} />
+                  <LeadRecordPanel title="Viewings" items={data.viewings.map((item) => ({ id: item.id, label: item.status || "requested", value: [item.listing_id, item.scheduled_at].filter(Boolean).join(" · ") || "—" }))} />
+                  <LeadRecordPanel title="Audit history" items={data.audits.map((item) => ({ id: item.id, label: item.action || "audit", value: item.summary || "—" }))} />
+                </CardContent>
+              </Card>
+            ) : null}
+          </div>
         </div>
         <div className="space-y-6">
           <InternalLeadActionPanel

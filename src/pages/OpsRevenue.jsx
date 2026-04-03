@@ -15,6 +15,7 @@ import { formatCurrency, getEntitlementAmount, isOverdueDate, triggerTypeOptions
 export default function OpsRevenue() {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState({ search: "", status: "all", partner: "all", trigger: "all", rule: "all", special: "all" });
+  const [showAdvancedFinance, setShowAdvancedFinance] = useState(false);
 
   const { data: workspace = { entitlements: [], invoices: [], payouts: [], disputes: [], settlements: [] } } = useQuery({
     queryKey: ["ops-revenue-workspace"],
@@ -153,16 +154,17 @@ export default function OpsRevenue() {
   const partnerBalances = filteredPayouts.reduce((sum, item) => sum + Math.max(0, Number(item.expected_amount || 0) - Number(item.paid_amount || 0)), 0);
 
   const summary = [
-    { label: "Pipeline value", value: formatCurrency(pipelineValue) },
-    { label: "Approved uninvoiced", value: formatCurrency(approvedUninvoiced) },
-    { label: "Awaiting payment", value: formatCurrency(awaitingPayment) },
-    { label: "Overdue payments", value: formatCurrency(overduePayments) },
-    { label: "Disputed amounts", value: formatCurrency(disputedAmounts) },
-    { label: "Paid this period", value: formatCurrency(paidThisPeriod) },
-    { label: "Partner balances", value: formatCurrency(partnerBalances) }
+    { label: "Needs approval", value: String(filteredEntitlements.filter((item) => ["draft", "pending_review", "approved"].includes(item.entitlement_status)).length), hint: formatCurrency(approvedUninvoiced) + " ready to invoice" },
+    { label: "Needs collection", value: formatCurrency(awaitingPayment), hint: `${filteredInvoices.filter((item) => ["issued", "acknowledged", "partially_paid", "overdue", "disputed"].includes(item.invoice_status)).length} invoices live` },
+    { label: "Overdue", value: formatCurrency(overduePayments), hint: `${filteredInvoices.filter((item) => isOverdueDate(item.due_date) && !["paid", "void"].includes(item.invoice_status)).length} invoices overdue` },
+    { label: "Disputes", value: String(filteredDisputes.filter((item) => !["resolved", "rejected", "closed"].includes(item.status)).length), hint: formatCurrency(disputedAmounts) + " disputed" },
+    { label: "Paid this period", value: formatCurrency(paidThisPeriod), hint: formatCurrency(partnerBalances) + " still outstanding" }
   ];
 
-  const entitlementQueue = filteredEntitlements.slice(0, 8).map((item) => ({
+  const approvalQueue = filteredEntitlements
+    .filter((item) => ["draft", "pending_review", "approved"].includes(item.entitlement_status))
+    .slice(0, 8)
+    .map((item) => ({
     id: item.id,
     title: item.notes || item.trigger_type || item.id,
     meta: [item.partner_id, item.trigger_type, item.lead_id].filter(Boolean).join(" · "),
@@ -172,7 +174,10 @@ export default function OpsRevenue() {
     badges: [item.invoice_id ? "invoiced" : null, item.payout_id ? "payout-linked" : null].filter(Boolean)
   }));
 
-  const invoiceQueue = filteredInvoices.slice(0, 8).map((item) => ({
+  const collectionQueue = filteredInvoices
+    .filter((item) => ["issued", "acknowledged", "partially_paid", "overdue", "disputed"].includes(item.invoice_status))
+    .slice(0, 8)
+    .map((item) => ({
     id: item.entitlement_id || item.id,
     title: item.invoice_number || item.id,
     meta: [item.partner_id, item.due_date ? `Due ${new Date(item.due_date).toLocaleDateString()}` : null].filter(Boolean).join(" · "),
@@ -182,7 +187,10 @@ export default function OpsRevenue() {
     badges: [isOverdueDate(item.due_date) && !["paid", "void"].includes(item.invoice_status) ? "overdue" : null].filter(Boolean)
   }));
 
-  const disputeQueue = filteredDisputes.slice(0, 8).map((item) => ({
+  const disputeQueue = filteredDisputes
+    .filter((item) => !["resolved", "rejected", "closed"].includes(item.status))
+    .slice(0, 8)
+    .map((item) => ({
     id: item.entitlement_id || item.id,
     title: item.summary || item.id,
     meta: [item.partner_id, item.dispute_type, item.opened_at ? new Date(item.opened_at).toLocaleDateString() : null].filter(Boolean).join(" · "),
@@ -206,11 +214,13 @@ export default function OpsRevenue() {
       <SectionHeading
         eyebrow="Money desk"
         title="Fee claims, invoices, payouts, disputes, and settlements"
-        description="Use this workspace for the commercial lifecycle after a governed trigger exists: approval, invoicing, collection, dispute handling, and settlement."
+        description="This page now stays focused on the daily finance flow: approve the claim, collect the money, resolve the dispute. The deeper finance tools are still here, but they stay secondary."
         action={(
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" asChild><Link to="/ops/commission-rules">Commission rules</Link></Button>
             <Button variant="outline" onClick={() => reconcileRevenue.mutate()} disabled={reconcileRevenue.isPending}>Reconcile revenue states</Button>
+            <Button variant="outline" onClick={() => setShowAdvancedFinance((current) => !current)}>
+              {showAdvancedFinance ? "Hide advanced finance" : "Show advanced finance"}
+            </Button>
             <RevenueWorkflowDialog
               title="Create manual revenue trigger"
               description="Use this when a commercial trigger needs to be recorded directly by finance or operations."
@@ -268,21 +278,30 @@ export default function OpsRevenue() {
         <AdminSummaryStrip items={summary} />
       </AccessGuard>
       <AccessGuard permission="revenue.read">
-        <RevenueFilters
-          filters={filters}
-          onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))}
-          partners={partnerOptions}
-          triggers={triggerOptions}
-          rules={ruleOptions}
-        />
+        <div className="grid gap-6 xl:grid-cols-3">
+          <RevenueQueueCard title="Needs approval" items={approvalQueue} linkBase="/ops/revenue" emptyMessage="No fee claims are waiting for approval." />
+          <RevenueQueueCard title="Needs collection" items={collectionQueue} linkBase="/ops/revenue" emptyMessage="No live invoices need collection right now." />
+          <RevenueQueueCard title="Dispute queue" items={disputeQueue} linkBase="/ops/revenue" emptyMessage="No disputes opened yet." />
+        </div>
       </AccessGuard>
       <AccessGuard permission="revenue.read">
-        <div className="grid gap-6 xl:grid-cols-2">
-          <RevenueQueueCard title="Entitlements queue" items={entitlementQueue} linkBase="/ops/revenue" emptyMessage="No entitlements created yet." />
-          <RevenueQueueCard title="Invoice queue" items={invoiceQueue} linkBase="/ops/revenue" emptyMessage="No invoices issued yet." />
-          <RevenueQueueCard title="Dispute queue" items={disputeQueue} linkBase="/ops/revenue" emptyMessage="No disputes opened yet." />
-          <RevenueQueueCard title="Settlement queue" items={settlementQueue} linkBase="/ops/revenue" emptyMessage="No settlements recorded yet." />
-        </div>
+        {showAdvancedFinance ? (
+          <div className="space-y-6">
+            <RevenueFilters
+              filters={filters}
+              onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))}
+              partners={partnerOptions}
+              triggers={triggerOptions}
+              rules={ruleOptions}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" asChild><Link to="/ops/commission-rules">Open commission rules</Link></Button>
+            </div>
+            <div className="grid gap-6 xl:grid-cols-2">
+              <RevenueQueueCard title="Settlement queue" items={settlementQueue} linkBase="/ops/revenue" emptyMessage="No settlements recorded yet." />
+            </div>
+          </div>
+        ) : null}
       </AccessGuard>
     </div>
   );
