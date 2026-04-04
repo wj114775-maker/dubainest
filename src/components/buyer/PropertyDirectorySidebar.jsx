@@ -25,6 +25,27 @@ function SidebarSection({ title, items = [] }) {
   );
 }
 
+function InlineLocations({ items = [] }) {
+  if (!items.length) return null;
+
+  return (
+    <section className="space-y-2">
+      <h2 className="text-sm font-semibold tracking-tight text-foreground">Most searched locations</h2>
+      <div className="flex flex-wrap gap-2">
+        {items.map((item) => (
+          <Link
+            key={item.label}
+            to={item.path}
+            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-muted-foreground"
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function PropertyDirectorySidebar({ locations = [] }) {
   const recommendedSearches = [
     { label: "Studios for sale in Dubai", path: "/properties?propertyType=Studio" },
@@ -61,11 +82,11 @@ export default function PropertyDirectorySidebar({ locations = [] }) {
   return (
     <Card className="rounded-[1.5rem] border-white/10 bg-card shadow-lg shadow-black/5">
       <CardContent className="space-y-6 p-5">
-      {locationLinks.length ? <SidebarSection title="Most searched locations" items={locationLinks} /> : null}
-      <SidebarSection title="Recommended searches" items={recommendedSearches} />
-      <SidebarSection title="Invest in off-plan" items={offPlanLinks} />
-      <SidebarSection title="Top searches by price" items={priceLinks} />
-      <SidebarSection title="Top searches by developers" items={developerLinks} />
+        <InlineLocations items={locationLinks.slice(0, 4)} />
+        <SidebarSection title="Recommended searches" items={recommendedSearches} />
+        <SidebarSection title="Invest in off-plan" items={offPlanLinks} />
+        <SidebarSection title="Top searches by price" items={priceLinks} />
+        <SidebarSection title="Top searches by developers" items={developerLinks} />
       </CardContent>
     </Card>
   );

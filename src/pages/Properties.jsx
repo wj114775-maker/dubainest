@@ -1,14 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpDown, ChevronDown, List, Map, SlidersHorizontal } from "lucide-react";
+import { ArrowUpDown, List, Map, SlidersHorizontal } from "lucide-react";
 import { createSearchParams, useSearchParams } from "react-router-dom";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ListingListRow from "@/components/buyer/ListingListRow";
 import PropertyDirectorySidebar from "@/components/buyer/PropertyDirectorySidebar";
 import PropertyFilterPanel from "@/components/buyer/PropertyFilterPanel";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import SectionHeading from "@/components/common/SectionHeading";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -87,36 +85,6 @@ const buildSearchParams = (filters) => {
   return createSearchParams(params);
 };
 
-const formatMoneyShort = (value) => {
-  const number = Number(value || 0);
-  if (!number) return "Any";
-  if (number >= 1000000) return `AED ${(number / 1000000).toFixed(number % 1000000 === 0 ? 0 : 1)}M`;
-  return `AED ${number.toLocaleString()}`;
-};
-
-const formatAreaShort = (value) => {
-  const number = Number(value || 0);
-  if (!number) return "Any";
-  return `${number.toLocaleString()} sqft`;
-};
-
-const summarizeActiveFilters = (filters, viewMode) => {
-  const chips = [viewMode === "map" ? "Map view" : "List view"];
-
-  if (filters.location.trim()) chips.push(filters.location.trim());
-  if (filters.completionStatus === "off_plan") chips.push("Off-Plan");
-  if (filters.completionStatus === "ready") chips.push("Ready");
-  if (filters.propertyType !== "all") chips.push(filters.propertyType);
-  if (filters.bedrooms !== "any") chips.push(`${filters.bedrooms}+ beds`);
-  if (filters.bathrooms !== "any") chips.push(`${filters.bathrooms}+ baths`);
-  if (filters.minPrice !== "0" || filters.maxPrice !== "0") chips.push(`${formatMoneyShort(filters.minPrice)} - ${formatMoneyShort(filters.maxPrice)}`);
-  if (filters.minArea !== "0" || filters.maxArea !== "0") chips.push(`${formatAreaShort(filters.minArea)} - ${formatAreaShort(filters.maxArea)}`);
-  if (filters.privateInventoryOnly) chips.push("Private inventory");
-  if (filters.withFloorPlans) chips.push("Floor plans");
-
-  return chips;
-};
-
 const countExtendedFilters = (filters) => [
   filters.minPrice !== "0",
   filters.maxPrice !== "0",
@@ -135,7 +103,6 @@ export default function Properties() {
   const [openIntent, setOpenIntent] = useState(false);
   const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [locationsExpanded, setLocationsExpanded] = useState(false);
   const [filters, setFilters] = useState(() => filtersFromSearchParams(searchParams));
   const [viewMode, setViewMode] = useState(() => getViewModeFromSearchParams(searchParams));
   const [trackedLocations, setTrackedLocations] = useState([]);
@@ -279,10 +246,6 @@ export default function Properties() {
     });
   }, [filters, listings]);
 
-  const offPlanCount = filteredListings.filter((listing) => listing.is_off_plan).length;
-  const privateInventoryCount = filteredListings.filter((listing) => listing.is_private_inventory).length;
-  const readyCount = filteredListings.filter((listing) => !listing.is_off_plan).length;
-  const chips = useMemo(() => summarizeActiveFilters(filters, viewMode), [filters, viewMode]);
   const extendedFilterCount = useMemo(() => countExtendedFilters(filters), [filters]);
   const mapFocusLabel = filters.location.trim() || filteredListings[0]?.area_name || "Dubai";
   const mapQuery = `${mapFocusLabel}, Dubai, UAE`;
@@ -413,36 +376,26 @@ export default function Properties() {
                   onClick={() => setFiltersPanelOpen(true)}
                 >
                   More Filters
-                  {extendedFilterCount ? <Badge className="ml-2 rounded-full bg-amber-500/15 text-amber-700 hover:bg-amber-500/15">{extendedFilterCount}</Badge> : null}
+                  {extendedFilterCount ? <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-700">{extendedFilterCount}</span> : null}
                 </Button>
               </div>
 
-              <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className="rounded-full">{filteredListings.length} properties</Badge>
-                  <Badge variant="outline" className="rounded-full">{offPlanCount} off-plan</Badge>
-                  <Badge variant="outline" className="rounded-full">{privateInventoryCount} private inventory</Badge>
-                  <Badge variant="outline" className="rounded-full">{readyCount} ready</Badge>
-                  {chips.map((chip) => <Badge key={chip} variant="outline" className="rounded-full">{chip}</Badge>)}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  {viewToggle}
-                  <div className="w-full lg:w-[220px]">
-                    <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
-                      <SelectTrigger className="h-10 rounded-full border-slate-200 bg-white">
-                        <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="Sort by" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="featured">Featured</SelectItem>
-                        <SelectItem value="price_low_high">Price: low to high</SelectItem>
-                        <SelectItem value="price_high_low">Price: high to low</SelectItem>
-                        <SelectItem value="size_large_small">Largest size</SelectItem>
-                        <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {viewToggle}
+                <div className="w-full lg:w-[220px]">
+                  <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
+                    <SelectTrigger className="h-10 rounded-full border-slate-200 bg-white">
+                      <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="featured">Featured</SelectItem>
+                      <SelectItem value="price_low_high">Price: low to high</SelectItem>
+                      <SelectItem value="price_high_low">Price: high to low</SelectItem>
+                      <SelectItem value="size_large_small">Largest size</SelectItem>
+                      <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardContent>
@@ -478,87 +431,31 @@ export default function Properties() {
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{filteredListings.length} properties</p>
-                  <p className="text-sm text-muted-foreground">{offPlanCount} off-plan · {privateInventoryCount} private inventory · {readyCount} ready</p>
-                </div>
                 <Button variant="outline" className="rounded-full" onClick={() => setFiltersPanelOpen(true)}>
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
                   Filters
                 </Button>
+                <div className="ml-auto">{viewToggle}</div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                {viewToggle}
-                <div className="w-full sm:w-[230px]">
-                  <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
-                    <SelectTrigger className="rounded-full border-slate-200 bg-white">
-                      <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="featured">Featured</SelectItem>
-                      <SelectItem value="price_low_high">Price: low to high</SelectItem>
-                      <SelectItem value="price_high_low">Price: high to low</SelectItem>
-                      <SelectItem value="size_large_small">Largest size</SelectItem>
-                      <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="w-full sm:w-[230px]">
+                <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
+                  <SelectTrigger className="rounded-full border-slate-200 bg-white">
+                    <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="featured">Featured</SelectItem>
+                    <SelectItem value="price_low_high">Price: low to high</SelectItem>
+                    <SelectItem value="price_high_low">Price: high to low</SelectItem>
+                    <SelectItem value="size_large_small">Largest size</SelectItem>
+                    <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
-          <CardContent className="space-y-4 p-5 md:p-6">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Popular Dubai areas</p>
-                <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">Jump into a market quickly</p>
-              </div>
-              <Button
-                variant="outline"
-                className="rounded-full"
-                onClick={() => setFilters((current) => ({ ...current, completionStatus: "off_plan", sortBy: "off_plan_first" }))}
-              >
-                View off-plan collection
-              </Button>
-            </div>
-
-            <Collapsible open={locationsExpanded} onOpenChange={setLocationsExpanded}>
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {(locationsExpanded ? locationCounts : locationCounts.slice(0, 6)).map((item) => (
-                  <button
-                    key={item.name}
-                    type="button"
-                    onClick={() => setFilters((current) => ({ ...current, location: item.name }))}
-                    className={cn(
-                      "flex items-center justify-between rounded-[1.3rem] border px-4 py-4 text-left transition",
-                      filters.location === item.name
-                        ? "border-primary/25 bg-primary/10"
-                        : "border-white/10 bg-background/60 hover:border-primary/20 hover:bg-background"
-                    )}
-                  >
-                    <span className="font-medium text-foreground">{item.name}</span>
-                    <span className="text-sm text-muted-foreground">({item.count})</span>
-                  </button>
-                ))}
-              </div>
-
-              <CollapsibleContent className="pt-3" />
-
-              {locationCounts.length > 6 ? (
-                <CollapsibleTrigger asChild>
-                  <button type="button" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary">
-                    {locationsExpanded ? "Show fewer locations" : "View all locations"}
-                    <ChevronDown className={cn("h-4 w-4 transition", locationsExpanded ? "rotate-180" : "")} />
-                  </button>
-                </CollapsibleTrigger>
-              ) : null}
-            </Collapsible>
-          </CardContent>
-        </Card>
 
         <div className={cn("grid gap-6", viewMode === "map" ? "xl:grid-cols-[minmax(0,780px),390px]" : "xl:grid-cols-[minmax(0,780px),320px] xl:justify-center")}>
           <div className="space-y-4 xl:max-w-[780px]">
