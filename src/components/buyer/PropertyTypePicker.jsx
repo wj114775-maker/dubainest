@@ -13,7 +13,7 @@ const categoryOptions = [
 
 export default function PropertyTypePicker({
   categoryValue = "all",
-  value = "all",
+  value = [],
   onCategoryChange,
   onValueChange,
   triggerClassName,
@@ -24,6 +24,13 @@ export default function PropertyTypePicker({
   const [search, setSearch] = useState("");
   const groups = getPropertyTypeGroups();
   const [activeCategory, setActiveCategory] = useState(categoryValue === "commercial" ? "commercial" : "residential");
+  const selectedValues = useMemo(() => (
+    Array.isArray(value)
+      ? value.filter(Boolean)
+      : value && value !== "all"
+        ? [value]
+        : []
+  ), [value]);
 
   const filteredOptions = useMemo(() => {
     const searchTerm = search.trim().toLowerCase();
@@ -35,14 +42,26 @@ export default function PropertyTypePicker({
     );
   }, [activeCategory, groups, search]);
 
-  const triggerLabel = value !== "all" || categoryValue !== "all"
-    ? getPropertyTypeLabel(categoryValue, value)
+  const triggerLabel = selectedValues.length || categoryValue !== "all"
+    ? getPropertyTypeLabel(categoryValue, selectedValues)
     : placeholder;
 
   const applyCategory = (nextCategory) => {
+    const categoryChanged = activeCategory !== nextCategory;
     setActiveCategory(nextCategory);
     onCategoryChange(nextCategory);
-    onValueChange("all");
+    if (categoryChanged) {
+      onValueChange([]);
+    }
+  };
+
+  const toggleValue = (nextValue) => {
+    const nextSelectedValues = selectedValues.includes(nextValue)
+      ? selectedValues.filter((item) => item !== nextValue)
+      : [...selectedValues, nextValue];
+
+    onCategoryChange(activeCategory);
+    onValueChange(nextSelectedValues);
   };
 
   return (
@@ -51,7 +70,7 @@ export default function PropertyTypePicker({
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
         if (nextOpen) {
-          setActiveCategory(categoryValue === "all" ? getPropertyTypeCategory(value) : categoryValue || "residential");
+          setActiveCategory(categoryValue === "all" ? getPropertyTypeCategory(selectedValues) : categoryValue || "residential");
         } else {
           setSearch("");
         }
@@ -98,20 +117,16 @@ export default function PropertyTypePicker({
               <button
                 key={`${option.category}-${option.value}`}
                 type="button"
-                onClick={() => {
-                  onCategoryChange(option.category);
-                  onValueChange(option.value);
-                  setOpen(false);
-                }}
+                onClick={() => toggleValue(option.value)}
                 className={cn(
                   "flex items-center justify-between rounded-[1rem] border px-3 py-2.5 text-left text-sm transition-colors",
-                  value === option.value
+                  selectedValues.includes(option.value)
                     ? "border-slate-950 bg-slate-950 text-white"
                     : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
                 )}
               >
                 <span>{option.label}</span>
-                <Check className={cn("h-4 w-4", value === option.value ? "opacity-100" : "opacity-0")} />
+                <Check className={cn("h-4 w-4", selectedValues.includes(option.value) ? "opacity-100" : "opacity-0")} />
               </button>
             ))}
           </div>
@@ -123,13 +138,16 @@ export default function PropertyTypePicker({
               className="rounded-full px-4 text-slate-600"
               onClick={() => {
                 onCategoryChange("all");
-                onValueChange("all");
+                onValueChange([]);
                 setActiveCategory("residential");
                 setSearch("");
               }}
             >
               Reset
             </Button>
+            <div className="text-xs font-medium text-slate-500">
+              {selectedValues.length ? `${selectedValues.length} selected` : "Select one or more"}
+            </div>
             <Button type="button" className="rounded-full px-5" onClick={() => setOpen(false)}>
               Done
             </Button>

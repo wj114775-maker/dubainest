@@ -27,7 +27,7 @@ const defaultFilters = {
   developer: "all",
   propertyCategory: "all",
   completionStatus: "all",
-  propertyType: "all",
+  propertyType: [],
   bedrooms: "any",
   bathrooms: "any",
   minPrice: "0",
@@ -44,6 +44,13 @@ const defaultFilters = {
 
 const getViewModeFromSearchParams = (searchParams) => searchParams.get("map_active") === "true" ? "map" : "list";
 
+const parsePropertyTypeFilter = (value) => (
+  String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+);
+
 const getPublicListingRank = (listing) => (
   Number(Boolean(listing.is_private_inventory)) * 40
   + Number(Boolean(listing.is_off_plan)) * 20
@@ -57,7 +64,7 @@ const filtersFromSearchParams = (searchParams) => ({
   developer: searchParams.get("developer") || "all",
   propertyCategory: searchParams.get("category") || "all",
   completionStatus: searchParams.get("completion") || "all",
-  propertyType: searchParams.get("propertyType") || "all",
+  propertyType: parsePropertyTypeFilter(searchParams.get("propertyType")),
   bedrooms: searchParams.get("beds") || "any",
   bathrooms: searchParams.get("baths") || "any",
   minPrice: searchParams.get("minPrice") || "0",
@@ -79,7 +86,7 @@ const buildSearchParams = (filters) => {
   if (filters.developer !== "all") params.developer = filters.developer;
   if (filters.propertyCategory !== "all") params.category = filters.propertyCategory;
   if (filters.completionStatus !== "all") params.completion = filters.completionStatus;
-  if (filters.propertyType !== "all") params.propertyType = filters.propertyType;
+  if (filters.propertyType.length) params.propertyType = filters.propertyType.join(",");
   if (filters.bedrooms !== "any") params.beds = filters.bedrooms;
   if (filters.bathrooms !== "any") params.baths = filters.bathrooms;
   if (filters.minPrice !== "0") params.minPrice = filters.minPrice;
@@ -237,7 +244,7 @@ export default function Properties() {
       const matchesPropertyCategory = filters.propertyCategory === "all" || listing.property_category === filters.propertyCategory;
       const matchesKeywords = !keywordTerm || searchableText.includes(keywordTerm);
       const matchesCompletion = filters.completionStatus === "all" || listing.completion_status === filters.completionStatus;
-      const matchesPropertyType = filters.propertyType === "all" || listing.property_type === filters.propertyType;
+      const matchesPropertyType = !filters.propertyType.length || filters.propertyType.includes(listing.property_type);
       const matchesBedrooms = filters.bedrooms === "any" || Number(listing.bedrooms || 0) >= Number(filters.bedrooms);
       const matchesBathrooms = filters.bathrooms === "any" || Number(listing.bathrooms || 0) >= Number(filters.bathrooms);
       const matchesMinPrice = filters.minPrice === "0" || Number(listing.price || 0) >= Number(filters.minPrice);

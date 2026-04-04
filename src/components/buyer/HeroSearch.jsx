@@ -22,7 +22,7 @@ export default function HeroSearch({ appName, metrics }) {
   const [location, setLocation] = useState("");
   const [developer, setDeveloper] = useState("all");
   const [propertyCategory, setPropertyCategory] = useState("all");
-  const [propertyType, setPropertyType] = useState("all");
+  const [propertyType, setPropertyType] = useState([]);
   const [collection, setCollection] = useState("all");
   const [open, setOpen] = useState(false);
   const { data: approvedDevelopers = [] } = useApprovedDevelopers();
@@ -42,7 +42,7 @@ export default function HeroSearch({ appName, metrics }) {
     if (next.location.trim()) params.q = next.location.trim();
     if (next.developer !== "all") params.developer = next.developer;
     if (next.propertyCategory !== "all") params.category = next.propertyCategory;
-    if (next.propertyType !== "all") params.propertyType = next.propertyType;
+    if (next.propertyType.length) params.propertyType = next.propertyType.join(",");
     if (next.collection === "ready") params.completion = "ready";
     if (next.collection === "off_plan") params.completion = "off_plan";
     if (next.collection === "private_inventory") params.privateInventory = "1";
@@ -68,53 +68,53 @@ export default function HeroSearch({ appName, metrics }) {
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(8,14,24,0.88),rgba(13,22,38,0.74),rgba(8,14,24,0.82))]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(201,165,92,0.22),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(20,92,76,0.18),transparent_28%)]" />
 
-      <div className="relative mx-auto flex min-h-[42rem] max-w-7xl flex-col justify-center px-4 py-16 sm:px-6 lg:px-8">
+      <div className="relative mx-auto flex min-h-[39rem] max-w-7xl flex-col justify-center px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center text-white">
           <Badge className="rounded-full border border-white/15 bg-white px-4 py-1.5 text-[11px] uppercase tracking-[0.24em] text-slate-900 hover:bg-white">
             Dubai property purchase
           </Badge>
           <div className="mt-6 space-y-4">
-            <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
+            <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
               Search Dubai properties for sale through one clear buyer journey.
             </h1>
-            <p className="mx-auto max-w-3xl text-sm leading-6 text-white/78 md:text-lg">
+            <p className="mx-auto max-w-3xl text-sm leading-6 text-white/78 md:text-base">
               {appName} is built for purchase only: ready homes, off-plan launches, and private inventory routed into direct advisory support.
             </p>
           </div>
         </div>
 
-        <div className="mx-auto mt-10 w-full max-w-5xl rounded-[2rem] border border-slate-200/70 bg-white p-4 shadow-[0_24px_80px_rgba(4,12,24,0.22)] md:p-5">
-          <div className="flex flex-wrap items-center justify-center gap-2 border-b border-slate-200 pb-4">
-            <Badge className="rounded-full bg-slate-950 px-4 py-2 text-white hover:bg-slate-950">Properties</Badge>
-            <Button asChild variant="ghost" className="rounded-full px-4 text-slate-600 hover:bg-slate-100 hover:text-slate-950">
+        <div className="mx-auto mt-9 w-full max-w-[72rem] rounded-[1.8rem] border border-slate-200/80 bg-white p-3.5 shadow-[0_24px_80px_rgba(4,12,24,0.22)] md:p-4">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 border-b border-slate-200 pb-3">
+            <Badge className="rounded-full bg-slate-950 px-3.5 py-1.5 text-[11px] text-white hover:bg-slate-950">Properties</Badge>
+            <Button asChild variant="ghost" className="rounded-full px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-950">
               <Link to="/properties?completion=off_plan">New projects</Link>
             </Button>
-            <Button variant="ghost" className="rounded-full px-4 text-slate-600 hover:bg-slate-100 hover:text-slate-950" onClick={() => setOpen(true)}>
+            <Button variant="ghost" className="rounded-full px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-950" onClick={() => setOpen(true)}>
               Private client
             </Button>
-            <Button asChild variant="ghost" className="rounded-full px-4 text-slate-600 hover:bg-slate-100 hover:text-slate-950">
+            <Button asChild variant="ghost" className="rounded-full px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-950">
               <Link to="/guides">Guides</Link>
             </Button>
           </div>
 
-          <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-              <div className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  <MapPin className="h-4 w-4 text-slate-700" />
+          <form className="mt-3.5 space-y-3.5" onSubmit={handleSubmit}>
+            <div className="grid gap-2.5 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+              <div className="rounded-[1.15rem] border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                  <MapPin className="h-3.5 w-3.5 text-slate-700" />
                   Location
                 </div>
                 <Input
                   placeholder="Search area, community, or project"
                   value={location}
                   onChange={(event) => setLocation(event.target.value)}
-                  className="mt-2 h-8 border-none px-0 text-base text-slate-950 shadow-none focus-visible:ring-0"
+                  className="mt-1.5 h-7 border-none px-0 text-sm text-slate-950 shadow-none focus-visible:ring-0"
                 />
               </div>
 
-              <div className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  <Building2 className="h-4 w-4 text-slate-700" />
+              <div className="rounded-[1.15rem] border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                  <Building2 className="h-3.5 w-3.5 text-slate-700" />
                   Developer
                 </div>
                 <DeveloperPicker
@@ -123,14 +123,14 @@ export default function HeroSearch({ appName, metrics }) {
                   developers={approvedDevelopers}
                   featuredDeveloperNames={featuredDeveloperNames}
                   placeholder="Any developer"
-                  triggerClassName="mt-1 h-8 border-none px-0 text-base text-slate-950 shadow-none focus-visible:ring-0"
+                  triggerClassName="mt-1 h-7 border-none px-0 text-sm text-slate-950 shadow-none focus-visible:ring-0"
                   contentClassName="w-[380px]"
                 />
               </div>
 
-              <div className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  <Sparkles className="h-4 w-4 text-slate-700" />
+              <div className="rounded-[1.15rem] border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                  <Sparkles className="h-3.5 w-3.5 text-slate-700" />
                   Property type
                 </div>
                 <PropertyTypePicker
@@ -138,26 +138,26 @@ export default function HeroSearch({ appName, metrics }) {
                   value={propertyType}
                   onCategoryChange={setPropertyCategory}
                   onValueChange={setPropertyType}
-                  triggerClassName="mt-1 h-8 border-none px-0 text-base text-slate-950 shadow-none focus-visible:ring-0"
+                  triggerClassName="mt-1 h-7 border-none px-0 text-sm text-slate-950 shadow-none focus-visible:ring-0"
                   contentClassName="w-[400px]"
                 />
               </div>
 
-              <Button type="submit" className="h-full min-h-[5.25rem] rounded-[1.4rem] bg-slate-950 px-6 text-base font-semibold text-white hover:bg-slate-900">
+              <Button type="submit" className="h-full min-h-[4.4rem] rounded-[1.2rem] bg-slate-950 px-5 text-sm font-semibold text-white hover:bg-slate-900">
                 <Search className="mr-2 h-4 w-4" />
                 Search
               </Button>
             </div>
 
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap gap-1.5">
                 {collectionOptions.map((option) => (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => setCollection(option.value)}
                     className={cn(
-                      "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                      "rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors",
                       collection === option.value
                         ? "border-slate-950 bg-slate-950 text-white"
                         : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100"
@@ -171,22 +171,22 @@ export default function HeroSearch({ appName, metrics }) {
           </form>
         </div>
 
-        <div className="mx-auto mt-6 grid w-full max-w-5xl gap-3 md:grid-cols-4">
-          <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4 text-white backdrop-blur-sm">
+        <div className="mx-auto mt-5 grid w-full max-w-[72rem] gap-3 md:grid-cols-4">
+          <div className="rounded-[1.2rem] border border-white/12 bg-white/8 px-4 py-3.5 text-white backdrop-blur-sm">
             <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Verified sale stock</p>
-            <p className="mt-2 text-2xl font-semibold">{metrics?.verifiedListings || 0}</p>
+            <p className="mt-1.5 text-xl font-semibold">{metrics?.verifiedListings || 0}</p>
           </div>
-          <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4 text-white backdrop-blur-sm">
+          <div className="rounded-[1.2rem] border border-white/12 bg-white/8 px-4 py-3.5 text-white backdrop-blur-sm">
             <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Off-plan</p>
-            <p className="mt-2 text-2xl font-semibold">{metrics?.offPlanListings || 0}</p>
+            <p className="mt-1.5 text-xl font-semibold">{metrics?.offPlanListings || 0}</p>
           </div>
-          <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4 text-white backdrop-blur-sm">
+          <div className="rounded-[1.2rem] border border-white/12 bg-white/8 px-4 py-3.5 text-white backdrop-blur-sm">
             <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Private inventory</p>
-            <p className="mt-2 text-2xl font-semibold">{metrics?.privateInventoryListings || 0}</p>
+            <p className="mt-1.5 text-xl font-semibold">{metrics?.privateInventoryListings || 0}</p>
           </div>
-          <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4 text-white backdrop-blur-sm">
+          <div className="rounded-[1.2rem] border border-white/12 bg-white/8 px-4 py-3.5 text-white backdrop-blur-sm">
             <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Execution network</p>
-            <p className="mt-2 text-2xl font-semibold">{metrics?.activePartners || 0}</p>
+            <p className="mt-1.5 text-xl font-semibold">{metrics?.activePartners || 0}</p>
           </div>
         </div>
       </div>

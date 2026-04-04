@@ -29,7 +29,8 @@ const COMMERCIAL_TYPES = new Set(PROPERTY_TYPE_GROUPS.commercial.map((item) => i
 const RESIDENTIAL_TYPES = new Set(PROPERTY_TYPE_GROUPS.residential.map((item) => item.toLowerCase()));
 
 export function getPropertyTypeCategory(propertyType) {
-  const normalized = String(propertyType || "").trim().toLowerCase();
+  const firstValue = Array.isArray(propertyType) ? propertyType[0] : propertyType;
+  const normalized = String(firstValue || "").trim().toLowerCase();
   if (!normalized) return "residential";
   if (COMMERCIAL_TYPES.has(normalized)) return "commercial";
   if (RESIDENTIAL_TYPES.has(normalized)) return "residential";
@@ -51,7 +52,14 @@ export function getPropertyTypeOptions() {
 }
 
 export function getPropertyTypeLabel(category, propertyType) {
-  if (propertyType && propertyType !== "all") return propertyType;
+  const selectedValues = Array.isArray(propertyType)
+    ? propertyType.filter(Boolean)
+    : propertyType && propertyType !== "all"
+      ? [propertyType]
+      : [];
+
+  if (selectedValues.length === 1) return selectedValues[0];
+  if (selectedValues.length > 1) return `${selectedValues[0]} +${selectedValues.length - 1}`;
   if (category === "residential") return "Residential";
   if (category === "commercial") return "Commercial";
   return "Property type";
