@@ -8,6 +8,7 @@ import ShortlistActionsCard from "@/components/buyer/ShortlistActionsCard";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import ConversionSignalCard from "@/components/buyer/ConversionSignalCard";
 import { getSessionId } from "@/components/leads/leadEngine";
+import { loadBuyerListingById } from "@/lib/buyerListings";
 
 export default function Shortlist() {
   const [openIntent, setOpenIntent] = useState(false);
@@ -27,12 +28,10 @@ export default function Shortlist() {
     queryKey: ["shortlist-page"],
     queryFn: async () => {
       const sessionId = getSessionId();
-      const [shortlists, allListings] = await Promise.all([
-        base44.entities.Shortlist.list("-updated_date", 50),
-        base44.entities.Listing.list("-updated_date", 200),
-      ]);
+      const shortlists = await base44.entities.Shortlist.list("-updated_date", 50);
       const shortlist = shortlists.find((item) => item.session_id === sessionId);
-      return allListings.filter((listing) => shortlist?.listing_ids?.includes(listing.id));
+      const items = await Promise.all((shortlist?.listing_ids || []).map((listingId) => loadBuyerListingById(listingId)));
+      return items.filter(Boolean);
     },
     initialData: [],
   });

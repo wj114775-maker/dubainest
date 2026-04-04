@@ -22,7 +22,7 @@ export async function saveListingToCompare(listing) {
     const nextIds = Array.from(new Set([...(existing.listing_ids || []), listing.id]));
     return base44.entities.CompareSet.update(existing.id, { listing_ids: nextIds });
   }
-  return base44.entities.CompareSet.create({ session_id: sessionId, listing_ids: [listing.id], compare_mode: 'trust' });
+  return base44.entities.CompareSet.create({ session_id: sessionId, listing_ids: [listing.id], compare_mode: 'purchase' });
 }
 
 export async function captureBuyerIntent(payload) {

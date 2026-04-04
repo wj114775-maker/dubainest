@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 const priceSteps = ["0", "1000000", "2000000", "3000000", "5000000", "7500000", "10000000", "15000000", "25000000", "50000000"];
 const areaSteps = ["0", "500", "1000", "1500", "2000", "3000", "5000", "7500", "10000", "15000"];
-const advancedKeys = ["parkingSpaces", "furnishingStatus", "keywords", "withFloorPlans", "privateInventoryOnly", "trustedOnly"];
+const advancedKeys = ["parkingSpaces", "furnishingStatus", "keywords", "withFloorPlans", "privateInventoryOnly"];
 
 const formatPrice = (value) => {
   if (value === "0") return "Any";
@@ -51,18 +51,11 @@ export default function PropertyFilterPanel({
       <CardContent className="space-y-5 p-5 md:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Purchase filters</p>
-            <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">Find the right property faster</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">More filters</p>
+            <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">Refine price, area, features, and buyer requirements</p>
           </div>
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Filter className="h-4 w-4" />
-          </div>
-        </div>
-
-        <div className="rounded-[1.4rem] border border-primary/15 bg-primary/5 p-3">
-          <p className="text-[11px] uppercase tracking-[0.26em] text-muted-foreground">Purpose</p>
-          <div className="mt-2 inline-flex rounded-full bg-background p-1">
-            <span className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Buy</span>
           </div>
         </div>
 
@@ -253,14 +246,6 @@ export default function PropertyFilterPanel({
                     <p className="text-xs text-muted-foreground">Unique premium-stock control for your platform.</p>
                   </div>
                   <Switch checked={filters.privateInventoryOnly} onCheckedChange={(checked) => updateField("privateInventoryOnly", checked)} />
-                </div>
-
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Trusted listings only</p>
-                    <p className="text-xs text-muted-foreground">Highlights your governance advantage without crowding the page.</p>
-                  </div>
-                  <Switch checked={filters.trustedOnly} onCheckedChange={(checked) => updateField("trustedOnly", checked)} />
                 </div>
 
               </div>

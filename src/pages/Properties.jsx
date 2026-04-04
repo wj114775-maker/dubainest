@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpDown, ChevronDown, List, Map, SlidersHorizontal } from "lucide-react";
-import { createSearchParams, Link, useSearchParams } from "react-router-dom";
+import { createSearchParams, useSearchParams } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ListingListRow from "@/components/buyer/ListingListRow";
 import PropertyFilterPanel from "@/components/buyer/PropertyFilterPanel";
@@ -10,10 +10,11 @@ import SectionHeading from "@/components/common/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import useAppConfig from "@/hooks/useAppConfig";
-import { getShowcaseListings, isShowcaseListing, loadBuyerListings } from "@/lib/buyerListings";
+import { getShowcaseListings, loadBuyerListings } from "@/lib/buyerListings";
 import { cn } from "@/lib/utils";
 
 const defaultFilters = {
@@ -31,12 +32,17 @@ const defaultFilters = {
   keywords: "",
   withFloorPlans: false,
   privateInventoryOnly: false,
-  trustedOnly: false,
-  showcaseOnly: false,
-  sortBy: "popular",
+  sortBy: "featured",
 };
 
 const getViewModeFromSearchParams = (searchParams) => searchParams.get("map_active") === "true" ? "map" : "list";
+
+const getPublicListingRank = (listing) => (
+  Number(Boolean(listing.is_private_inventory)) * 40
+  + Number(Boolean(listing.is_off_plan)) * 20
+  + Number(Boolean(listing.permit_verified)) * 10
+  + Math.min(Number(listing.price || 0) / 1000000, 50)
+);
 
 const filtersFromSearchParams = (searchParams) => ({
   ...defaultFilters,
@@ -54,9 +60,7 @@ const filtersFromSearchParams = (searchParams) => ({
   keywords: searchParams.get("keywords") || "",
   withFloorPlans: searchParams.get("floorPlans") === "1",
   privateInventoryOnly: searchParams.get("privateInventory") === "1",
-  trustedOnly: searchParams.get("trustedOnly") === "1",
-  showcaseOnly: searchParams.get("showcaseOnly") === "1",
-  sortBy: searchParams.get("sort") || "popular",
+  sortBy: searchParams.get("sort") || "featured",
 });
 
 const buildSearchParams = (filters) => {
@@ -76,9 +80,7 @@ const buildSearchParams = (filters) => {
   if (filters.keywords.trim()) params.keywords = filters.keywords.trim();
   if (filters.withFloorPlans) params.floorPlans = "1";
   if (filters.privateInventoryOnly) params.privateInventory = "1";
-  if (filters.trustedOnly) params.trustedOnly = "1";
-  if (filters.showcaseOnly) params.showcaseOnly = "1";
-  if (filters.sortBy !== "popular") params.sort = filters.sortBy;
+  if (filters.sortBy !== "featured") params.sort = filters.sortBy;
 
   return createSearchParams(params);
 };
@@ -96,8 +98,8 @@ const formatAreaShort = (value) => {
   return `${number.toLocaleString()} sqft`;
 };
 
-const filterSummaryChips = (filters, viewMode) => {
-  const chips = ["Buy", viewMode === "map" ? "Map view" : "List view"];
+const summarizeActiveFilters = (filters, viewMode) => {
+  const chips = [viewMode === "map" ? "Map view" : "List view"];
 
   if (filters.location.trim()) chips.push(filters.location.trim());
   if (filters.completionStatus === "off_plan") chips.push("Off-Plan");
@@ -107,26 +109,36 @@ const filterSummaryChips = (filters, viewMode) => {
   if (filters.bathrooms !== "any") chips.push(`${filters.bathrooms}+ baths`);
   if (filters.minPrice !== "0" || filters.maxPrice !== "0") chips.push(`${formatMoneyShort(filters.minPrice)} - ${formatMoneyShort(filters.maxPrice)}`);
   if (filters.minArea !== "0" || filters.maxArea !== "0") chips.push(`${formatAreaShort(filters.minArea)} - ${formatAreaShort(filters.maxArea)}`);
-  if (filters.keywords.trim()) chips.push(`Keyword: ${filters.keywords.trim()}`);
-  if (filters.privateInventoryOnly) chips.push("Private Inventory");
+  if (filters.privateInventoryOnly) chips.push("Private inventory");
   if (filters.withFloorPlans) chips.push("Floor plans");
-  if (filters.trustedOnly) chips.push("Trusted only");
 
   return chips;
 };
+
+const countExtendedFilters = (filters) => [
+  filters.minPrice !== "0",
+  filters.maxPrice !== "0",
+  filters.minArea !== "0",
+  filters.maxArea !== "0",
+  filters.parkingSpaces !== "any",
+  filters.furnishingStatus !== "all",
+  Boolean(filters.keywords.trim()),
+  filters.withFloorPlans,
+  filters.privateInventoryOnly,
+].filter(Boolean).length;
 
 export default function Properties() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: appConfig } = useAppConfig();
   const [openIntent, setOpenIntent] = useState(false);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [locationsExpanded, setLocationsExpanded] = useState(false);
   const [filters, setFilters] = useState(() => filtersFromSearchParams(searchParams));
   const [viewMode, setViewMode] = useState(() => getViewModeFromSearchParams(searchParams));
 
   const { data: listings = [] } = useQuery({
-    queryKey: ["buyer-properties-v2"],
+    queryKey: ["buyer-properties-v3"],
     queryFn: () => loadBuyerListings({ limit: 24, includeShowcase: true }),
     initialData: getShowcaseListings(24),
   });
@@ -159,17 +171,6 @@ export default function Properties() {
 
   const propertyTypes = useMemo(
     () => Array.from(new Set(listings.map((listing) => listing.property_type).filter(Boolean))).sort(),
-    [listings]
-  );
-
-  const featuredListings = useMemo(
-    () => [...listings]
-      .sort((left, right) => {
-        const leftScore = Number(Boolean(left.is_private_inventory)) * 20 + Number(Boolean(left.is_off_plan)) * 10 + Number(left.trust_score || 0);
-        const rightScore = Number(Boolean(right.is_private_inventory)) * 20 + Number(Boolean(right.is_off_plan)) * 10 + Number(right.trust_score || 0);
-        return rightScore - leftScore;
-      })
-      .slice(0, 4),
     [listings]
   );
 
@@ -220,8 +221,6 @@ export default function Properties() {
       const matchesFurnishing = filters.furnishingStatus === "all" || listing.furnishing_status === filters.furnishingStatus;
       const matchesFloorPlans = !filters.withFloorPlans || Boolean(listing.floor_plan_available);
       const matchesPrivateInventory = !filters.privateInventoryOnly || Boolean(listing.is_private_inventory);
-      const matchesTrusted = !filters.trustedOnly || Number(listing.trust_score || 0) >= 85;
-      const matchesShowcase = !filters.showcaseOnly || Boolean(isShowcaseListing(listing));
 
       return matchesLocation
         && matchesKeywords
@@ -236,9 +235,7 @@ export default function Properties() {
         && matchesParking
         && matchesFurnishing
         && matchesFloorPlans
-        && matchesPrivateInventory
-        && matchesTrusted
-        && matchesShowcase;
+        && matchesPrivateInventory;
     });
 
     return [...results].sort((left, right) => {
@@ -251,9 +248,9 @@ export default function Properties() {
           return Number(right.built_up_area_sqft || 0) - Number(left.built_up_area_sqft || 0) || Number(right.price || 0) - Number(left.price || 0);
         case "off_plan_first":
           return Number(Boolean(right.is_off_plan)) - Number(Boolean(left.is_off_plan)) || Number(right.price || 0) - Number(left.price || 0);
-        case "popular":
+        case "featured":
         default:
-          return Number(right.trust_score || 0) - Number(left.trust_score || 0) || Number(right.price || 0) - Number(left.price || 0);
+          return getPublicListingRank(right) - getPublicListingRank(left) || Number(right.price || 0) - Number(left.price || 0);
       }
     });
   }, [filters, listings]);
@@ -261,7 +258,8 @@ export default function Properties() {
   const offPlanCount = filteredListings.filter((listing) => listing.is_off_plan).length;
   const privateInventoryCount = filteredListings.filter((listing) => listing.is_private_inventory).length;
   const readyCount = filteredListings.filter((listing) => !listing.is_off_plan).length;
-  const chips = useMemo(() => filterSummaryChips(filters, viewMode), [filters, viewMode]);
+  const chips = useMemo(() => summarizeActiveFilters(filters, viewMode), [filters, viewMode]);
+  const extendedFilterCount = useMemo(() => countExtendedFilters(filters), [filters]);
   const mapFocusLabel = filters.location.trim() || filteredListings[0]?.area_name || "Dubai";
   const mapQuery = `${mapFocusLabel}, Dubai, UAE`;
 
@@ -303,16 +301,197 @@ export default function Properties() {
         <SectionHeading
           eyebrow="Property purchase"
           title="Properties for sale in Dubai"
-          description="Browse apartments, villas, penthouses, and off-plan opportunities with a clean list view, a market map toggle, and buyer-first filters."
+          description="Browse apartments, villas, penthouses, and off-plan opportunities with a cleaner buyer-first list view."
           action={<Button className="rounded-full px-5" onClick={() => setOpenIntent(true)}>Request curated shortlist</Button>}
         />
+
+        <div className="sticky top-20 z-30 hidden xl:block">
+          <Card className="rounded-[1.75rem] border-white/10 bg-background/92 shadow-xl shadow-black/10 backdrop-blur-xl">
+            <CardContent className="space-y-4 p-4">
+              <div className="grid gap-3 xl:grid-cols-[86px,minmax(0,1.4fr),230px,180px,130px,130px,160px]">
+                <div className="inline-flex items-center justify-center rounded-[1.15rem] border border-primary/15 bg-primary/8 px-4 py-3 text-sm font-semibold text-foreground">
+                  Buy
+                </div>
+
+                <Input
+                  value={filters.location}
+                  onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))}
+                  placeholder="Enter location"
+                  className="h-12 rounded-[1.15rem] border-white/10 bg-background/80"
+                />
+
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "all", label: "All" },
+                    { value: "ready", label: "Ready" },
+                    { value: "off_plan", label: "Off-Plan" },
+                  ].map((option) => (
+                    <Button
+                      key={option.value}
+                      type="button"
+                      variant={filters.completionStatus === option.value ? "default" : "outline"}
+                      className="h-12 rounded-[1.15rem]"
+                      onClick={() => setFilters((current) => ({ ...current, completionStatus: option.value }))}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+
+                <Select value={filters.propertyType} onValueChange={(value) => setFilters((current) => ({ ...current, propertyType: value }))}>
+                  <SelectTrigger className="h-12 rounded-[1.15rem]">
+                    <SelectValue placeholder="Property type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Property type</SelectItem>
+                    {propertyTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
+                <Select value={filters.bedrooms} onValueChange={(value) => setFilters((current) => ({ ...current, bedrooms: value }))}>
+                  <SelectTrigger className="h-12 rounded-[1.15rem]">
+                    <SelectValue placeholder="Beds" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Beds</SelectItem>
+                    <SelectItem value="0">Studio</SelectItem>
+                    <SelectItem value="1">1+</SelectItem>
+                    <SelectItem value="2">2+</SelectItem>
+                    <SelectItem value="3">3+</SelectItem>
+                    <SelectItem value="4">4+</SelectItem>
+                    <SelectItem value="5">5+</SelectItem>
+                    <SelectItem value="6">6+</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={filters.bathrooms} onValueChange={(value) => setFilters((current) => ({ ...current, bathrooms: value }))}>
+                  <SelectTrigger className="h-12 rounded-[1.15rem]">
+                    <SelectValue placeholder="Baths" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Baths</SelectItem>
+                    <SelectItem value="1">1+</SelectItem>
+                    <SelectItem value="2">2+</SelectItem>
+                    <SelectItem value="3">3+</SelectItem>
+                    <SelectItem value="4">4+</SelectItem>
+                    <SelectItem value="5">5+</SelectItem>
+                    <SelectItem value="6">6+</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "h-12 rounded-[1.15rem] justify-between",
+                    extendedFilterCount ? "border-amber-300/40 bg-amber-500/5 text-amber-800" : ""
+                  )}
+                  onClick={() => setFiltersPanelOpen(true)}
+                >
+                  More Filters
+                  {extendedFilterCount ? <Badge className="ml-2 rounded-full bg-amber-500/15 text-amber-700 hover:bg-amber-500/15">{extendedFilterCount}</Badge> : null}
+                </Button>
+              </div>
+
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="rounded-full">{filteredListings.length} properties</Badge>
+                  <Badge variant="outline" className="rounded-full">{offPlanCount} off-plan</Badge>
+                  <Badge variant="outline" className="rounded-full">{privateInventoryCount} private inventory</Badge>
+                  <Badge variant="outline" className="rounded-full">{readyCount} ready</Badge>
+                  {chips.map((chip) => <Badge key={chip} variant="outline" className="rounded-full">{chip}</Badge>)}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  {viewToggle}
+                  <div className="w-full lg:w-[230px]">
+                    <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
+                      <SelectTrigger className="h-11 rounded-full">
+                        <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="featured">Featured</SelectItem>
+                        <SelectItem value="price_low_high">Price: low to high</SelectItem>
+                        <SelectItem value="price_high_low">Price: high to low</SelectItem>
+                        <SelectItem value="size_large_small">Largest size</SelectItem>
+                        <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-4 xl:hidden">
+          <Card className="rounded-[1.75rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+            <CardContent className="space-y-4 p-5">
+              <Input
+                value={filters.location}
+                onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))}
+                placeholder="Enter location"
+                className="rounded-[1.15rem]"
+              />
+
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: "all", label: "All" },
+                  { value: "ready", label: "Ready" },
+                  { value: "off_plan", label: "Off-Plan" },
+                ].map((option) => (
+                  <Button
+                    key={option.value}
+                    type="button"
+                    variant={filters.completionStatus === option.value ? "default" : "outline"}
+                    className="rounded-[1.15rem]"
+                    onClick={() => setFilters((current) => ({ ...current, completionStatus: option.value }))}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{filteredListings.length} properties</p>
+                  <p className="text-sm text-muted-foreground">{offPlanCount} off-plan · {privateInventoryCount} private inventory · {readyCount} ready</p>
+                </div>
+                <Button variant="outline" className="rounded-full" onClick={() => setFiltersPanelOpen(true)}>
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Filters
+                </Button>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {viewToggle}
+                <div className="w-full sm:w-[230px]">
+                  <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
+                    <SelectTrigger className="rounded-full">
+                      <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="featured">Featured</SelectItem>
+                      <SelectItem value="price_low_high">Price: low to high</SelectItem>
+                      <SelectItem value="price_high_low">Price: high to low</SelectItem>
+                      <SelectItem value="size_large_small">Largest size</SelectItem>
+                      <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
           <CardContent className="space-y-4 p-5 md:p-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Popular Dubai areas</p>
-                <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">Start with the market that best fits your search</p>
+                <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">Jump into a market quickly</p>
               </div>
               <Button
                 variant="outline"
@@ -357,138 +536,8 @@ export default function Properties() {
           </CardContent>
         </Card>
 
-        <div className="space-y-4 xl:hidden">
-          <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
-            <CardContent className="space-y-4 p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{filteredListings.length} properties</p>
-                  <p className="text-sm text-muted-foreground">{offPlanCount} off-plan · {privateInventoryCount} private inventory · {readyCount} ready</p>
-                </div>
-                <Button variant="outline" className="rounded-full" onClick={() => setMobileFiltersOpen(true)}>
-                  <SlidersHorizontal className="mr-2 h-4 w-4" />
-                  Filters
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                {viewToggle}
-                <div className="w-full sm:w-[220px]">
-                  <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
-                    <SelectTrigger className="rounded-full">
-                      <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="popular">Featured</SelectItem>
-                      <SelectItem value="price_low_high">Price: low to high</SelectItem>
-                      <SelectItem value="price_high_low">Price: high to low</SelectItem>
-                      <SelectItem value="size_large_small">Largest size</SelectItem>
-                      <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {chips.map((chip) => <Badge key={chip} variant="outline" className="rounded-full">{chip}</Badge>)}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {featuredListings.length ? (
-          <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
-            <CardContent className="space-y-4 p-5 md:p-6">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Featured properties</p>
-                  <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">A quick read across apartments, villas, private inventory, and off-plan stock</p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="rounded-full"
-                  onClick={() => setFilters((current) => ({ ...current, completionStatus: "all", location: "", sortBy: "popular" }))}
-                >
-                  View featured selection
-                </Button>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {featuredListings.map((listing) => (
-                  <Link
-                    key={listing.id}
-                    to={`/listing/${listing.id}`}
-                    className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-background/70 text-left transition hover:border-primary/25 hover:bg-background"
-                  >
-                    <img src={listing.hero_image_url} alt={listing.title} className="h-40 w-full object-cover" />
-                    <div className="space-y-2 p-4">
-                      <div className="flex flex-wrap gap-2">
-                        {listing.is_off_plan ? (
-                          <Badge className="bg-sky-950 text-white hover:bg-sky-950">Off-Plan</Badge>
-                        ) : (
-                          <Badge className="bg-emerald-700 text-white hover:bg-emerald-700">Ready</Badge>
-                        )}
-                        <Badge variant="outline" className="rounded-full">{listing.property_type || "Property"}</Badge>
-                      </div>
-                      <p className="text-sm font-semibold text-foreground">{listing.title}</p>
-                      <p className="text-sm text-muted-foreground">{listing.area_name}</p>
-                      <p className="text-sm font-medium text-foreground">AED {Number(listing.price || 0).toLocaleString()}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        <div className={cn("grid gap-6", viewMode === "map" ? "xl:grid-cols-[320px,minmax(0,1fr),380px]" : "xl:grid-cols-[320px,1fr]")}>
-          <div className="hidden xl:block xl:sticky xl:top-24 xl:self-start">
-            <PropertyFilterPanel
-              filters={filters}
-              setFilters={setFilters}
-              propertyTypes={propertyTypes}
-              areaOptions={areaOptions}
-              advancedOpen={advancedOpen}
-              setAdvancedOpen={setAdvancedOpen}
-              onReset={resetFilters}
-            />
-          </div>
-
+        <div className={cn("grid gap-6", viewMode === "map" ? "xl:grid-cols-[minmax(0,1fr),390px]" : "xl:grid-cols-1")}>
           <div className="space-y-4">
-            <Card className="hidden rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5 xl:block">
-              <CardContent className="space-y-4 p-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{filteredListings.length} properties for sale</p>
-                    <p className="text-sm text-muted-foreground">
-                      {offPlanCount} off-plan · {privateInventoryCount} private inventory · {readyCount} ready to move
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    {viewToggle}
-                    <div className="w-full lg:w-[240px]">
-                      <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
-                        <SelectTrigger className="rounded-full">
-                          <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder="Sort by" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="popular">Featured</SelectItem>
-                          <SelectItem value="price_low_high">Price: low to high</SelectItem>
-                          <SelectItem value="price_high_low">Price: high to low</SelectItem>
-                          <SelectItem value="size_large_small">Largest size</SelectItem>
-                          <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {chips.map((chip) => <Badge key={chip} variant="outline" className="rounded-full">{chip}</Badge>)}
-                </div>
-              </CardContent>
-            </Card>
-
             {viewMode === "map" ? (
               <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5 xl:hidden">
                 <CardContent className="space-y-3 p-4">
@@ -535,7 +584,7 @@ export default function Properties() {
           </div>
 
           {viewMode === "map" ? (
-            <div className="hidden xl:block xl:sticky xl:top-24 xl:self-start">
+            <div className="hidden xl:block xl:sticky xl:top-[10.5rem] xl:self-start">
               <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
                 <CardContent className="space-y-4 p-4">
                   <div className="flex items-center justify-between gap-3">
@@ -549,7 +598,7 @@ export default function Properties() {
                     <iframe
                       title={`Property map for ${mapFocusLabel}`}
                       src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`}
-                      className="h-[640px] w-full border-0"
+                      className="h-[680px] w-full border-0"
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
                     />
@@ -561,11 +610,11 @@ export default function Properties() {
         </div>
       </div>
 
-      <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+      <Sheet open={filtersPanelOpen} onOpenChange={setFiltersPanelOpen}>
         <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Refine your property search</SheetTitle>
-            <SheetDescription>Keep the essentials visible first, then expand More Filters only when you need deeper control.</SheetDescription>
+            <SheetTitle>More filters</SheetTitle>
+            <SheetDescription>Refine price, area, features, and special requirements.</SheetDescription>
           </SheetHeader>
           <div className="mt-6">
             <PropertyFilterPanel

@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BedDouble, Building2, Heart, MapPin, Scale } from "lucide-react";
-import TrustBadge from "@/components/common/TrustBadge";
 import { useToast } from '@/components/ui/use-toast';
 import { saveListingToShortlist, saveListingToCompare } from '@/components/leads/buyerLeadActions';
 import { isShowcaseListing } from "@/lib/buyerListings";
@@ -24,27 +23,22 @@ export default function ListingCard({ listing }) {
             <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">{listing.property_type}</p>
             <h3 className="mt-2 text-xl font-semibold tracking-tight">{listing.title}</h3>
           </div>
-          <TrustBadge score={listing.trust_score} />
         </div>
         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {listing.area_name}</span>
           <span className="flex items-center gap-1"><BedDouble className="h-4 w-4" /> {listing.bedrooms} bed</span>
-          <span className="flex items-center gap-1"><Building2 className="h-4 w-4" /> {listing.permit_verified ? 'Permit verified' : 'Permit pending'}</span>
+          <span className="flex items-center gap-1"><Building2 className="h-4 w-4" /> {listing.developer_name || 'Dubai property'}</span>
         </div>
         <div className="flex flex-wrap gap-2">
-          {showcase ? <Badge variant="outline" className="rounded-full">Showcase</Badge> : null}
           {listing.is_off_plan ? <Badge className="rounded-full bg-sky-950 text-white hover:bg-sky-950">Off-Plan</Badge> : null}
-          {listing.trust_band === 'verified' || listing.verification_status === 'verified' ? <Badge variant="outline" className="rounded-full">Verified</Badge> : null}
-          <Badge variant="outline" className="rounded-full">Freshness {listing.freshness_status || 'fresh'}</Badge>
-          {listing.partner_verified ? <Badge variant="outline" className="rounded-full">Partner verified</Badge> : null}
           {listing.is_private_inventory ? <Badge className="rounded-full bg-primary/10 text-primary hover:bg-primary/10">Private inventory</Badge> : null}
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground">From</p>
+            <p className="text-xs text-muted-foreground">Price</p>
             <p className="text-2xl font-semibold">AED {listing.price?.toLocaleString()}</p>
           </div>
-          <Badge variant="outline" className="rounded-full">{listing.listing_type === "private_inventory" ? "Private" : "Published"}</Badge>
+          <Badge variant="outline" className="rounded-full">{listing.property_type}</Badge>
         </div>
         <div className="grid grid-cols-3 gap-2">
           <Button
@@ -71,7 +65,7 @@ export default function ListingCard({ listing }) {
           >
             <Scale className="mr-2 h-4 w-4" /> Compare
           </Button>
-          <Button asChild className="rounded-2xl"><Link to={`/listing/${listing.id}`}>{showcase ? "Preview" : "View"}</Link></Button>
+          <Button asChild className="rounded-2xl"><Link to={`/listing/${listing.id}`}>View</Link></Button>
         </div>
       </CardContent>
     </Card>

@@ -84,18 +84,16 @@ export default function Home() {
       const verifiedListings = allListings.filter((item) => item.status === "published" && item.permit_verified).length;
       const offPlanListings = allListings.filter((item) => item.status === "published" && item.completion_status === "off_plan").length;
       const activePartners = agencies.filter((item) => item.status === "active");
-      const averageTrust = allListings.length
-        ? Math.round(allListings.reduce((sum, item) => sum + Number(item.trust_score || 0), 0) / allListings.length)
-        : 0;
+      const privateInventoryListings = allListings.filter((item) => item.status === "published" && item.is_private_inventory).length;
 
       return {
         verifiedListings,
         offPlanListings,
         activePartners: activePartners.length,
-        averageTrust,
+        privateInventoryListings,
       };
     },
-    initialData: { verifiedListings: 0, offPlanListings: 0, activePartners: 0, averageTrust: 0 },
+    initialData: { verifiedListings: 0, offPlanListings: 0, activePartners: 0, privateInventoryListings: 0 },
   });
 
   const featuredGuideSet = useMemo(() => guides.slice(0, 3), [guides]);
@@ -107,10 +105,10 @@ export default function Home() {
         <HeroSearch appName={appConfig.app_name} />
 
         <section className="grid gap-4 md:grid-cols-4">
-          <MetricCard label="Verified active listings" value={String(homeMetrics.verifiedListings)} hint="Purchase-ready and trust screened" />
+          <MetricCard label="Active properties" value={String(homeMetrics.verifiedListings)} hint="Publicly available purchase inventory" />
           <MetricCard label="Off-plan opportunities" value={String(homeMetrics.offPlanListings)} hint="Future-delivery stock tracked separately" />
-          <MetricCard label="Partner agencies" value={String(homeMetrics.activePartners)} hint="Licensed execution partners" />
-          <MetricCard label="Average trust score" value={`${homeMetrics.averageTrust}/100`} hint="Listing + partner + broker weighted" />
+          <MetricCard label="Private inventory" value={String(homeMetrics.privateInventoryListings)} hint="Discreet stock handled with direct guidance" />
+          <MetricCard label="Execution network" value={String(homeMetrics.activePartners)} hint="Licensed counterparties and delivery relationships" />
         </section>
 
         <section className="space-y-6">

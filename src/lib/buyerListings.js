@@ -291,6 +291,59 @@ const demoListings = [
   }
 ];
 
+const demoGalleryImages = {
+  "demo-bulgari-bay-villa": [
+    "https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80",
+  ],
+  "demo-downtown-sky-residence": [
+    "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1600&q=80",
+  ],
+  "demo-palm-beachfront-duplex": [
+    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=1600&q=80",
+  ],
+  "demo-dubai-hills-family-home": [
+    "https://images.unsplash.com/photo-1600607687644-c7171b42498f?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1605146769289-440113cc3d00?auto=format&fit=crop&w=1600&q=80",
+  ],
+  "demo-business-bay-canal-loft": [
+    "https://images.unsplash.com/photo-1600607687126-8a3414349a51?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80",
+  ],
+  "demo-emirates-hills-estate": [
+    "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1513584684374-8bab748fbf90?auto=format&fit=crop&w=1600&q=80",
+  ],
+  "demo-city-walk-penthouse": [
+    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1505692952047-1a78307da8f2?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=1600&q=80",
+  ],
+  "demo-creek-harbour-investor-suite": [
+    "https://images.unsplash.com/photo-1600047509358-9dc75507daeb?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb3?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1600&q=80",
+  ],
+  "demo-jumeirah-golf-estates-manor": [
+    "https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1600607687644-c7171b42498f?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1502672023488-70e25813eb80?auto=format&fit=crop&w=1600&q=80",
+  ],
+  "demo-bluewaters-branded-apartment": [
+    "https://images.unsplash.com/photo-1600047509782-20d39509f26d?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80",
+  ],
+};
+
 const demoListingsById = Object.fromEntries(demoListings.map((listing) => [listing.id, listing]));
 
 function normalizeBuyerListing(listing) {
@@ -301,6 +354,13 @@ function normalizeBuyerListing(listing) {
   const parkingSpaces = listing.parking_spaces ?? listing.car_spaces ?? Math.max(Math.min(bedrooms || 1, 4), 1);
   const completionStatus = listing.completion_status || "ready";
   const description = String(listing.description || "").replace(/\bshowcase\b/gi, "listing");
+  const rawGalleryImages = []
+    .concat(listing.gallery_image_urls || [])
+    .concat(listing.image_urls || [])
+    .concat((listing.photos || []).map((item) => item?.url || item?.image_url || item))
+    .concat(demoGalleryImages[listing.id] || [])
+    .filter(Boolean);
+  const galleryImageUrls = Array.from(new Set([listing.hero_image_url, ...rawGalleryImages].filter(Boolean)));
 
   return {
     purpose: "buy",
@@ -313,6 +373,7 @@ function normalizeBuyerListing(listing) {
     developer_name: "",
     ...listing,
     description,
+    gallery_image_urls: galleryImageUrls,
     bedrooms,
     bathrooms,
     parking_spaces: parkingSpaces,
