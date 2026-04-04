@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getPropertyTypeCategory, getPropertyTypeGroups, getPropertyTypeLabel } from "@/lib/propertyTaxonomy";
 import { cn } from "@/lib/utils";
@@ -21,7 +20,6 @@ export default function PropertyTypePicker({
   placeholder = "Property type",
 }) {
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
   const groups = getPropertyTypeGroups();
   const [activeCategory, setActiveCategory] = useState(categoryValue === "commercial" ? "commercial" : "residential");
   const selectedValues = useMemo(() => (
@@ -33,14 +31,12 @@ export default function PropertyTypePicker({
   ), [value]);
 
   const filteredOptions = useMemo(() => {
-    const searchTerm = search.trim().toLowerCase();
     const categories = [activeCategory];
     return categories.flatMap((category) =>
       groups[category]
-        .filter((item) => item.toLowerCase().includes(searchTerm))
         .map((item) => ({ category, label: item, value: item }))
     );
-  }, [activeCategory, groups, search]);
+  }, [activeCategory, groups]);
 
   const triggerLabel = selectedValues.length || categoryValue !== "all"
     ? getPropertyTypeLabel(categoryValue, selectedValues)
@@ -71,8 +67,6 @@ export default function PropertyTypePicker({
         setOpen(nextOpen);
         if (nextOpen) {
           setActiveCategory(categoryValue === "all" ? getPropertyTypeCategory(selectedValues) : categoryValue || "residential");
-        } else {
-          setSearch("");
         }
       }}
     >
@@ -84,16 +78,6 @@ export default function PropertyTypePicker({
       </PopoverTrigger>
       <PopoverContent align="start" className={cn("w-[27rem] max-w-[calc(100vw-2rem)] rounded-[1.1rem] border-slate-200 bg-white p-0 shadow-[0_0.6rem_1.6rem_rgba(15,23,42,0.16)]", contentClassName)}>
         <div className="space-y-4 p-4">
-          <div className="flex items-center gap-2 rounded-[0.9rem] bg-slate-50 px-3 py-2">
-            <Search className="h-4 w-4 text-slate-400" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Filter property type"
-              className="h-auto border-none px-0 py-0 text-sm shadow-none focus-visible:ring-0"
-            />
-          </div>
-
           <div className="grid grid-cols-2 gap-2 rounded-[0.9rem] bg-slate-100 p-1">
             {categoryOptions.map((option) => (
               <button
@@ -140,7 +124,6 @@ export default function PropertyTypePicker({
                 onCategoryChange("all");
                 onValueChange([]);
                 setActiveCategory("residential");
-                setSearch("");
               }}
             >
               Reset
