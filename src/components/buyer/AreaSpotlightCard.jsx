@@ -13,7 +13,7 @@ export default function AreaSpotlightCard({ area }) {
         <h3 className="text-xl font-semibold tracking-tight">{area.name}</h3>
         <p className="text-sm text-muted-foreground">{area.description}</p>
         <div className="grid grid-cols-3 gap-3 text-sm">
-          <div><p className="text-muted-foreground">Yield</p><p className="font-semibold">{area.avg_rental_yield}%</p></div>
+          <div><p className="text-muted-foreground">Investment</p><p className="font-semibold">{area.avg_rental_yield ? `${area.avg_rental_yield}%` : "—"}</p></div>
           <div><p className="text-muted-foreground">Family</p><p className="font-semibold">{area.family_score}/100</p></div>
           <div><p className="text-muted-foreground">Investor</p><p className="font-semibold">{area.investor_score}/100</p></div>
         </div>

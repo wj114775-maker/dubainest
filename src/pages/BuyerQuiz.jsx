@@ -17,13 +17,14 @@ export default function BuyerQuiz() {
         base44.entities.Lead.list("-updated_date", 200),
       ]);
 
+      const saleListings = listings.filter((item) => item.listing_type !== "rent");
       const topInvestorArea = [...areas].sort((a, b) => Number(b.investor_score || 0) - Number(a.investor_score || 0))[0];
       const familyArea = [...areas].sort((a, b) => Number(b.family_score || 0) - Number(a.family_score || 0))[0];
-      const privateInventoryCount = listings.filter((item) => item.listing_type === "private_inventory" || item.is_private_inventory).length;
+      const privateInventoryCount = saleListings.filter((item) => item.listing_type === "private_inventory" || item.is_private_inventory).length;
       const qualifiedLeadCount = leads.filter((lead) => ["qualified", "assigned", "accepted"].includes(lead.status)).length;
 
       return [
-        `Investor route with yield-first matching${topInvestorArea ? ` in ${topInvestorArea.name}` : ""}`,
+        `Investor route with investment-first matching${topInvestorArea ? ` in ${topInvestorArea.name}` : ""}`,
         `Family move route with area-fit signals${familyArea ? ` led by ${familyArea.name}` : ""}`,
         `Private buyer route with ${privateInventoryCount} protected inventory options and ${qualifiedLeadCount} qualified leads`,
       ];

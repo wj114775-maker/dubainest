@@ -34,7 +34,7 @@ export default function AreaDetail() {
       <div className="grid gap-4 md:grid-cols-4">
         <MetricCard label="Demand score" value={String(area?.investor_score || 0)} />
         <MetricCard label="Median price" value={area?.avg_sale_price ? `AED ${Number(area.avg_sale_price).toLocaleString()}` : 'On request'} />
-        <MetricCard label="Average yield" value={area?.avg_rental_yield ? `${area.avg_rental_yield}%` : '—'} />
+        <MetricCard label="Investment yield" value={area?.avg_rental_yield ? `${area.avg_rental_yield}%` : '—'} />
         <MetricCard label="Family fit" value={`${area?.family_score || 0}/100`} />
       </div>
     </div>

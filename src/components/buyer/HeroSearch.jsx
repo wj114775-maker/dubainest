@@ -1,42 +1,240 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link, createSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Sparkles } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Building2, MapPin, Search, Sparkles } from "lucide-react";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
+import { loadBuyerListings } from "@/lib/buyerListings";
+import { cn } from "@/lib/utils";
 
-export default function HeroSearch({ appName }) {
-  const [query, setQuery] = useState("");
+const collectionOptions = [
+  { value: "all", label: "All sale stock" },
+  { value: "ready", label: "Ready" },
+  { value: "off_plan", label: "Off-Plan" },
+  { value: "private_inventory", label: "Private inventory" },
+];
+
+export default function HeroSearch({ appName, metrics }) {
+  const navigate = useNavigate();
+  const [location, setLocation] = useState("");
+  const [developer, setDeveloper] = useState("all");
+  const [propertyType, setPropertyType] = useState("all");
+  const [collection, setCollection] = useState("all");
   const [open, setOpen] = useState(false);
-  const listingDirectoryPath = query.trim() ? `/properties?q=${encodeURIComponent(query.trim())}` : "/properties";
+
+  const { data: listings = [] } = useQuery({
+    queryKey: ["home-hero-search-options"],
+    queryFn: () => loadBuyerListings({ limit: 80, includeShowcase: true }),
+    initialData: [],
+  });
+
+  const developerOptions = useMemo(
+    () => Array.from(new Set(listings.map((listing) => listing.developer_name).filter(Boolean))).sort(),
+    [listings]
+  );
+
+  const propertyTypeOptions = useMemo(
+    () => Array.from(new Set(listings.map((listing) => listing.property_type).filter(Boolean))).sort(),
+    [listings]
+  );
+
+  const quickAreas = useMemo(() => {
+    const counts = listings.reduce((accumulator, listing) => {
+      const key = listing.area_name;
+      if (!key) return accumulator;
+      accumulator[key] = (accumulator[key] || 0) + 1;
+      return accumulator;
+    }, {});
+
+    return Object.entries(counts)
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 4)
+      .map(([name]) => name);
+  }, [listings]);
+
+  const openProperties = (overrides = {}) => {
+    const next = {
+      location,
+      developer,
+      propertyType,
+      collection,
+      ...overrides,
+    };
+
+    const params = {};
+    if (next.location.trim()) params.q = next.location.trim();
+    if (next.developer !== "all") params.developer = next.developer;
+    if (next.propertyType !== "all") params.propertyType = next.propertyType;
+    if (next.collection === "ready") params.completion = "ready";
+    if (next.collection === "off_plan") params.completion = "off_plan";
+    if (next.collection === "private_inventory") params.privateInventory = "1";
+
+    const query = createSearchParams(params).toString();
+    navigate(query ? `/properties?${query}` : "/properties");
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    openProperties();
+  };
 
   return (
-    <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(218,165,32,0.18),transparent_30%),linear-gradient(135deg,rgba(12,18,28,1),rgba(18,28,44,0.95))] p-6 text-white shadow-2xl shadow-black/20 md:p-10">
-      <div className="max-w-3xl space-y-6">
-        <Badge className="rounded-full bg-white/10 px-4 py-1.5 text-white hover:bg-white/10">
-          Dubai property purchase, off-plan, and private inventory
-        </Badge>
-        <div className="space-y-3">
-          <h2 className="text-4xl font-semibold tracking-tight md:text-6xl">{appName} brings Dubai property purchase into one clear buyer journey.</h2>
-          <p className="max-w-2xl text-sm text-white/75 md:text-lg">Explore live opportunities, request curated options, and move from shortlist to purchase support when you are ready.</p>
+    <section className="relative -mx-4 overflow-hidden sm:-mx-6 lg:-mx-8 xl:-mx-10">
+      <div className="absolute inset-0">
+        <img
+          src="https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=2200&q=80"
+          alt="Dubai skyline and luxury residences"
+          className="h-full w-full object-cover"
+        />
+      </div>
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(8,14,24,0.88),rgba(13,22,38,0.74),rgba(8,14,24,0.82))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(201,165,92,0.22),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(20,92,76,0.18),transparent_28%)]" />
+
+      <div className="relative mx-auto flex min-h-[42rem] max-w-7xl flex-col justify-center px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center text-white">
+          <Badge className="rounded-full border border-white/15 bg-white px-4 py-1.5 text-[11px] uppercase tracking-[0.24em] text-slate-900 hover:bg-white">
+            Dubai property purchase
+          </Badge>
+          <div className="mt-6 space-y-4">
+            <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
+              Search Dubai properties for sale through one clear buyer journey.
+            </h1>
+            <p className="mx-auto max-w-3xl text-sm leading-6 text-white/78 md:text-lg">
+              {appName} is built for purchase only: ready homes, off-plan launches, and private inventory routed into direct advisory support.
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col gap-3 rounded-3xl bg-white/10 p-3 backdrop-blur md:flex-row">
-          <Input placeholder="Search by area, project or intent" value={query} onChange={(event) => setQuery(event.target.value)} className="h-12 rounded-2xl border-white/10 bg-white/10 text-white placeholder:text-white/50" />
-          <Button asChild className="h-12 rounded-2xl bg-white text-slate-950 hover:bg-white/90">
-            <Link to={listingDirectoryPath}>
-              <Search className="mr-2 h-4 w-4" />
-              Explore properties
-            </Link>
-          </Button>
+
+        <div className="mx-auto mt-10 w-full max-w-5xl rounded-[2rem] border border-slate-200/70 bg-white p-4 shadow-[0_24px_80px_rgba(4,12,24,0.22)] md:p-5">
+          <div className="flex flex-wrap items-center justify-center gap-2 border-b border-slate-200 pb-4">
+            <Badge className="rounded-full bg-slate-950 px-4 py-2 text-white hover:bg-slate-950">Properties</Badge>
+            <Button asChild variant="ghost" className="rounded-full px-4 text-slate-600 hover:bg-slate-100 hover:text-slate-950">
+              <Link to="/properties?completion=off_plan">New projects</Link>
+            </Button>
+            <Button variant="ghost" className="rounded-full px-4 text-slate-600 hover:bg-slate-100 hover:text-slate-950" onClick={() => setOpen(true)}>
+              Private client
+            </Button>
+            <Button asChild variant="ghost" className="rounded-full px-4 text-slate-600 hover:bg-slate-100 hover:text-slate-950">
+              <Link to="/guides">Guides</Link>
+            </Button>
+          </div>
+
+          <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+              <div className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                  <MapPin className="h-4 w-4 text-slate-700" />
+                  Location
+                </div>
+                <Input
+                  placeholder="Search area, community, or project"
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                  className="mt-2 h-8 border-none px-0 text-base text-slate-950 shadow-none focus-visible:ring-0"
+                />
+              </div>
+
+              <div className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                  <Building2 className="h-4 w-4 text-slate-700" />
+                  Developer
+                </div>
+                <Select value={developer} onValueChange={setDeveloper}>
+                  <SelectTrigger className="mt-2 h-8 border-none px-0 text-base text-slate-950 shadow-none focus:ring-0">
+                    <SelectValue placeholder="Any developer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any developer</SelectItem>
+                    {developerOptions.map((option) => (
+                      <SelectItem key={option} value={option}>{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                  <Sparkles className="h-4 w-4 text-slate-700" />
+                  Property type
+                </div>
+                <Select value={propertyType} onValueChange={setPropertyType}>
+                  <SelectTrigger className="mt-2 h-8 border-none px-0 text-base text-slate-950 shadow-none focus:ring-0">
+                    <SelectValue placeholder="All types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All types</SelectItem>
+                    {propertyTypeOptions.map((option) => (
+                      <SelectItem key={option} value={option}>{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button type="submit" className="h-full min-h-[5.25rem] rounded-[1.4rem] bg-slate-950 px-6 text-base font-semibold text-white hover:bg-slate-900">
+                <Search className="mr-2 h-4 w-4" />
+                Search
+              </Button>
+            </div>
+
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap gap-2">
+                {collectionOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setCollection(option.value)}
+                    className={cn(
+                      "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                      collection === option.value
+                        ? "border-slate-950 bg-slate-950 text-white"
+                        : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-slate-500 lg:justify-end">
+                <span className="mr-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Popular areas</span>
+                {quickAreas.map((area) => (
+                  <button
+                    key={area}
+                    type="button"
+                    onClick={() => openProperties({ location: area })}
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950"
+                  >
+                    {area}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </form>
         </div>
-        <div className="flex flex-wrap gap-2 text-xs text-white/70">
-          <span className="rounded-full border border-white/10 px-3 py-1">Golden Visa workflow</span>
-          <button type="button" onClick={() => setOpen(true)} className="rounded-full border border-white/10 px-3 py-1 text-left">HNW private inventory</button>
-          <span className="rounded-full border border-white/10 px-3 py-1">WhatsApp-first concierge</span>
-          <span className="rounded-full border border-white/10 px-3 py-1"><Sparkles className="mr-1 inline h-3 w-3" /> Developer-aligned purchase support</span>
+
+        <div className="mx-auto mt-6 grid w-full max-w-5xl gap-3 md:grid-cols-4">
+          <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4 text-white backdrop-blur-sm">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Verified sale stock</p>
+            <p className="mt-2 text-2xl font-semibold">{metrics?.verifiedListings || 0}</p>
+          </div>
+          <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4 text-white backdrop-blur-sm">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Off-plan</p>
+            <p className="mt-2 text-2xl font-semibold">{metrics?.offPlanListings || 0}</p>
+          </div>
+          <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4 text-white backdrop-blur-sm">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Private inventory</p>
+            <p className="mt-2 text-2xl font-semibold">{metrics?.privateInventoryListings || 0}</p>
+          </div>
+          <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4 text-white backdrop-blur-sm">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Execution network</p>
+            <p className="mt-2 text-2xl font-semibold">{metrics?.activePartners || 0}</p>
+          </div>
         </div>
       </div>
+
       <BuyerIntentSheet open={open} onOpenChange={setOpen} intentType="request_private_inventory" title="Request private inventory access" />
     </section>
   );

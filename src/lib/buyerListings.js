@@ -113,7 +113,7 @@ const demoListings = [
   {
     id: "demo-business-bay-canal-loft",
     title: "Business Bay Canal Loft Collection",
-    description: "A design-led loft showcase built for investors and founders who want an urban address with quick Downtown access and strong rental positioning.",
+    description: "A design-led loft showcase built for investors and founders who want an urban address with quick Downtown access and strong resale appeal.",
     listing_type: "sale",
     property_type: "Loft",
     price: 6450000,
@@ -346,6 +346,11 @@ const demoGalleryImages = {
 
 const demoListingsById = Object.fromEntries(demoListings.map((listing) => [listing.id, listing]));
 
+function isSaleOnlyListing(listing) {
+  if (!listing) return false;
+  return String(listing.listing_type || "sale").toLowerCase() !== "rent";
+}
+
 function normalizeBuyerListing(listing) {
   if (!listing) return null;
 
@@ -385,11 +390,11 @@ function normalizeBuyerListing(listing) {
 async function fetchLivePublishedListings(limit = 24) {
   try {
     const listings = await base44.entities.Listing.filter({ status: "published" }, "-updated_date", limit);
-    return Array.isArray(listings) ? listings : [];
+    return Array.isArray(listings) ? listings.filter(isSaleOnlyListing) : [];
   } catch {
     try {
       const listings = await base44.entities.Listing.list("-updated_date", Math.max(limit, 100));
-      return listings.filter((listing) => listing.status === "published");
+      return listings.filter((listing) => listing.status === "published" && isSaleOnlyListing(listing));
     } catch {
       return [];
     }
@@ -420,7 +425,8 @@ export async function loadBuyerListingById(id) {
   }
 
   try {
-    return normalizeBuyerListing(await base44.entities.Listing.get(id));
+    const listing = await base44.entities.Listing.get(id);
+    return isSaleOnlyListing(listing) ? normalizeBuyerListing(listing) : null;
   } catch {
     return normalizeBuyerListing(demoListingsById[id] || null);
   }

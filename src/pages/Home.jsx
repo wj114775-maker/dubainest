@@ -16,7 +16,6 @@ import AreaSpotlightCard from "@/components/buyer/AreaSpotlightCard";
 import StickyInquiryBar from "@/components/buyer/StickyInquiryBar";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import SectionHeading from "@/components/common/SectionHeading";
-import MetricCard from "@/components/common/MetricCard";
 import GuideCard from "@/components/content/GuideCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -81,10 +80,11 @@ export default function Home() {
         base44.entities.PartnerAgency.list("-updated_date", 200),
       ]);
 
-      const verifiedListings = allListings.filter((item) => item.status === "published" && item.permit_verified).length;
-      const offPlanListings = allListings.filter((item) => item.status === "published" && item.completion_status === "off_plan").length;
+      const publishedListings = allListings.filter((item) => item.status === "published" && item.listing_type !== "rent");
+      const verifiedListings = publishedListings.filter((item) => item.permit_verified).length;
+      const offPlanListings = publishedListings.filter((item) => item.completion_status === "off_plan").length;
       const activePartners = agencies.filter((item) => item.status === "active");
-      const privateInventoryListings = allListings.filter((item) => item.status === "published" && item.is_private_inventory).length;
+      const privateInventoryListings = publishedListings.filter((item) => item.is_private_inventory).length;
 
       return {
         verifiedListings,
@@ -102,20 +102,13 @@ export default function Home() {
   return (
     <>
       <div className="space-y-10 pb-32">
-        <HeroSearch appName={appConfig.app_name} />
-
-        <section className="grid gap-4 md:grid-cols-4">
-          <MetricCard label="Active properties" value={String(homeMetrics.verifiedListings)} hint="Publicly available purchase inventory" />
-          <MetricCard label="Off-plan opportunities" value={String(homeMetrics.offPlanListings)} hint="Future-delivery stock tracked separately" />
-          <MetricCard label="Private inventory" value={String(homeMetrics.privateInventoryListings)} hint="Discreet stock handled with direct guidance" />
-          <MetricCard label="Execution network" value={String(homeMetrics.activePartners)} hint="Licensed counterparties and delivery relationships" />
-        </section>
+        <HeroSearch appName={appConfig.app_name} metrics={homeMetrics} />
 
         <section className="space-y-6">
           <SectionHeading
-            eyebrow="Explore"
-            title="Choose the right entry path before you browse"
-            description="This page is now an overview surface. The actual property stock lives in the property directory, while this page helps buyers choose their route."
+            eyebrow="Beyond search"
+            title="Continue with curated routes when the buyer is not ready for direct search"
+            description="The homepage now starts with sale search. These routes stay below it for private inventory, visa-led journeys, guides, and advisory support."
           />
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {pathCards.map((item) => {

@@ -37,7 +37,7 @@ export default function PartnerListingEditorDialog({ open, onOpenChange, listing
     setForm(listing ? {
       title: listing.title || "",
       description: listing.description || "",
-      listing_type: listing.listing_type || "sale",
+      listing_type: listing.listing_type === "private_inventory" ? "private_inventory" : "sale",
       property_type: listing.property_type || "",
       price: listing.price ?? "",
       bedrooms: listing.bedrooms ?? "",
@@ -69,7 +69,7 @@ export default function PartnerListingEditorDialog({ open, onOpenChange, listing
       <DialogContent className="max-w-2xl rounded-3xl">
         <DialogHeader>
           <DialogTitle>{listing ? "Edit listing" : "Create listing"}</DialogTitle>
-          <DialogDescription>Partners can draft and update listings before submitting them back into governance review.</DialogDescription>
+          <DialogDescription>Partners can draft and update sale listings before submitting them back into governance review.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
@@ -82,7 +82,6 @@ export default function PartnerListingEditorDialog({ open, onOpenChange, listing
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="sale">Sale</SelectItem>
-                <SelectItem value="rent">Rent</SelectItem>
                 <SelectItem value="private_inventory">Private inventory</SelectItem>
               </SelectContent>
             </Select>
