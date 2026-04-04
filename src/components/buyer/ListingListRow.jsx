@@ -51,7 +51,7 @@ export default function ListingListRow({ listing, whatsappNumber }) {
   const shortSummary = summary.length > 92 ? `${summary.slice(0, 89)}...` : summary;
   const statusLabel = listing.is_off_plan ? "Off-Plan" : "Ready";
   const statusClassName = listing.is_off_plan
-    ? "bg-sky-950 text-white hover:bg-sky-950"
+    ? "bg-slate-950 text-white hover:bg-slate-950"
     : "bg-emerald-700 text-white hover:bg-emerald-700";
   const propertyType = listing.property_type || "Property";
   const whatsappUrl = buildWhatsAppUrl(whatsappNumber, listing);
@@ -104,11 +104,11 @@ export default function ListingListRow({ listing, whatsappNumber }) {
 
             <div className="absolute left-3 top-3 flex flex-wrap gap-2">
               <Badge className={`rounded-full ${statusClassName}`}>{statusLabel}</Badge>
-              <Badge variant="outline" className="rounded-full border-white/25 bg-white/92 text-slate-900">
+              <Badge className="rounded-full border border-slate-200 bg-white text-slate-900 hover:bg-white">
                 {propertyType}
               </Badge>
               {listing.is_private_inventory ? (
-                <Badge className="rounded-full bg-black/75 text-white hover:bg-black/75">Private Inventory</Badge>
+                <Badge className="rounded-full bg-emerald-800 text-white hover:bg-emerald-800">Private Inventory</Badge>
               ) : null}
             </div>
 
