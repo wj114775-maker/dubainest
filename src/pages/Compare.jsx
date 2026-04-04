@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
+import SeoMeta from "@/components/seo/SeoMeta";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
 import { Card, CardContent } from "@/components/ui/card";
 import CompareActionsCard from "@/components/buyer/CompareActionsCard";
@@ -26,6 +27,12 @@ export default function Compare() {
 
   return (
     <div className="space-y-6 pb-28">
+      <SeoMeta
+        title="Compare Properties"
+        description="Compare shortlisted Dubai properties side by side."
+        canonicalPath="/compare"
+        robots="noindex,nofollow"
+      />
       <SectionHeading eyebrow="Compare" title="Compare price, size, location and fit before you enquire" description="Compare sets stay in the anonymous browse layer until the buyer chooses to contact the team." />
       {listings.length ? (
         <>

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import HeroSearch from "@/components/buyer/HeroSearch";
+import SeoMeta from "@/components/seo/SeoMeta";
 import AreaSpotlightCard from "@/components/buyer/AreaSpotlightCard";
 import StickyInquiryBar from "@/components/buyer/StickyInquiryBar";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
@@ -20,6 +21,7 @@ import GuideCard from "@/components/content/GuideCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import useAppConfig from "@/hooks/useAppConfig";
+import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/lib/seo";
 
 const pathCards = [
   {
@@ -112,6 +114,12 @@ export default function Home() {
 
   return (
     <>
+      <SeoMeta
+        title="Dubai Properties for Sale, Off-Plan and Private Inventory"
+        description="Search Dubai properties for sale, compare off-plan opportunities, and request curated private inventory through one buyer-focused journey."
+        canonicalPath="/"
+        jsonLd={[buildOrganizationJsonLd(), buildWebsiteJsonLd()]}
+      />
       <div className="space-y-10 pb-32">
         <HeroSearch appName={appConfig.app_name} metrics={homeMetrics} />
 

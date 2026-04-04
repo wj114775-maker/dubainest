@@ -1,7 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import SectionHeading from "@/components/common/SectionHeading";
+import SeoMeta from "@/components/seo/SeoMeta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buildBreadcrumbJsonLd } from "@/lib/seo";
 
 const groups = [
   {
@@ -11,18 +13,10 @@ const groups = [
       { label: "Properties", path: "/properties" },
       { label: "Guides", path: "/guides" },
       { label: "Golden Visa", path: "/golden-visa" },
+      { label: "Buyer Qualification", path: "/quiz" },
       { label: "Shortlist", path: "/shortlist" },
       { label: "Compare", path: "/compare" },
-      { label: "Account", path: "/account" },
-      { label: "Notifications", path: "/notifications" },
-    ],
-  },
-  {
-    title: "Workspace entry points",
-    links: [
-      { label: "Workspace router", path: "/workspace" },
-      { label: "Partner workspace", path: "/partner" },
-      { label: "Operations workspace", path: "/ops" },
+      { label: "Site map", path: "/sitemap" },
     ],
   },
 ];
@@ -30,10 +24,19 @@ const groups = [
 export default function SiteMap() {
   return (
     <div className="space-y-6 pb-28">
+      <SeoMeta
+        title="Site Map"
+        description="Browse the main public pages for Dubai property search, guides, visa support, and buyer qualification."
+        canonicalPath="/sitemap"
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Site Map", path: "/sitemap" },
+        ])}
+      />
       <SectionHeading
         eyebrow="Site map"
-        title="A clearer index of the application"
-        description="Use this page as a simple route directory while the platform grows."
+        title="A clearer index of the public website"
+        description="Use this page as a simple route directory for the public-facing property search experience."
       />
 
       <div className="grid gap-5 md:grid-cols-2">

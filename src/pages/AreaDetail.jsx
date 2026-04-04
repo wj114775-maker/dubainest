@@ -4,9 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import MetricCard from "@/components/common/MetricCard";
+import SeoMeta from "@/components/seo/SeoMeta";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import BuyerIntentSheet from '@/components/leads/BuyerIntentSheet';
+import { buildBreadcrumbJsonLd, truncateSeoDescription } from "@/lib/seo";
 
 export default function AreaDetail() {
   const { slug } = useParams();
@@ -24,6 +26,16 @@ export default function AreaDetail() {
 
   return (
     <>
+    <SeoMeta
+      title={`${area?.name || slug?.replace(/-/g, " ") || "Dubai Area"} Area Guide and Property Overview`}
+      description={truncateSeoDescription(area?.description || `Explore ${area?.name || slug?.replace(/-/g, " ") || "Dubai"} with area insight, pricing, and buyer guidance.`)}
+      canonicalPath={`/areas/${slug}`}
+      robots={area ? "index,follow" : "noindex,nofollow"}
+      jsonLd={buildBreadcrumbJsonLd([
+        { name: "Home", path: "/" },
+        { name: area?.name || slug?.replace(/-/g, " ") || "Area", path: `/areas/${slug}` },
+      ])}
+    />
     <div className="space-y-6 pb-28">
       <SectionHeading eyebrow="Area intelligence" title={area?.name || slug?.replace(/-/g, " ") || "Dubai area"} description={area?.description || `City: ${area?.city || 'Dubai'}`} action={<Button onClick={() => setOpen(true)}>Request area consultation</Button>} />
       <div className="flex flex-wrap gap-2">

@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import SeoMeta from "@/components/seo/SeoMeta";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
@@ -40,6 +41,12 @@ export default function Account() {
 
   return (
     <div className="space-y-6 pb-28">
+      <SeoMeta
+        title="Account"
+        description="Manage your account access."
+        canonicalPath="/account"
+        robots="noindex,nofollow"
+      />
       <SectionHeading eyebrow={isInternal ? "Admin account" : "Account"} title={isInternal ? "Your internal workspace access is active" : "Sign in only when you want protected access"} description={isInternal ? "Use this page as the handoff into Internal OS, lead operations, user controls and audit tools." : "Anonymous browsing stays open; registration begins on save, compare, share, enquiry, callback, private inventory or concierge flows."} />
       <Card className="rounded-[2rem] border-white/10 bg-card/80">
         <CardContent className="space-y-4 p-6">

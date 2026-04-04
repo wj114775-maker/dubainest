@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
 import ListingCard from "@/components/buyer/ListingCard";
+import SeoMeta from "@/components/seo/SeoMeta";
 import ShortlistActionsCard from "@/components/buyer/ShortlistActionsCard";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import ConversionSignalCard from "@/components/buyer/ConversionSignalCard";
@@ -38,6 +39,12 @@ export default function Shortlist() {
 
   return (
     <div className="space-y-6 pb-28">
+      <SeoMeta
+        title="Saved Shortlist"
+        description="Review saved Dubai properties and request support when you are ready."
+        canonicalPath="/shortlist"
+        robots="noindex,nofollow"
+      />
       <SectionHeading eyebrow="Saved" title="Keep your shortlisted properties in one place" description="Save properties, share the shortlist, and request buyer support when you want the team involved." />
       {listings.length ? <>
         <ConversionSignalCard title="Shortlist progress" description="You can share these properties or ask the team to help you move forward with the right options." items={[{ label: "Saved", value: String(listings.length) }, { label: "Share status", value: shareMutation.isSuccess ? "Ready" : "Not shared" }, { label: "Next step", value: "Buyer support" }]} />

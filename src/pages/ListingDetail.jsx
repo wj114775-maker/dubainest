@@ -3,8 +3,10 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import SeoMeta from "@/components/seo/SeoMeta";
 import BuyerIntentSheet from '@/components/leads/BuyerIntentSheet';
 import { isShowcaseListing, loadBuyerListingById } from "@/lib/buyerListings";
+import { buildBreadcrumbJsonLd, truncateSeoDescription } from "@/lib/seo";
 
 export default function ListingDetail() {
   const { id } = useParams();
@@ -22,13 +24,38 @@ export default function ListingDetail() {
   }
 
   if (!listing) {
-    return <div className="pb-28 text-sm text-muted-foreground">Listing not found.</div>;
+    return (
+      <>
+        <SeoMeta
+          title="Listing Not Found"
+          description="The requested property listing could not be found."
+          canonicalPath={`/listing/${id}`}
+          robots="noindex,nofollow"
+        />
+        <div className="pb-28 text-sm text-muted-foreground">Listing not found.</div>
+      </>
+    );
   }
 
   const showcase = isShowcaseListing(listing);
+  const seoDescription = truncateSeoDescription(
+    listing.description
+    || `${listing.property_type || "Property"} for sale in ${listing.area_name || "Dubai"}${listing.developer_name ? ` by ${listing.developer_name}` : ""}.`
+  );
 
   return (
     <>
+    <SeoMeta
+      title={`${listing.title} in ${listing.area_name || "Dubai"}`}
+      description={seoDescription}
+      canonicalPath={`/listing/${id}`}
+      image={listing.hero_image_url}
+      jsonLd={buildBreadcrumbJsonLd([
+        { name: "Home", path: "/" },
+        { name: "Properties", path: "/properties" },
+        { name: listing.title, path: `/listing/${id}` },
+      ])}
+    />
     <div className="space-y-6 pb-28">
       <div className="overflow-hidden rounded-[2rem] border border-white/10">
         <img src={listing.hero_image_url || "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1600&q=80"} alt={listing.title} className="h-[320px] w-full object-cover md:h-[480px]" />

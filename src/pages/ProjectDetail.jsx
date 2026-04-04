@@ -4,9 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import MetricCard from "@/components/common/MetricCard";
+import SeoMeta from "@/components/seo/SeoMeta";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import BuyerIntentSheet from '@/components/leads/BuyerIntentSheet';
+import { buildBreadcrumbJsonLd, truncateSeoDescription } from "@/lib/seo";
 
 export default function ProjectDetail() {
   const { slug } = useParams();
@@ -29,6 +31,16 @@ export default function ProjectDetail() {
 
   return (
     <>
+    <SeoMeta
+      title={`${project?.name || slug?.replace(/-/g, " ") || "Project"} New Project and Off-Plan Overview`}
+      description={truncateSeoDescription(`Review ${project?.name || slug?.replace(/-/g, " ") || "this project"} in ${project?.area_name || "Dubai"} with status, handover timing, and starting price information.`)}
+      canonicalPath={`/projects/${slug}`}
+      robots={project ? "index,follow" : "noindex,nofollow"}
+      jsonLd={buildBreadcrumbJsonLd([
+        { name: "Home", path: "/" },
+        { name: project?.name || slug?.replace(/-/g, " ") || "Project", path: `/projects/${slug}` },
+      ])}
+    />
     <div className="space-y-6 pb-28">
       <SectionHeading eyebrow="Project overview" title={project?.name || slug?.replace(/-/g, " ") || "Project"} description={`Status: ${statusValue}${project?.handover_date ? ` · Handover ${project.handover_date}` : ''}`} action={<Button onClick={() => setOpen(true)}>Request brochure</Button>} />
       <div className="flex flex-wrap gap-2">

@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /account
+Disallow: /notifications
+Disallow: /shortlist
+Disallow: /compare
+Disallow: /workspace
+Disallow: /partner
+Disallow: /partner/
+Disallow: /ops
+Disallow: /ops/
+
+Sitemap: https://dubai-nest-home.base44.app/sitemap.xml

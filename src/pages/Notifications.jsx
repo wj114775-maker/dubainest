@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
+import SeoMeta from "@/components/seo/SeoMeta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -42,6 +43,12 @@ export default function Notifications() {
 
   return (
     <div className="space-y-6">
+      <SeoMeta
+        title="Notifications"
+        description="Operational notification center."
+        canonicalPath="/notifications"
+        robots="noindex,nofollow"
+      />
       <SectionHeading eyebrow="Inbox" title="Operational notifications" description="Review alerts, reminders and workflow notices linked to lead and supply operations." />
       <Card className="rounded-[2rem] border-white/10 bg-card/80">
         <CardHeader><CardTitle>Notification centre</CardTitle></CardHeader>

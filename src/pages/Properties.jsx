@@ -7,6 +7,7 @@ import ListingListRow from "@/components/buyer/ListingListRow";
 import PropertyTypePicker from "@/components/buyer/PropertyTypePicker";
 import PropertyDirectorySidebar from "@/components/buyer/PropertyDirectorySidebar";
 import PropertyFilterPanel from "@/components/buyer/PropertyFilterPanel";
+import SeoMeta from "@/components/seo/SeoMeta";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import SectionHeading from "@/components/common/SectionHeading";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ import useAppConfig from "@/hooks/useAppConfig";
 import { normalizeDeveloperQueryValue } from "@/lib/approvedDevelopers";
 import { getShowcaseListings, loadBuyerListings } from "@/lib/buyerListings";
 import { readPropertySearchLocations, recordPropertySearchLocation } from "@/lib/propertySearchInsights";
+import { buildBreadcrumbJsonLd } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 const defaultFilters = {
@@ -335,6 +337,16 @@ export default function Properties() {
 
   return (
     <>
+      <SeoMeta
+        title="Properties for Sale in Dubai"
+        description="Browse Dubai apartments, villas, penthouses, off-plan opportunities, and private inventory with a clean buyer-first directory."
+        canonicalPath="/properties"
+        robots={searchParams.toString() ? "noindex,follow" : "index,follow"}
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Properties", path: "/properties" },
+        ])}
+      />
       <div className="space-y-6 pb-28">
         <SectionHeading
           eyebrow="Property purchase"

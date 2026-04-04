@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -50,12 +50,14 @@ import AppHeader from '@/components/layout/AppHeader';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import SideRail from '@/components/layout/SideRail';
 import SiteFooter from '@/components/layout/SiteFooter';
+import SeoMeta from '@/components/seo/SeoMeta';
 import useAppConfig from '@/hooks/useAppConfig';
 import useCurrentUserRole from '@/hooks/useCurrentUserRole';
 import { navItems, roleGroups } from '@/lib/appShell';
 
 const AppFrame = ({ children, mode = 'buyer', title, showInternalAccess = false, headerSticky = true }) => {
   const { data: appConfig } = useAppConfig();
+  const location = useLocation();
   const items = mode === "buyer" && showInternalAccess
     ? navItems.buyer.map((item) => item.path === "/account" ? { label: "Workspace", path: "/workspace" } : item)
     : navItems[mode];
@@ -64,6 +66,14 @@ const AppFrame = ({ children, mode = 'buyer', title, showInternalAccess = false,
 
   return (
     <div className="min-h-screen bg-background">
+      {mode !== 'buyer' ? (
+        <SeoMeta
+          title={mode === "internal" ? `${appConfig.app_name} Internal Workspace` : `${appConfig.app_name} Partner Workspace`}
+          description={mode === "internal" ? "Internal operations workspace." : "Partner workspace."}
+          canonicalPath={location.pathname}
+          robots="noindex,nofollow"
+        />
+      ) : null}
       <AppHeader
         appName={appConfig.app_name}
         tagline={appConfig.tagline}
