@@ -3,11 +3,10 @@ import { Check, ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { getPropertyTypeGroups, getPropertyTypeLabel } from "@/lib/propertyTaxonomy";
+import { getPropertyTypeCategory, getPropertyTypeGroups, getPropertyTypeLabel } from "@/lib/propertyTaxonomy";
 import { cn } from "@/lib/utils";
 
 const categoryOptions = [
-  { value: "all", label: "All" },
   { value: "residential", label: "Residential" },
   { value: "commercial", label: "Commercial" },
 ];
@@ -24,11 +23,11 @@ export default function PropertyTypePicker({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const groups = getPropertyTypeGroups();
-  const [activeCategory, setActiveCategory] = useState(categoryValue || "all");
+  const [activeCategory, setActiveCategory] = useState(categoryValue === "commercial" ? "commercial" : "residential");
 
   const filteredOptions = useMemo(() => {
     const searchTerm = search.trim().toLowerCase();
-    const categories = activeCategory === "all" ? Object.keys(groups) : [activeCategory];
+    const categories = [activeCategory];
     return categories.flatMap((category) =>
       groups[category]
         .filter((item) => item.toLowerCase().includes(searchTerm))
@@ -43,9 +42,7 @@ export default function PropertyTypePicker({
   const applyCategory = (nextCategory) => {
     setActiveCategory(nextCategory);
     onCategoryChange(nextCategory);
-    if (nextCategory === "all") {
-      onValueChange("all");
-    }
+    onValueChange("all");
   };
 
   return (
@@ -54,7 +51,7 @@ export default function PropertyTypePicker({
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
         if (nextOpen) {
-          setActiveCategory(categoryValue || "all");
+          setActiveCategory(categoryValue === "all" ? getPropertyTypeCategory(value) : categoryValue || "residential");
         } else {
           setSearch("");
         }
@@ -66,9 +63,9 @@ export default function PropertyTypePicker({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className={cn("w-[390px] rounded-[1.4rem] border-slate-200 p-0 shadow-xl", contentClassName)}>
+      <PopoverContent align="start" className={cn("w-[27rem] max-w-[calc(100vw-2rem)] rounded-[1.1rem] border-slate-200 bg-white p-0 shadow-[0_0.6rem_1.6rem_rgba(15,23,42,0.16)]", contentClassName)}>
         <div className="space-y-4 p-4">
-          <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2">
+          <div className="flex items-center gap-2 rounded-[0.9rem] bg-slate-50 px-3 py-2">
             <Search className="h-4 w-4 text-slate-400" />
             <Input
               value={search}
@@ -78,15 +75,15 @@ export default function PropertyTypePicker({
             />
           </div>
 
-          <div className="flex flex-wrap gap-2 rounded-full bg-slate-100 p-1">
+          <div className="grid grid-cols-2 gap-2 rounded-[0.9rem] bg-slate-100 p-1">
             {categoryOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => applyCategory(option.value)}
                 className={cn(
-                  "rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                  categoryValue === option.value
+                  "rounded-[0.8rem] px-4 py-2 text-sm font-medium transition-colors",
+                  activeCategory === option.value
                     ? "bg-slate-950 text-white"
                     : "text-slate-600 hover:bg-white hover:text-slate-950"
                 )}
@@ -104,6 +101,7 @@ export default function PropertyTypePicker({
                 onClick={() => {
                   onCategoryChange(option.category);
                   onValueChange(option.value);
+                  setOpen(false);
                 }}
                 className={cn(
                   "flex items-center justify-between rounded-[1rem] border px-3 py-2.5 text-left text-sm transition-colors",
@@ -126,6 +124,7 @@ export default function PropertyTypePicker({
               onClick={() => {
                 onCategoryChange("all");
                 onValueChange("all");
+                setActiveCategory("residential");
                 setSearch("");
               }}
             >

@@ -85,15 +85,26 @@ export default function Home() {
       const offPlanListings = publishedListings.filter((item) => item.completion_status === "off_plan").length;
       const activePartners = agencies.filter((item) => item.status === "active");
       const privateInventoryListings = publishedListings.filter((item) => item.is_private_inventory).length;
+      const developerCounts = publishedListings.reduce((accumulator, item) => {
+        const name = String(item.developer_name || "").trim();
+        if (!name) return accumulator;
+        accumulator[name] = (accumulator[name] || 0) + 1;
+        return accumulator;
+      }, {});
+      const topDeveloperNames = Object.entries(developerCounts)
+        .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+        .slice(0, 50)
+        .map(([name]) => name);
 
       return {
         verifiedListings,
         offPlanListings,
         activePartners: activePartners.length,
         privateInventoryListings,
+        topDeveloperNames,
       };
     },
-    initialData: { verifiedListings: 0, offPlanListings: 0, activePartners: 0, privateInventoryListings: 0 },
+    initialData: { verifiedListings: 0, offPlanListings: 0, activePartners: 0, privateInventoryListings: 0, topDeveloperNames: [] },
   });
 
   const featuredGuideSet = useMemo(() => guides.slice(0, 3), [guides]);

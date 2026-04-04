@@ -26,6 +26,7 @@ export default function HeroSearch({ appName, metrics }) {
   const [collection, setCollection] = useState("all");
   const [open, setOpen] = useState(false);
   const { data: approvedDevelopers = [] } = useApprovedDevelopers();
+  const featuredDeveloperNames = metrics?.topDeveloperNames || [];
 
   const openProperties = (overrides = {}) => {
     const next = {
@@ -56,7 +57,7 @@ export default function HeroSearch({ appName, metrics }) {
   };
 
   return (
-    <section className="relative -mx-4 overflow-hidden sm:-mx-6 lg:-mx-8 xl:-mx-10">
+    <section className="relative -mx-4 overflow-hidden rounded-[2rem] sm:-mx-6 lg:-mx-8 xl:-mx-10">
       <div className="absolute inset-0">
         <img
           src="https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=2200&q=80"
@@ -120,6 +121,7 @@ export default function HeroSearch({ appName, metrics }) {
                   value={developer}
                   onChange={setDeveloper}
                   developers={approvedDevelopers}
+                  featuredDeveloperNames={featuredDeveloperNames}
                   placeholder="Any developer"
                   triggerClassName="mt-1 h-8 border-none px-0 text-base text-slate-950 shadow-none focus-visible:ring-0"
                   contentClassName="w-[380px]"

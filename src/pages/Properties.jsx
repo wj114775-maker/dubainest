@@ -180,6 +180,20 @@ export default function Properties() {
       .map(([name, count]) => ({ name, count }));
   }, [listings]);
 
+  const featuredDeveloperNames = useMemo(() => (
+    Object.entries(
+      listings.reduce((accumulator, listing) => {
+        const name = String(listing.developer_name || "").trim();
+        if (!name) return accumulator;
+        accumulator[name] = (accumulator[name] || 0) + 1;
+        return accumulator;
+      }, {})
+    )
+      .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+      .slice(0, 50)
+      .map(([name]) => name)
+  ), [listings]);
+
   useEffect(() => {
     setTrackedLocations(readPropertySearchLocations(locationCounts.map((item) => item.name), 4));
   }, [locationCounts]);
@@ -341,6 +355,7 @@ export default function Properties() {
                   value={filters.developer}
                   onChange={(value) => setFilters((current) => ({ ...current, developer: value }))}
                   developers={approvedDevelopers}
+                  featuredDeveloperNames={featuredDeveloperNames}
                   placeholder="Developer"
                   triggerClassName="h-10 rounded-[1rem] border-slate-200 bg-white"
                 />
@@ -465,6 +480,7 @@ export default function Properties() {
                   value={filters.developer}
                   onChange={(value) => setFilters((current) => ({ ...current, developer: value }))}
                   developers={approvedDevelopers}
+                  featuredDeveloperNames={featuredDeveloperNames}
                   placeholder="Developer"
                   triggerClassName="h-10 rounded-[1rem] border-slate-200 bg-white"
                 />
@@ -627,6 +643,7 @@ export default function Properties() {
               filters={filters}
               setFilters={setFilters}
               developers={approvedDevelopers}
+              featuredDeveloperNames={featuredDeveloperNames}
               areaOptions={areaOptions}
               advancedOpen={advancedOpen}
               setAdvancedOpen={setAdvancedOpen}

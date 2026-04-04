@@ -42,6 +42,7 @@ export default function PropertyFilterPanel({
   filters,
   setFilters,
   developers = [],
+  featuredDeveloperNames = [],
   areaOptions = [],
   advancedOpen,
   setAdvancedOpen,
@@ -88,6 +89,7 @@ export default function PropertyFilterPanel({
             value={filters.developer}
             onChange={(value) => updateField("developer", value)}
             developers={developers}
+            featuredDeveloperNames={featuredDeveloperNames}
             placeholder="Any developer"
             triggerClassName="h-10 rounded-2xl"
           />
