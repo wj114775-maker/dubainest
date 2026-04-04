@@ -38,13 +38,13 @@ export default function Shortlist() {
 
   return (
     <div className="space-y-6 pb-28">
-      <SectionHeading eyebrow="Saved" title="Shortlists stay anonymous until you share or request access" description="This is designed for mobile-first saving, later sharing, and controlled sign-up only when trust has been earned." />
+      <SectionHeading eyebrow="Saved" title="Keep your shortlisted properties in one place" description="Save properties, share the shortlist, and request buyer support when you want the team involved." />
       {listings.length ? <>
-        <ConversionSignalCard title="Shortlist conversion flow" description="Saved listings can now move into a share step or a guided shortlist consultation request." items={[{ label: "Saved", value: String(listings.length) }, { label: "Share status", value: shareMutation.isSuccess ? "Ready" : "Not shared" }, { label: "Next step", value: "Consultation" }]} />
+        <ConversionSignalCard title="Shortlist progress" description="You can share these properties or ask the team to help you move forward with the right options." items={[{ label: "Saved", value: String(listings.length) }, { label: "Share status", value: shareMutation.isSuccess ? "Ready" : "Not shared" }, { label: "Next step", value: "Buyer support" }]} />
         <ShortlistActionsCard onShare={() => shareMutation.mutate()} onConsult={() => setOpenIntent(true)} />
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{listings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div>
         <BuyerIntentSheet open={openIntent} onOpenChange={setOpenIntent} intentType="request_shortlist_consultation" title="Request shortlist consultation" />
-      </> : <EmptyStateCard title="Your shortlist is empty" description="Save any listing and it will appear here with attribution-ready tracking." />}
+      </> : <EmptyStateCard title="Your shortlist is empty" description="Save any property and it will appear here for easy comparison later." />}
     </div>
   );
 }

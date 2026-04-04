@@ -4,6 +4,7 @@ import { ArrowUpDown, ChevronDown, List, Map, SlidersHorizontal } from "lucide-r
 import { createSearchParams, useSearchParams } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ListingListRow from "@/components/buyer/ListingListRow";
+import PropertyDirectorySidebar from "@/components/buyer/PropertyDirectorySidebar";
 import PropertyFilterPanel from "@/components/buyer/PropertyFilterPanel";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import SectionHeading from "@/components/common/SectionHeading";
@@ -536,8 +537,8 @@ export default function Properties() {
           </CardContent>
         </Card>
 
-        <div className={cn("grid gap-6", viewMode === "map" ? "xl:grid-cols-[minmax(0,1fr),390px]" : "xl:grid-cols-1")}>
-          <div className="space-y-4">
+        <div className={cn("grid gap-6", viewMode === "map" ? "xl:grid-cols-[minmax(0,780px),390px]" : "xl:grid-cols-[minmax(0,780px),320px] xl:justify-center")}>
+          <div className="space-y-4 xl:max-w-[780px]">
             {viewMode === "map" ? (
               <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5 xl:hidden">
                 <CardContent className="space-y-3 p-4">
@@ -606,7 +607,11 @@ export default function Properties() {
                 </CardContent>
               </Card>
             </div>
-          ) : null}
+          ) : (
+            <div className="hidden xl:block xl:sticky xl:top-[10.5rem] xl:max-h-[calc(100vh-11rem)] xl:self-start xl:overflow-y-auto">
+              <PropertyDirectorySidebar listings={listings} onAlertOpen={() => setOpenIntent(true)} />
+            </div>
+          )}
         </div>
       </div>
 

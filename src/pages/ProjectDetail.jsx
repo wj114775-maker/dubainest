@@ -22,24 +22,24 @@ export default function ProjectDetail() {
     initialData: null,
   });
 
-  const trustScore = project?.trust_score || 0;
   const constructionValue = project?.status === 'completed' ? '100%' : project?.status === 'under_construction' ? 'In progress' : project?.status === 'launched' ? 'Launched' : 'Planned';
-  const developerScore = project?.trust_score || 0;
   const priceFrom = project?.price_from ? `AED ${Number(project.price_from).toLocaleString()}` : 'On request';
+  const handoverValue = project?.handover_date || 'TBC';
+  const statusValue = project?.status ? String(project.status).replace(/_/g, ' ') : 'Planned';
 
   return (
     <>
     <div className="space-y-6 pb-28">
-      <SectionHeading eyebrow="Project intelligence" title={project?.name || slug?.replace(/-/g, " ") || "Project"} description={`Status: ${project?.status || 'planned'}${project?.handover_date ? ` · Handover ${project.handover_date}` : ''}`} action={<Button onClick={() => setOpen(true)}>Request brochure</Button>} />
+      <SectionHeading eyebrow="Project overview" title={project?.name || slug?.replace(/-/g, " ") || "Project"} description={`Status: ${statusValue}${project?.handover_date ? ` · Handover ${project.handover_date}` : ''}`} action={<Button onClick={() => setOpen(true)}>Request brochure</Button>} />
       <div className="flex flex-wrap gap-2">
-        <Badge variant="outline">Verification {project?.verification_status || 'not_started'}</Badge>
-        <Badge variant="outline">Trust band {project?.project_trust_band || 'low'}</Badge>
-        <Badge variant="outline">Authority {project?.authority_status || 'unknown'}</Badge>
+        <Badge variant="outline">Status {statusValue}</Badge>
+        <Badge variant="outline">Sales {project?.verification_status || 'available'}</Badge>
+        <Badge variant="outline">Authority {project?.authority_status || 'available'}</Badge>
       </div>
       <div className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="Project trust" value={`${trustScore}/100`} />
-        <MetricCard label="Construction status" value={constructionValue} />
-        <MetricCard label="Developer score" value={String(developerScore)} />
+        <MetricCard label="Construction" value={constructionValue} />
+        <MetricCard label="Handover" value={handoverValue} />
+        <MetricCard label="Area" value={project?.area_name || 'Dubai'} />
         <MetricCard label="Price from" value={priceFrom} />
       </div>
     </div>

@@ -8,7 +8,7 @@ export default function Guides() {
   const { data: guides = [] } = useQuery({ queryKey: ["guides"], queryFn: () => base44.entities.Guide.filter({ status: "published" }, "-updated_date", 100), initialData: [] });
   return (
     <div className="space-y-6 pb-28">
-      <SectionHeading eyebrow="Guides" title="Content engineered for trust and conversion" description="Area intelligence, investor education and relocation planning form a lead capture layer, not just a marketing blog." />
+      <SectionHeading eyebrow="Guides" title="Dubai property guides for buyers and investors" description="Area insight, buying guidance, and relocation support to help clients move forward with more clarity." />
       {guides.length ? <div className="grid gap-5 md:grid-cols-3">{guides.map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div> : <p className="text-sm text-muted-foreground">No published guides yet.</p>}
     </div>
   );

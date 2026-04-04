@@ -85,7 +85,7 @@ export default function ListingListRow({ listing, whatsappNumber }) {
   };
 
   return (
-    <Card className="overflow-hidden rounded-[1.5rem] border-white/10 bg-card/95 shadow-lg shadow-black/5 transition hover:border-primary/20 hover:shadow-xl hover:shadow-black/10">
+    <Card className="overflow-hidden rounded-[1.5rem] border-white/10 bg-card/95 shadow-lg shadow-black/5 transition hover:border-primary/20 hover:shadow-xl hover:shadow-black/10 md:max-w-[780px]">
       <CardContent className="p-0">
         <article
           data-listing-row={listing.id}
@@ -93,9 +93,9 @@ export default function ListingListRow({ listing, whatsappNumber }) {
           tabIndex={0}
           onClick={openListing}
           onKeyDown={handleKeyDown}
-          className="group grid cursor-pointer gap-0 md:grid-cols-[240px,1fr] lg:grid-cols-[260px,1fr]"
+          className="group grid cursor-pointer gap-0 md:h-[230px] md:grid-cols-[325px,1fr]"
         >
-          <div className="relative aspect-[4/3] overflow-hidden bg-muted md:aspect-auto md:min-h-[205px]">
+          <div className="relative aspect-[360/255] overflow-hidden bg-muted md:h-[230px] md:w-[325px]">
             <img
               src={galleryImages[activeImageIndex]}
               alt={listing.title}
@@ -137,38 +137,38 @@ export default function ListingListRow({ listing, whatsappNumber }) {
             ) : null}
           </div>
 
-          <div className="flex flex-col justify-between p-4 md:p-5">
-            <div className="space-y-3">
+          <div className="flex h-full flex-col justify-between overflow-hidden p-4 md:p-4">
+            <div className="space-y-2.5">
               <p className="text-2xl font-semibold tracking-tight text-foreground">
                 AED {Number(listing.price || 0).toLocaleString()}
               </p>
 
-              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{propertyType}</span>
-                <span className="text-muted-foreground/50">•</span>
-                <span className="inline-flex items-center gap-1.5">
+              <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap text-sm text-muted-foreground">
+                <span className="shrink-0 font-medium text-foreground">{propertyType}</span>
+                <span className="shrink-0 text-muted-foreground/50">•</span>
+                <span className="inline-flex min-w-0 items-center gap-1.5 truncate">
                   <MapPin className="h-4 w-4" />
-                  {listing.area_name || "Dubai"}
+                  <span className="truncate">{listing.area_name || "Dubai"}</span>
                 </span>
                 {listing.developer_name ? (
                   <>
-                    <span className="text-muted-foreground/50">•</span>
-                    <span>{listing.developer_name}</span>
+                    <span className="shrink-0 text-muted-foreground/50">•</span>
+                    <span className="truncate">{listing.developer_name}</span>
                   </>
                 ) : null}
                 {listing.is_off_plan && listing.handover_label ? (
                   <>
-                    <span className="text-muted-foreground/50">•</span>
-                    <span>Handover {listing.handover_label}</span>
+                    <span className="shrink-0 text-muted-foreground/50">•</span>
+                    <span className="shrink-0">Handover {listing.handover_label}</span>
                   </>
                 ) : null}
               </div>
 
-              <h3 className="text-lg font-semibold tracking-tight text-foreground md:text-[1.3rem]">
+              <h3 className="truncate text-lg font-semibold tracking-tight text-foreground md:text-[1.3rem]">
                 {listing.title}
               </h3>
 
-              <p className="max-w-3xl truncate text-sm leading-6 text-muted-foreground">
+              <p className="max-w-3xl truncate text-sm leading-5 text-muted-foreground">
                 {shortSummary || "Dubai purchase opportunity with clean pricing and key property details."}
               </p>
 
@@ -182,7 +182,7 @@ export default function ListingListRow({ listing, whatsappNumber }) {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-white/10 pt-4">
+            <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-white/10 pt-3">
               <Button
                 asChild
                 variant="outline"
@@ -207,7 +207,7 @@ export default function ListingListRow({ listing, whatsappNumber }) {
                   openListing();
                 }}
               >
-                View property
+                View details
               </Button>
             </div>
           </div>
