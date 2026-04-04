@@ -10,6 +10,7 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview",
+    "sync:developers": "python scripts/sync_approved_developers.py",
     "verify:phase3": "npm run lint && npm run typecheck && npm run build",
     "verify:phase4": "npm run lint && npm run typecheck && npm run build",
     "verify:phase5": "npm run lint && npm run typecheck && npm run build"

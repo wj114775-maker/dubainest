@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpDown, Bath, BedDouble, List, Map, SlidersHorizontal } from "lucide-react";
 import { createSearchParams, useSearchParams } from "react-router-dom";
+import DeveloperPicker from "@/components/buyer/DeveloperPicker";
 import ListingListRow from "@/components/buyer/ListingListRow";
+import PropertyTypePicker from "@/components/buyer/PropertyTypePicker";
 import PropertyDirectorySidebar from "@/components/buyer/PropertyDirectorySidebar";
 import PropertyFilterPanel from "@/components/buyer/PropertyFilterPanel";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
@@ -13,7 +15,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
 import useAppConfig from "@/hooks/useAppConfig";
+import { normalizeDeveloperQueryValue } from "@/lib/approvedDevelopers";
 import { getShowcaseListings, loadBuyerListings } from "@/lib/buyerListings";
 import { readPropertySearchLocations, recordPropertySearchLocation } from "@/lib/propertySearchInsights";
 import { cn } from "@/lib/utils";
@@ -21,6 +25,7 @@ import { cn } from "@/lib/utils";
 const defaultFilters = {
   location: "",
   developer: "all",
+  propertyCategory: "all",
   completionStatus: "all",
   propertyType: "all",
   bedrooms: "any",
@@ -50,6 +55,7 @@ const filtersFromSearchParams = (searchParams) => ({
   ...defaultFilters,
   location: searchParams.get("q") || "",
   developer: searchParams.get("developer") || "all",
+  propertyCategory: searchParams.get("category") || "all",
   completionStatus: searchParams.get("completion") || "all",
   propertyType: searchParams.get("propertyType") || "all",
   bedrooms: searchParams.get("beds") || "any",
@@ -71,6 +77,7 @@ const buildSearchParams = (filters) => {
 
   if (filters.location.trim()) params.q = filters.location.trim();
   if (filters.developer !== "all") params.developer = filters.developer;
+  if (filters.propertyCategory !== "all") params.category = filters.propertyCategory;
   if (filters.completionStatus !== "all") params.completion = filters.completionStatus;
   if (filters.propertyType !== "all") params.propertyType = filters.propertyType;
   if (filters.bedrooms !== "any") params.beds = filters.bedrooms;
@@ -115,6 +122,7 @@ const formatBathLabel = (value) => {
 export default function Properties() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: appConfig } = useAppConfig();
+  const { data: approvedDevelopers = [] } = useApprovedDevelopers();
   const [openIntent, setOpenIntent] = useState(false);
   const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -154,16 +162,6 @@ export default function Properties() {
       setSearchParams(nextParams, { replace: true });
     }
   }, [filters, viewMode]);
-
-  const propertyTypes = useMemo(
-    () => Array.from(new Set(listings.map((listing) => listing.property_type).filter(Boolean))).sort(),
-    [listings]
-  );
-
-  const developerOptions = useMemo(
-    () => Array.from(new Set(listings.map((listing) => listing.developer_name).filter(Boolean))).sort(),
-    [listings]
-  );
 
   const areaOptions = useMemo(
     () => Array.from(new Set(listings.map((listing) => listing.area_name).filter(Boolean))).sort(),
@@ -205,7 +203,7 @@ export default function Properties() {
   const filteredListings = useMemo(() => {
     const searchTerm = filters.location.trim().toLowerCase();
     const keywordTerm = filters.keywords.trim().toLowerCase();
-    const developerTerm = filters.developer === "all" ? "" : filters.developer.toLowerCase();
+    const developerTerm = filters.developer === "all" ? "" : normalizeDeveloperQueryValue(filters.developer);
 
     const results = listings.filter((listing) => {
       const searchableText = [
@@ -219,8 +217,10 @@ export default function Properties() {
         .join(" ")
         .toLowerCase();
 
+      const listingDeveloperKey = normalizeDeveloperQueryValue(listing.developer_name || "");
       const matchesLocation = !searchTerm || searchableText.includes(searchTerm);
-      const matchesDeveloper = !developerTerm || String(listing.developer_name || "").toLowerCase().includes(developerTerm);
+      const matchesDeveloper = !developerTerm || listingDeveloperKey.includes(developerTerm) || developerTerm.includes(listingDeveloperKey);
+      const matchesPropertyCategory = filters.propertyCategory === "all" || listing.property_category === filters.propertyCategory;
       const matchesKeywords = !keywordTerm || searchableText.includes(keywordTerm);
       const matchesCompletion = filters.completionStatus === "all" || listing.completion_status === filters.completionStatus;
       const matchesPropertyType = filters.propertyType === "all" || listing.property_type === filters.propertyType;
@@ -237,6 +237,7 @@ export default function Properties() {
 
       return matchesLocation
         && matchesDeveloper
+        && matchesPropertyCategory
         && matchesKeywords
         && matchesCompletion
         && matchesPropertyType
@@ -324,7 +325,7 @@ export default function Properties() {
         <div className="sticky top-0 z-30 hidden rounded-[1.5rem] bg-white pb-3 xl:block">
           <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-lg shadow-black/8">
             <CardContent className="space-y-3 p-3">
-              <div className="grid gap-2 xl:grid-cols-[76px,minmax(0,1.2fr),160px,212px,148px,100px,100px,148px]">
+              <div className="grid gap-2 xl:grid-cols-[76px,minmax(0,1.05fr),210px,212px,190px,108px,108px,148px]">
                 <div className="inline-flex items-center justify-center rounded-[1rem] border border-primary/15 bg-primary/8 px-3 py-2 text-sm font-semibold text-foreground">
                   Buy
                 </div>
@@ -336,15 +337,13 @@ export default function Properties() {
                   className="h-10 rounded-[1rem] border-slate-200 bg-white"
                 />
 
-                <Select value={filters.developer} onValueChange={(value) => setFilters((current) => ({ ...current, developer: value }))}>
-                  <SelectTrigger className="h-10 rounded-[1rem] border-slate-200 bg-white">
-                    <SelectValue placeholder="Developer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Developer</SelectItem>
-                    {developerOptions.map((developer) => <SelectItem key={developer} value={developer}>{developer}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <DeveloperPicker
+                  value={filters.developer}
+                  onChange={(value) => setFilters((current) => ({ ...current, developer: value }))}
+                  developers={approvedDevelopers}
+                  placeholder="Developer"
+                  triggerClassName="h-10 rounded-[1rem] border-slate-200 bg-white"
+                />
 
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -364,15 +363,13 @@ export default function Properties() {
                   ))}
                 </div>
 
-                <Select value={filters.propertyType} onValueChange={(value) => setFilters((current) => ({ ...current, propertyType: value }))}>
-                  <SelectTrigger className="h-10 rounded-[1rem] border-slate-200 bg-white">
-                    <SelectValue placeholder="Property type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Property type</SelectItem>
-                    {propertyTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <PropertyTypePicker
+                  categoryValue={filters.propertyCategory}
+                  value={filters.propertyType}
+                  onCategoryChange={(value) => setFilters((current) => ({ ...current, propertyCategory: value }))}
+                  onValueChange={(value) => setFilters((current) => ({ ...current, propertyType: value }))}
+                  triggerClassName="h-10 rounded-[1rem] border-slate-200 bg-white"
+                />
 
                 <Select value={filters.bedrooms} onValueChange={(value) => setFilters((current) => ({ ...current, bedrooms: value }))}>
                   <SelectTrigger className="h-10 rounded-[1rem] border-slate-200 bg-white">
@@ -464,15 +461,13 @@ export default function Properties() {
                   className="rounded-[1rem] border-slate-200 bg-white"
                 />
 
-                <Select value={filters.developer} onValueChange={(value) => setFilters((current) => ({ ...current, developer: value }))}>
-                  <SelectTrigger className="rounded-[1rem] border-slate-200 bg-white">
-                    <SelectValue placeholder="Developer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Developer</SelectItem>
-                    {developerOptions.map((developer) => <SelectItem key={developer} value={developer}>{developer}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <DeveloperPicker
+                  value={filters.developer}
+                  onChange={(value) => setFilters((current) => ({ ...current, developer: value }))}
+                  developers={approvedDevelopers}
+                  placeholder="Developer"
+                  triggerClassName="h-10 rounded-[1rem] border-slate-200 bg-white"
+                />
               </div>
 
               <div className="grid grid-cols-3 gap-2">
@@ -494,6 +489,13 @@ export default function Properties() {
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3">
+                <PropertyTypePicker
+                  categoryValue={filters.propertyCategory}
+                  value={filters.propertyType}
+                  onCategoryChange={(value) => setFilters((current) => ({ ...current, propertyCategory: value }))}
+                  onValueChange={(value) => setFilters((current) => ({ ...current, propertyType: value }))}
+                  triggerClassName="rounded-[1rem] border-slate-200 bg-white min-w-[180px] justify-between"
+                />
                 <Button
                   variant="outline"
                   className={cn(
@@ -624,8 +626,7 @@ export default function Properties() {
             <PropertyFilterPanel
               filters={filters}
               setFilters={setFilters}
-              developerOptions={developerOptions}
-              propertyTypes={propertyTypes}
+              developers={approvedDevelopers}
               areaOptions={areaOptions}
               advancedOpen={advancedOpen}
               setAdvancedOpen={setAdvancedOpen}

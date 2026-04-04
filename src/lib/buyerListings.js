@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { getPropertyTypeCategory } from "@/lib/propertyTaxonomy";
 
 const demoListings = [
   {
@@ -382,6 +383,7 @@ function normalizeBuyerListing(listing) {
     bedrooms,
     bathrooms,
     parking_spaces: parkingSpaces,
+    property_category: listing.property_category || getPropertyTypeCategory(listing.property_type),
     completion_status: completionStatus,
     is_off_plan: completionStatus === "off_plan",
   };

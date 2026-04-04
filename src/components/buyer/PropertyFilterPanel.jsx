@@ -1,5 +1,7 @@
 import React, { useMemo } from "react";
 import { Bath, BedDouble, ChevronDown, Filter, Sparkles } from "lucide-react";
+import DeveloperPicker from "@/components/buyer/DeveloperPicker";
+import PropertyTypePicker from "@/components/buyer/PropertyTypePicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,8 +41,7 @@ const formatBathLabel = (value) => {
 export default function PropertyFilterPanel({
   filters,
   setFilters,
-  developerOptions = [],
-  propertyTypes = [],
+  developers = [],
   areaOptions = [],
   advancedOpen,
   setAdvancedOpen,
@@ -83,13 +84,13 @@ export default function PropertyFilterPanel({
 
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-muted-foreground">Developer</p>
-          <Select value={filters.developer} onValueChange={(value) => updateField("developer", value)}>
-            <SelectTrigger className="rounded-2xl"><SelectValue placeholder="Any developer" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any developer</SelectItem>
-              {developerOptions.map((developer) => <SelectItem key={developer} value={developer}>{developer}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <DeveloperPicker
+            value={filters.developer}
+            onChange={(value) => updateField("developer", value)}
+            developers={developers}
+            placeholder="Any developer"
+            triggerClassName="h-10 rounded-2xl"
+          />
         </div>
 
         <div className="space-y-2">
@@ -115,13 +116,13 @@ export default function PropertyFilterPanel({
 
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-muted-foreground">Property Type</p>
-          <Select value={filters.propertyType} onValueChange={(value) => updateField("propertyType", value)}>
-            <SelectTrigger className="rounded-2xl"><SelectValue placeholder="Any property type" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any property type</SelectItem>
-              {propertyTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <PropertyTypePicker
+            categoryValue={filters.propertyCategory}
+            value={filters.propertyType}
+            onCategoryChange={(value) => updateField("propertyCategory", value)}
+            onValueChange={(value) => updateField("propertyType", value)}
+            triggerClassName="h-10 rounded-2xl"
+          />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

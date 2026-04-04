@@ -1,13 +1,13 @@
-import React, { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
 import { Link, createSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, MapPin, Search, Sparkles } from "lucide-react";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
-import { loadBuyerListings } from "@/lib/buyerListings";
+import DeveloperPicker from "@/components/buyer/DeveloperPicker";
+import PropertyTypePicker from "@/components/buyer/PropertyTypePicker";
+import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
 import { cn } from "@/lib/utils";
 
 const collectionOptions = [
@@ -21,44 +21,17 @@ export default function HeroSearch({ appName, metrics }) {
   const navigate = useNavigate();
   const [location, setLocation] = useState("");
   const [developer, setDeveloper] = useState("all");
+  const [propertyCategory, setPropertyCategory] = useState("all");
   const [propertyType, setPropertyType] = useState("all");
   const [collection, setCollection] = useState("all");
   const [open, setOpen] = useState(false);
-
-  const { data: listings = [] } = useQuery({
-    queryKey: ["home-hero-search-options"],
-    queryFn: () => loadBuyerListings({ limit: 80, includeShowcase: true }),
-    initialData: [],
-  });
-
-  const developerOptions = useMemo(
-    () => Array.from(new Set(listings.map((listing) => listing.developer_name).filter(Boolean))).sort(),
-    [listings]
-  );
-
-  const propertyTypeOptions = useMemo(
-    () => Array.from(new Set(listings.map((listing) => listing.property_type).filter(Boolean))).sort(),
-    [listings]
-  );
-
-  const quickAreas = useMemo(() => {
-    const counts = listings.reduce((accumulator, listing) => {
-      const key = listing.area_name;
-      if (!key) return accumulator;
-      accumulator[key] = (accumulator[key] || 0) + 1;
-      return accumulator;
-    }, {});
-
-    return Object.entries(counts)
-      .sort((left, right) => right[1] - left[1])
-      .slice(0, 4)
-      .map(([name]) => name);
-  }, [listings]);
+  const { data: approvedDevelopers = [] } = useApprovedDevelopers();
 
   const openProperties = (overrides = {}) => {
     const next = {
       location,
       developer,
+      propertyCategory,
       propertyType,
       collection,
       ...overrides,
@@ -67,6 +40,7 @@ export default function HeroSearch({ appName, metrics }) {
     const params = {};
     if (next.location.trim()) params.q = next.location.trim();
     if (next.developer !== "all") params.developer = next.developer;
+    if (next.propertyCategory !== "all") params.category = next.propertyCategory;
     if (next.propertyType !== "all") params.propertyType = next.propertyType;
     if (next.collection === "ready") params.completion = "ready";
     if (next.collection === "off_plan") params.completion = "off_plan";
@@ -142,17 +116,14 @@ export default function HeroSearch({ appName, metrics }) {
                   <Building2 className="h-4 w-4 text-slate-700" />
                   Developer
                 </div>
-                <Select value={developer} onValueChange={setDeveloper}>
-                  <SelectTrigger className="mt-2 h-8 border-none px-0 text-base text-slate-950 shadow-none focus:ring-0">
-                    <SelectValue placeholder="Any developer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Any developer</SelectItem>
-                    {developerOptions.map((option) => (
-                      <SelectItem key={option} value={option}>{option}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <DeveloperPicker
+                  value={developer}
+                  onChange={setDeveloper}
+                  developers={approvedDevelopers}
+                  placeholder="Any developer"
+                  triggerClassName="mt-1 h-8 border-none px-0 text-base text-slate-950 shadow-none focus-visible:ring-0"
+                  contentClassName="w-[380px]"
+                />
               </div>
 
               <div className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-3 shadow-sm">
@@ -160,17 +131,14 @@ export default function HeroSearch({ appName, metrics }) {
                   <Sparkles className="h-4 w-4 text-slate-700" />
                   Property type
                 </div>
-                <Select value={propertyType} onValueChange={setPropertyType}>
-                  <SelectTrigger className="mt-2 h-8 border-none px-0 text-base text-slate-950 shadow-none focus:ring-0">
-                    <SelectValue placeholder="All types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All types</SelectItem>
-                    {propertyTypeOptions.map((option) => (
-                      <SelectItem key={option} value={option}>{option}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <PropertyTypePicker
+                  categoryValue={propertyCategory}
+                  value={propertyType}
+                  onCategoryChange={setPropertyCategory}
+                  onValueChange={setPropertyType}
+                  triggerClassName="mt-1 h-8 border-none px-0 text-base text-slate-950 shadow-none focus-visible:ring-0"
+                  contentClassName="w-[400px]"
+                />
               </div>
 
               <Button type="submit" className="h-full min-h-[5.25rem] rounded-[1.4rem] bg-slate-950 px-6 text-base font-semibold text-white hover:bg-slate-900">
@@ -194,20 +162,6 @@ export default function HeroSearch({ appName, metrics }) {
                     )}
                   >
                     {option.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-slate-500 lg:justify-end">
-                <span className="mr-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Popular areas</span>
-                {quickAreas.map((area) => (
-                  <button
-                    key={area}
-                    type="button"
-                    onClick={() => openProperties({ location: area })}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950"
-                  >
-                    {area}
                   </button>
                 ))}
               </div>
