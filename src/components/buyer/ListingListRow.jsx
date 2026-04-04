@@ -93,9 +93,9 @@ export default function ListingListRow({ listing, whatsappNumber }) {
           tabIndex={0}
           onClick={openListing}
           onKeyDown={handleKeyDown}
-          className="grid cursor-pointer gap-0 md:h-[230px] md:grid-cols-[325px,1fr]"
+          className="grid cursor-pointer gap-0 md:h-[246px] md:grid-cols-[325px,1fr]"
         >
-          <div className="relative aspect-[360/255] overflow-hidden bg-muted md:h-[230px] md:w-[325px]">
+          <div className="relative aspect-[360/255] overflow-hidden bg-muted md:h-[246px] md:w-[325px]">
             <img
               src={galleryImages[activeImageIndex]}
               alt={listing.title}
@@ -137,8 +137,8 @@ export default function ListingListRow({ listing, whatsappNumber }) {
             ) : null}
           </div>
 
-          <div className="flex h-full flex-col justify-between overflow-hidden p-4 md:p-4">
-            <div className="space-y-2.5">
+          <div className="grid h-full grid-rows-[1fr_auto] overflow-hidden p-4">
+            <div className="min-h-0 space-y-2">
               <p className="text-2xl font-semibold tracking-tight text-foreground">
                 AED {Number(listing.price || 0).toLocaleString()}
               </p>
@@ -182,7 +182,7 @@ export default function ListingListRow({ listing, whatsappNumber }) {
               </div>
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-white/10 pt-3">
+            <div className="mt-3 flex shrink-0 flex-wrap items-center justify-start gap-2 border-t border-white/10 pt-3">
               <Button
                 asChild
                 variant="outline"
