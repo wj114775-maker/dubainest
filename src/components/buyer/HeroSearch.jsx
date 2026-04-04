@@ -170,25 +170,6 @@ export default function HeroSearch({ appName, metrics }) {
             </div>
           </form>
         </div>
-
-        <div className="mx-auto mt-5 grid w-full max-w-[72rem] gap-3 md:grid-cols-4">
-          <div className="rounded-[1.2rem] border border-white/12 bg-white/8 px-4 py-3.5 text-white backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Verified sale stock</p>
-            <p className="mt-1.5 text-xl font-semibold">{metrics?.verifiedListings || 0}</p>
-          </div>
-          <div className="rounded-[1.2rem] border border-white/12 bg-white/8 px-4 py-3.5 text-white backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Off-plan</p>
-            <p className="mt-1.5 text-xl font-semibold">{metrics?.offPlanListings || 0}</p>
-          </div>
-          <div className="rounded-[1.2rem] border border-white/12 bg-white/8 px-4 py-3.5 text-white backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Private inventory</p>
-            <p className="mt-1.5 text-xl font-semibold">{metrics?.privateInventoryListings || 0}</p>
-          </div>
-          <div className="rounded-[1.2rem] border border-white/12 bg-white/8 px-4 py-3.5 text-white backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/62">Execution network</p>
-            <p className="mt-1.5 text-xl font-semibold">{metrics?.activePartners || 0}</p>
-          </div>
-        </div>
       </div>
 
       <BuyerIntentSheet open={open} onOpenChange={setOpen} intentType="request_private_inventory" title="Request private inventory access" />
