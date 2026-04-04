@@ -15,10 +15,14 @@ export default function AppHeader({
   buyerItems = [],
   showInternalAccess = false,
   homePath = "/",
-  mode = "buyer"
+  mode = "buyer",
+  sticky = true,
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-background/80 backdrop-blur-xl">
+    <header className={cn(
+      "z-40 border-b border-white/10 bg-background",
+      sticky ? "sticky top-0" : "relative"
+    )}>
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 md:px-6">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick}>

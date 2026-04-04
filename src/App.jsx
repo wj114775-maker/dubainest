@@ -54,7 +54,7 @@ import useAppConfig from '@/hooks/useAppConfig';
 import useCurrentUserRole from '@/hooks/useCurrentUserRole';
 import { navItems, roleGroups } from '@/lib/appShell';
 
-const AppFrame = ({ children, mode = 'buyer', title, showInternalAccess = false }) => {
+const AppFrame = ({ children, mode = 'buyer', title, showInternalAccess = false, headerSticky = true }) => {
   const { data: appConfig } = useAppConfig();
   const items = mode === "buyer" && showInternalAccess
     ? navItems.buyer.map((item) => item.path === "/account" ? { label: "Workspace", path: "/workspace" } : item)
@@ -72,6 +72,7 @@ const AppFrame = ({ children, mode = 'buyer', title, showInternalAccess = false 
         showInternalAccess={showInternalAccess}
         homePath={homePath}
         mode={mode}
+        sticky={headerSticky}
       />
       <div className="mx-auto flex max-w-7xl">
         {mode !== 'buyer' ? <SideRail title={railTitle} items={items} /> : null}
@@ -109,7 +110,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Home /></AppFrame>} />
-      <Route path="/properties" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Properties /></AppFrame>} />
+      <Route path="/properties" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess} headerSticky={false}><Properties /></AppFrame>} />
       <Route path="/shortlist" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Shortlist /></AppFrame>} />
       <Route path="/compare" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Compare /></AppFrame>} />
       <Route path="/guides" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Guides /></AppFrame>} />

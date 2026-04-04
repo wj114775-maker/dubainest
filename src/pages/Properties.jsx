@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpDown, ChevronDown, List, Map, SlidersHorizontal } from "lucide-react";
 import { createSearchParams, useSearchParams } from "react-router-dom";
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import useAppConfig from "@/hooks/useAppConfig";
 import { getShowcaseListings, loadBuyerListings } from "@/lib/buyerListings";
+import { readPropertySearchLocations, recordPropertySearchLocation } from "@/lib/propertySearchInsights";
 import { cn } from "@/lib/utils";
 
 const defaultFilters = {
@@ -137,6 +138,8 @@ export default function Properties() {
   const [locationsExpanded, setLocationsExpanded] = useState(false);
   const [filters, setFilters] = useState(() => filtersFromSearchParams(searchParams));
   const [viewMode, setViewMode] = useState(() => getViewModeFromSearchParams(searchParams));
+  const [trackedLocations, setTrackedLocations] = useState([]);
+  const lastTrackedQueryRef = useRef("");
 
   const { data: listings = [] } = useQuery({
     queryKey: ["buyer-properties-v3"],
@@ -191,6 +194,26 @@ export default function Properties() {
       .sort((left, right) => right[1] - left[1])
       .map(([name, count]) => ({ name, count }));
   }, [listings]);
+
+  useEffect(() => {
+    setTrackedLocations(readPropertySearchLocations(locationCounts.map((item) => item.name), 4));
+  }, [locationCounts]);
+
+  useEffect(() => {
+    const locationQuery = filters.location.trim();
+    const querySignature = `${searchParams.toString()}::${locationQuery.toLowerCase()}`;
+    if (!locationQuery || querySignature === lastTrackedQueryRef.current) return;
+
+    const matchedLocation = locationCounts.find(
+      (item) => item.name.toLowerCase() === locationQuery.toLowerCase()
+    )?.name;
+
+    if (!matchedLocation) return;
+
+    recordPropertySearchLocation(matchedLocation);
+    setTrackedLocations(readPropertySearchLocations(locationCounts.map((item) => item.name), 4));
+    lastTrackedQueryRef.current = querySignature;
+  }, [filters.location, locationCounts, searchParams]);
 
   const filteredListings = useMemo(() => {
     const searchTerm = filters.location.trim().toLowerCase();
@@ -270,12 +293,12 @@ export default function Properties() {
   };
 
   const viewToggle = (
-    <div className="inline-flex rounded-full border border-white/10 bg-background/70 p-1">
+    <div className="inline-flex rounded-full border border-slate-200 bg-white p-1">
       <button
         type="button"
         className={cn(
-          "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
-          viewMode === "list" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground hover:text-foreground"
+          "inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium",
+          viewMode === "list" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"
         )}
         onClick={() => setViewMode("list")}
       >
@@ -285,8 +308,8 @@ export default function Properties() {
       <button
         type="button"
         className={cn(
-          "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
-          viewMode === "map" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground hover:text-foreground"
+          "inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium",
+          viewMode === "map" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"
         )}
         onClick={() => setViewMode("map")}
       >
@@ -306,11 +329,11 @@ export default function Properties() {
           action={<Button className="rounded-full px-5" onClick={() => setOpenIntent(true)}>Request curated shortlist</Button>}
         />
 
-        <div className="sticky top-20 z-30 hidden xl:block">
-          <Card className="rounded-[1.75rem] border-white/10 bg-background/92 shadow-xl shadow-black/10 backdrop-blur-xl">
-            <CardContent className="space-y-4 p-4">
-              <div className="grid gap-3 xl:grid-cols-[86px,minmax(0,1.4fr),230px,180px,130px,130px,160px]">
-                <div className="inline-flex items-center justify-center rounded-[1.15rem] border border-primary/15 bg-primary/8 px-4 py-3 text-sm font-semibold text-foreground">
+        <div className="sticky top-0 z-30 hidden bg-white pb-3 xl:block">
+          <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-lg shadow-black/8">
+            <CardContent className="space-y-3 p-3">
+              <div className="grid gap-2 xl:grid-cols-[76px,minmax(0,1.35fr),212px,158px,112px,112px,148px]">
+                <div className="inline-flex items-center justify-center rounded-[1rem] border border-primary/15 bg-primary/8 px-3 py-2 text-sm font-semibold text-foreground">
                   Buy
                 </div>
 
@@ -318,7 +341,7 @@ export default function Properties() {
                   value={filters.location}
                   onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))}
                   placeholder="Enter location"
-                  className="h-12 rounded-[1.15rem] border-white/10 bg-background/80"
+                  className="h-10 rounded-[1rem] border-slate-200 bg-white"
                 />
 
                 <div className="grid grid-cols-3 gap-2">
@@ -331,7 +354,7 @@ export default function Properties() {
                       key={option.value}
                       type="button"
                       variant={filters.completionStatus === option.value ? "default" : "outline"}
-                      className="h-12 rounded-[1.15rem]"
+                      className="h-10 rounded-[1rem]"
                       onClick={() => setFilters((current) => ({ ...current, completionStatus: option.value }))}
                     >
                       {option.label}
@@ -340,7 +363,7 @@ export default function Properties() {
                 </div>
 
                 <Select value={filters.propertyType} onValueChange={(value) => setFilters((current) => ({ ...current, propertyType: value }))}>
-                  <SelectTrigger className="h-12 rounded-[1.15rem]">
+                  <SelectTrigger className="h-10 rounded-[1rem] border-slate-200 bg-white">
                     <SelectValue placeholder="Property type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -350,7 +373,7 @@ export default function Properties() {
                 </Select>
 
                 <Select value={filters.bedrooms} onValueChange={(value) => setFilters((current) => ({ ...current, bedrooms: value }))}>
-                  <SelectTrigger className="h-12 rounded-[1.15rem]">
+                  <SelectTrigger className="h-10 rounded-[1rem] border-slate-200 bg-white">
                     <SelectValue placeholder="Beds" />
                   </SelectTrigger>
                   <SelectContent>
@@ -366,7 +389,7 @@ export default function Properties() {
                 </Select>
 
                 <Select value={filters.bathrooms} onValueChange={(value) => setFilters((current) => ({ ...current, bathrooms: value }))}>
-                  <SelectTrigger className="h-12 rounded-[1.15rem]">
+                  <SelectTrigger className="h-10 rounded-[1rem] border-slate-200 bg-white">
                     <SelectValue placeholder="Baths" />
                   </SelectTrigger>
                   <SelectContent>
@@ -384,7 +407,7 @@ export default function Properties() {
                   type="button"
                   variant="outline"
                   className={cn(
-                    "h-12 rounded-[1.15rem] justify-between",
+                    "h-10 rounded-[1rem] justify-between border-slate-200 bg-white",
                     extendedFilterCount ? "border-amber-300/40 bg-amber-500/5 text-amber-800" : ""
                   )}
                   onClick={() => setFiltersPanelOpen(true)}
@@ -394,7 +417,7 @@ export default function Properties() {
                 </Button>
               </div>
 
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="rounded-full">{filteredListings.length} properties</Badge>
                   <Badge variant="outline" className="rounded-full">{offPlanCount} off-plan</Badge>
@@ -405,9 +428,9 @@ export default function Properties() {
 
                 <div className="flex flex-wrap items-center gap-3">
                   {viewToggle}
-                  <div className="w-full lg:w-[230px]">
+                  <div className="w-full lg:w-[220px]">
                     <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
-                      <SelectTrigger className="h-11 rounded-full">
+                      <SelectTrigger className="h-10 rounded-full border-slate-200 bg-white">
                         <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
                         <SelectValue placeholder="Sort by" />
                       </SelectTrigger>
@@ -426,14 +449,14 @@ export default function Properties() {
           </Card>
         </div>
 
-        <div className="space-y-4 xl:hidden">
-          <Card className="rounded-[1.75rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+        <div className="sticky top-0 z-30 space-y-4 bg-white pb-3 xl:hidden">
+          <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-lg shadow-black/8">
             <CardContent className="space-y-4 p-5">
               <Input
                 value={filters.location}
                 onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))}
                 placeholder="Enter location"
-                className="rounded-[1.15rem]"
+                className="rounded-[1rem] border-slate-200 bg-white"
               />
 
               <div className="grid grid-cols-3 gap-2">
@@ -446,7 +469,7 @@ export default function Properties() {
                     key={option.value}
                     type="button"
                     variant={filters.completionStatus === option.value ? "default" : "outline"}
-                    className="rounded-[1.15rem]"
+                    className="rounded-[1rem]"
                     onClick={() => setFilters((current) => ({ ...current, completionStatus: option.value }))}
                   >
                     {option.label}
@@ -469,7 +492,7 @@ export default function Properties() {
                 {viewToggle}
                 <div className="w-full sm:w-[230px]">
                   <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
-                    <SelectTrigger className="rounded-full">
+                    <SelectTrigger className="rounded-full border-slate-200 bg-white">
                       <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
@@ -608,8 +631,8 @@ export default function Properties() {
               </Card>
             </div>
           ) : (
-            <div className="hidden xl:block xl:sticky xl:top-[10.5rem] xl:max-h-[calc(100vh-11rem)] xl:self-start xl:overflow-y-auto">
-              <PropertyDirectorySidebar listings={listings} onAlertOpen={() => setOpenIntent(true)} />
+            <div className="hidden xl:block xl:sticky xl:top-4 xl:self-start">
+              <PropertyDirectorySidebar locations={trackedLocations} />
             </div>
           )}
         </div>

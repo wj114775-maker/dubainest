@@ -85,7 +85,7 @@ export default function ListingListRow({ listing, whatsappNumber }) {
   };
 
   return (
-    <Card className="overflow-hidden rounded-[1.5rem] border-white/10 bg-card/95 shadow-lg shadow-black/5 transition hover:border-primary/20 hover:shadow-xl hover:shadow-black/10 md:max-w-[780px]">
+    <Card className="overflow-hidden rounded-[1.5rem] border-white/10 bg-card shadow-lg shadow-black/5 md:max-w-[780px]">
       <CardContent className="p-0">
         <article
           data-listing-row={listing.id}
@@ -93,13 +93,13 @@ export default function ListingListRow({ listing, whatsappNumber }) {
           tabIndex={0}
           onClick={openListing}
           onKeyDown={handleKeyDown}
-          className="group grid cursor-pointer gap-0 md:h-[230px] md:grid-cols-[325px,1fr]"
+          className="grid cursor-pointer gap-0 md:h-[230px] md:grid-cols-[325px,1fr]"
         >
           <div className="relative aspect-[360/255] overflow-hidden bg-muted md:h-[230px] md:w-[325px]">
             <img
               src={galleryImages[activeImageIndex]}
               alt={listing.title}
-              className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+              className="h-full w-full object-cover"
             />
 
             <div className="absolute left-3 top-3 flex flex-wrap gap-2">
@@ -117,7 +117,7 @@ export default function ListingListRow({ listing, whatsappNumber }) {
                 <button
                   type="button"
                   aria-label="Previous photo"
-                  className="absolute left-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition group-hover:opacity-100"
+                  className="absolute left-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white"
                   onClick={showPrevImage}
                 >
                   <ChevronLeft className="h-5 w-5 stroke-[2.45]" />
@@ -125,7 +125,7 @@ export default function ListingListRow({ listing, whatsappNumber }) {
                 <button
                   type="button"
                   aria-label="Next photo"
-                  className="absolute right-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition group-hover:opacity-100"
+                  className="absolute right-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white"
                   onClick={showNextImage}
                 >
                   <ChevronRight className="h-5 w-5 stroke-[2.45]" />
