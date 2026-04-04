@@ -69,9 +69,9 @@ export default function PropertyDirectorySidebar({ locations = [] }) {
   ];
 
   const developerLinks = [
-    { label: "Emaar properties for sale", path: "/properties?keywords=Emaar" },
-    { label: "Meraas properties for sale", path: "/properties?keywords=Meraas" },
-    { label: "Omniyat properties for sale", path: "/properties?keywords=Omniyat" },
+    { label: "Emaar properties for sale", path: "/properties?developer=Emaar" },
+    { label: "Meraas properties for sale", path: "/properties?developer=Meraas" },
+    { label: "Omniyat properties for sale", path: "/properties?developer=Omniyat" },
   ];
 
   const locationLinks = locations.map((name) => ({

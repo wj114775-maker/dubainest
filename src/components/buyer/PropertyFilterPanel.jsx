@@ -28,6 +28,7 @@ const formatArea = (value) => {
 export default function PropertyFilterPanel({
   filters,
   setFilters,
+  developerOptions = [],
   propertyTypes = [],
   areaOptions = [],
   advancedOpen,
@@ -67,6 +68,17 @@ export default function PropertyFilterPanel({
             placeholder="Dubai, Palm Jumeirah, Downtown..."
             className="rounded-2xl"
           />
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-muted-foreground">Developer</p>
+          <Select value={filters.developer} onValueChange={(value) => updateField("developer", value)}>
+            <SelectTrigger className="rounded-2xl"><SelectValue placeholder="Any developer" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any developer</SelectItem>
+              {developerOptions.map((developer) => <SelectItem key={developer} value={developer}>{developer}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">

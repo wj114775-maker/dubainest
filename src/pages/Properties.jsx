@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 const defaultFilters = {
   location: "",
+  developer: "all",
   completionStatus: "all",
   propertyType: "all",
   bedrooms: "any",
@@ -47,6 +48,7 @@ const getPublicListingRank = (listing) => (
 const filtersFromSearchParams = (searchParams) => ({
   ...defaultFilters,
   location: searchParams.get("q") || "",
+  developer: searchParams.get("developer") || "all",
   completionStatus: searchParams.get("completion") || "all",
   propertyType: searchParams.get("propertyType") || "all",
   bedrooms: searchParams.get("beds") || "any",
@@ -67,6 +69,7 @@ const buildSearchParams = (filters) => {
   const params = {};
 
   if (filters.location.trim()) params.q = filters.location.trim();
+  if (filters.developer !== "all") params.developer = filters.developer;
   if (filters.completionStatus !== "all") params.completion = filters.completionStatus;
   if (filters.propertyType !== "all") params.propertyType = filters.propertyType;
   if (filters.bedrooms !== "any") params.beds = filters.bedrooms;
@@ -145,6 +148,11 @@ export default function Properties() {
     [listings]
   );
 
+  const developerOptions = useMemo(
+    () => Array.from(new Set(listings.map((listing) => listing.developer_name).filter(Boolean))).sort(),
+    [listings]
+  );
+
   const areaOptions = useMemo(
     () => Array.from(new Set(listings.map((listing) => listing.area_name).filter(Boolean))).sort(),
     [listings]
@@ -185,6 +193,7 @@ export default function Properties() {
   const filteredListings = useMemo(() => {
     const searchTerm = filters.location.trim().toLowerCase();
     const keywordTerm = filters.keywords.trim().toLowerCase();
+    const developerTerm = filters.developer === "all" ? "" : filters.developer.toLowerCase();
 
     const results = listings.filter((listing) => {
       const searchableText = [
@@ -199,6 +208,7 @@ export default function Properties() {
         .toLowerCase();
 
       const matchesLocation = !searchTerm || searchableText.includes(searchTerm);
+      const matchesDeveloper = !developerTerm || String(listing.developer_name || "").toLowerCase().includes(developerTerm);
       const matchesKeywords = !keywordTerm || searchableText.includes(keywordTerm);
       const matchesCompletion = filters.completionStatus === "all" || listing.completion_status === filters.completionStatus;
       const matchesPropertyType = filters.propertyType === "all" || listing.property_type === filters.propertyType;
@@ -214,6 +224,7 @@ export default function Properties() {
       const matchesPrivateInventory = !filters.privateInventoryOnly || Boolean(listing.is_private_inventory);
 
       return matchesLocation
+        && matchesDeveloper
         && matchesKeywords
         && matchesCompletion
         && matchesPropertyType
@@ -295,7 +306,7 @@ export default function Properties() {
         <div className="sticky top-0 z-30 hidden rounded-[1.5rem] bg-white pb-3 xl:block">
           <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-lg shadow-black/8">
             <CardContent className="space-y-3 p-3">
-              <div className="grid gap-2 xl:grid-cols-[76px,minmax(0,1.35fr),212px,158px,112px,112px,148px]">
+              <div className="grid gap-2 xl:grid-cols-[76px,minmax(0,1.2fr),160px,212px,148px,100px,100px,148px]">
                 <div className="inline-flex items-center justify-center rounded-[1rem] border border-primary/15 bg-primary/8 px-3 py-2 text-sm font-semibold text-foreground">
                   Buy
                 </div>
@@ -306,6 +317,16 @@ export default function Properties() {
                   placeholder="Enter location"
                   className="h-10 rounded-[1rem] border-slate-200 bg-white"
                 />
+
+                <Select value={filters.developer} onValueChange={(value) => setFilters((current) => ({ ...current, developer: value }))}>
+                  <SelectTrigger className="h-10 rounded-[1rem] border-slate-200 bg-white">
+                    <SelectValue placeholder="Developer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Developer</SelectItem>
+                    {developerOptions.map((developer) => <SelectItem key={developer} value={developer}>{developer}</SelectItem>)}
+                  </SelectContent>
+                </Select>
 
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -405,12 +426,24 @@ export default function Properties() {
         <div className="sticky top-0 z-30 space-y-4 rounded-[1.5rem] bg-white pb-3 xl:hidden">
           <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-lg shadow-black/8">
             <CardContent className="space-y-4 p-5">
-              <Input
-                value={filters.location}
-                onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))}
-                placeholder="Enter location"
-                className="rounded-[1rem] border-slate-200 bg-white"
-              />
+              <div className="grid gap-3">
+                <Input
+                  value={filters.location}
+                  onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))}
+                  placeholder="Enter location"
+                  className="rounded-[1rem] border-slate-200 bg-white"
+                />
+
+                <Select value={filters.developer} onValueChange={(value) => setFilters((current) => ({ ...current, developer: value }))}>
+                  <SelectTrigger className="rounded-[1rem] border-slate-200 bg-white">
+                    <SelectValue placeholder="Developer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Developer</SelectItem>
+                    {developerOptions.map((developer) => <SelectItem key={developer} value={developer}>{developer}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="grid grid-cols-3 gap-2">
                 {[
@@ -545,6 +578,7 @@ export default function Properties() {
             <PropertyFilterPanel
               filters={filters}
               setFilters={setFilters}
+              developerOptions={developerOptions}
               propertyTypes={propertyTypes}
               areaOptions={areaOptions}
               advancedOpen={advancedOpen}
