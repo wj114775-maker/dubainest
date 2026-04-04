@@ -14,13 +14,17 @@ import { base44 } from "@/api/base44Client";
 import HeroSearch from "@/components/buyer/HeroSearch";
 import SeoMeta from "@/components/seo/SeoMeta";
 import AreaSpotlightCard from "@/components/buyer/AreaSpotlightCard";
+import DeveloperSpotlightCard from "@/components/buyer/DeveloperSpotlightCard";
 import StickyInquiryBar from "@/components/buyer/StickyInquiryBar";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import SectionHeading from "@/components/common/SectionHeading";
 import GuideCard from "@/components/content/GuideCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
 import useAppConfig from "@/hooks/useAppConfig";
+import { loadBuyerListings } from "@/lib/buyerListings";
+import { buildDeveloperDirectory } from "@/lib/developerDirectory";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/lib/seo";
 
 const pathCards = [
@@ -70,10 +74,16 @@ const pathCards = [
 
 export default function Home() {
   const { data: appConfig } = useAppConfig();
+  const { data: approvedDevelopers = [] } = useApprovedDevelopers();
   const [intentConfig, setIntentConfig] = useState({ open: false, type: "request_callback", title: "Request a callback" });
 
   const { data: areas = [] } = useQuery({ queryKey: ["home-areas"], queryFn: () => base44.entities.Area.list("-updated_date", 6), initialData: [] });
   const { data: guides = [] } = useQuery({ queryKey: ["home-guides"], queryFn: () => base44.entities.Guide.filter({ status: "published" }, "-updated_date", 3), initialData: [] });
+  const { data: homeListings = [] } = useQuery({
+    queryKey: ["home-developer-listings"],
+    queryFn: () => loadBuyerListings({ limit: 120, includeShowcase: true }),
+    initialData: [],
+  });
   const { data: homeMetrics } = useQuery({
     queryKey: ["home-metrics"],
     queryFn: async () => {
@@ -111,6 +121,10 @@ export default function Home() {
 
   const featuredGuideSet = useMemo(() => guides.slice(0, 3), [guides]);
   const featuredAreas = useMemo(() => areas.slice(0, 2), [areas]);
+  const featuredDevelopers = useMemo(
+    () => buildDeveloperDirectory(approvedDevelopers, homeListings).slice(0, 3),
+    [approvedDevelopers, homeListings]
+  );
 
   return (
     <>
@@ -168,6 +182,11 @@ export default function Home() {
             eyebrow="Area intelligence"
             title="Start with the neighbourhood if the location decision comes first"
             description="Area pages stay visible from the overview page because many buyers decide by location before they decide by stock."
+            action={
+              <Button asChild variant="outline" className="rounded-full px-5">
+                <Link to="/areas">View all areas</Link>
+              </Button>
+            }
           />
           {featuredAreas.length ? (
             <div className="grid gap-5 md:grid-cols-2">
@@ -175,6 +194,26 @@ export default function Home() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">No area intelligence published yet.</p>
+          )}
+        </section>
+
+        <section className="space-y-6">
+          <SectionHeading
+            eyebrow="Developer directory"
+            title="Move from brand trust into active opportunities"
+            description="Developer pages give the public a clean way to browse active stock, off-plan weighting, and area concentration by developer."
+            action={
+              <Button asChild variant="outline" className="rounded-full px-5">
+                <Link to="/developers">View all developers</Link>
+              </Button>
+            }
+          />
+          {featuredDevelopers.length ? (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {featuredDevelopers.map((developer) => <DeveloperSpotlightCard key={developer.slug} developer={developer} />)}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No developer pages are available yet.</p>
           )}
         </section>
 

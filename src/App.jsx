@@ -7,6 +7,9 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Home from '@/pages/Home';
 import Properties from '@/pages/Properties';
+import Developers from '@/pages/Developers';
+import DeveloperDetail from '@/pages/DeveloperDetail';
+import Areas from '@/pages/Areas';
 import Shortlist from '@/pages/Shortlist';
 import Compare from '@/pages/Compare';
 import Guides from '@/pages/Guides';
@@ -121,6 +124,9 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Home /></AppFrame>} />
       <Route path="/properties" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess} headerSticky={false}><Properties /></AppFrame>} />
+      <Route path="/developers" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Developers /></AppFrame>} />
+      <Route path="/developers/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><DeveloperDetail /></AppFrame>} />
+      <Route path="/areas" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Areas /></AppFrame>} />
       <Route path="/shortlist" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Shortlist /></AppFrame>} />
       <Route path="/compare" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Compare /></AppFrame>} />
       <Route path="/guides" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Guides /></AppFrame>} />

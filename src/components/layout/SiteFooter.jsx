@@ -8,25 +8,25 @@ const publicGroups = [
     links: [
       { label: "Home", path: "/" },
       { label: "Properties", path: "/properties" },
+      { label: "Developers", path: "/developers" },
+      { label: "Areas", path: "/areas" },
       { label: "Guides", path: "/guides" },
       { label: "Golden Visa", path: "/golden-visa" },
     ]
   },
   {
-    title: "Planning",
+    title: "Buyer tools",
     links: [
+      { label: "Buyer Qualification", path: "/quiz" },
       { label: "Shortlist", path: "/shortlist" },
       { label: "Compare", path: "/compare" },
       { label: "Account", path: "/account" },
-      { label: "Notifications", path: "/notifications" },
     ]
   },
   {
-    title: "Platform",
+    title: "Site",
     links: [
       { label: "Site map", path: "/sitemap" },
-      { label: "Partner workspace", path: "/partner" },
-      { label: "Operations workspace", path: "/workspace" },
     ]
   }
 ];

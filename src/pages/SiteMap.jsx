@@ -11,6 +11,8 @@ const groups = [
     links: [
       { label: "Home", path: "/" },
       { label: "Properties", path: "/properties" },
+      { label: "Developers", path: "/developers" },
+      { label: "Areas", path: "/areas" },
       { label: "Guides", path: "/guides" },
       { label: "Golden Visa", path: "/golden-visa" },
       { label: "Buyer Qualification", path: "/quiz" },
