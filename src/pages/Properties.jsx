@@ -292,7 +292,7 @@ export default function Properties() {
           action={<Button className="rounded-full px-5" onClick={() => setOpenIntent(true)}>Request curated shortlist</Button>}
         />
 
-        <div className="sticky top-0 z-30 hidden bg-white pb-3 xl:block">
+        <div className="sticky top-0 z-30 hidden rounded-[1.5rem] bg-white pb-3 xl:block">
           <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-lg shadow-black/8">
             <CardContent className="space-y-3 p-3">
               <div className="grid gap-2 xl:grid-cols-[76px,minmax(0,1.35fr),212px,158px,112px,112px,148px]">
@@ -402,7 +402,7 @@ export default function Properties() {
           </Card>
         </div>
 
-        <div className="sticky top-0 z-30 space-y-4 bg-white pb-3 xl:hidden">
+        <div className="sticky top-0 z-30 space-y-4 rounded-[1.5rem] bg-white pb-3 xl:hidden">
           <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-lg shadow-black/8">
             <CardContent className="space-y-4 p-5">
               <Input
