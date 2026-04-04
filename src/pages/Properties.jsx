@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpDown, List, Map, SlidersHorizontal } from "lucide-react";
+import { ArrowUpDown, Bath, BedDouble, List, Map, SlidersHorizontal } from "lucide-react";
 import { createSearchParams, useSearchParams } from "react-router-dom";
 import ListingListRow from "@/components/buyer/ListingListRow";
 import PropertyDirectorySidebar from "@/components/buyer/PropertyDirectorySidebar";
 import PropertyFilterPanel from "@/components/buyer/PropertyFilterPanel";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import SectionHeading from "@/components/common/SectionHeading";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -99,6 +100,17 @@ const countExtendedFilters = (filters) => [
   filters.withFloorPlans,
   filters.privateInventoryOnly,
 ].filter(Boolean).length;
+
+const formatBedLabel = (value) => {
+  if (value === "any") return "Beds";
+  if (value === "0") return "Studio";
+  return `${value} Beds`;
+};
+
+const formatBathLabel = (value) => {
+  if (value === "any") return "Baths";
+  return `${value} Baths`;
+};
 
 export default function Properties() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -260,10 +272,16 @@ export default function Properties() {
   const extendedFilterCount = useMemo(() => countExtendedFilters(filters), [filters]);
   const mapFocusLabel = filters.location.trim() || filteredListings[0]?.area_name || "Dubai";
   const mapQuery = `${mapFocusLabel}, Dubai, UAE`;
+  const hasActiveSearch = useMemo(
+    () => JSON.stringify(filters) !== JSON.stringify(defaultFilters) || viewMode !== "list",
+    [filters, viewMode]
+  );
 
   const resetFilters = () => {
     setFilters(defaultFilters);
+    setViewMode("list");
     setAdvancedOpen(false);
+    setFiltersPanelOpen(false);
   };
 
   const viewToggle = (
@@ -358,7 +376,10 @@ export default function Properties() {
 
                 <Select value={filters.bedrooms} onValueChange={(value) => setFilters((current) => ({ ...current, bedrooms: value }))}>
                   <SelectTrigger className="h-10 rounded-[1rem] border-slate-200 bg-white">
-                    <SelectValue placeholder="Beds" />
+                    <div className="flex items-center gap-2">
+                      <BedDouble className="h-4 w-4 text-muted-foreground" />
+                      <span>{formatBedLabel(filters.bedrooms)}</span>
+                    </div>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="any">Beds</SelectItem>
@@ -369,12 +390,16 @@ export default function Properties() {
                     <SelectItem value="4">4+</SelectItem>
                     <SelectItem value="5">5+</SelectItem>
                     <SelectItem value="6">6+</SelectItem>
+                    <SelectItem value="8">8+</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <Select value={filters.bathrooms} onValueChange={(value) => setFilters((current) => ({ ...current, bathrooms: value }))}>
                   <SelectTrigger className="h-10 rounded-[1rem] border-slate-200 bg-white">
-                    <SelectValue placeholder="Baths" />
+                    <div className="flex items-center gap-2">
+                      <Bath className="h-4 w-4 text-muted-foreground" />
+                      <span>{formatBathLabel(filters.bathrooms)}</span>
+                    </div>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="any">Baths</SelectItem>
@@ -392,16 +417,21 @@ export default function Properties() {
                   variant="outline"
                   className={cn(
                     "h-10 rounded-[1rem] justify-between border-slate-200 bg-white",
-                    extendedFilterCount ? "border-amber-300/40 bg-amber-500/5 text-amber-800" : ""
+                    extendedFilterCount ? "border-amber-400 bg-amber-50 text-amber-900 shadow-sm" : ""
                   )}
                   onClick={() => setFiltersPanelOpen(true)}
                 >
                   More Filters
-                  {extendedFilterCount ? <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-700">{extendedFilterCount}</span> : null}
+                  {extendedFilterCount ? <span className="ml-2 rounded-full bg-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-900">{extendedFilterCount}</span> : null}
                 </Button>
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-3">
+                {hasActiveSearch ? (
+                  <Button variant="ghost" className="rounded-full px-4 text-sm" onClick={resetFilters}>
+                    Reset search
+                  </Button>
+                ) : null}
                 {viewToggle}
                 <div className="w-full lg:w-[220px]">
                   <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
@@ -464,12 +494,28 @@ export default function Properties() {
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <Button variant="outline" className="rounded-full" onClick={() => setFiltersPanelOpen(true)}>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "rounded-full",
+                    extendedFilterCount ? "border-amber-400 bg-amber-50 text-amber-900 shadow-sm" : ""
+                  )}
+                  onClick={() => setFiltersPanelOpen(true)}
+                >
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
-                  Filters
+                  More Filters
+                  {extendedFilterCount ? <span className="ml-2 rounded-full bg-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-900">{extendedFilterCount}</span> : null}
                 </Button>
                 <div className="ml-auto">{viewToggle}</div>
               </div>
+
+              {hasActiveSearch ? (
+                <div className="flex justify-end">
+                  <Button variant="ghost" className="rounded-full px-4 text-sm" onClick={resetFilters}>
+                    Reset search
+                  </Button>
+                </div>
+              ) : null}
 
               <div className="w-full sm:w-[230px]">
                 <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>

@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { ChevronDown, Filter, Sparkles } from "lucide-react";
+import { Bath, BedDouble, ChevronDown, Filter, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +23,17 @@ const formatPrice = (value) => {
 const formatArea = (value) => {
   if (value === "0") return "Any";
   return `${Number(value).toLocaleString()} sqft`;
+};
+
+const formatBedLabel = (value) => {
+  if (value === "any") return "Beds";
+  if (value === "0") return "Studio";
+  return `${value} Beds`;
+};
+
+const formatBathLabel = (value) => {
+  if (value === "any") return "Baths";
+  return `${value} Baths`;
 };
 
 export default function PropertyFilterPanel({
@@ -117,22 +128,34 @@ export default function PropertyFilterPanel({
           <div className="space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-muted-foreground">Beds</p>
             <Select value={filters.bedrooms} onValueChange={(value) => updateField("bedrooms", value)}>
-              <SelectTrigger className="rounded-2xl"><SelectValue placeholder="Any" /></SelectTrigger>
+              <SelectTrigger className="rounded-2xl">
+                <div className="flex items-center gap-2">
+                  <BedDouble className="h-4 w-4 text-muted-foreground" />
+                  <span>{formatBedLabel(filters.bedrooms)}</span>
+                </div>
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="any">Any</SelectItem>
+                <SelectItem value="0">Studio</SelectItem>
                 <SelectItem value="1">1+</SelectItem>
                 <SelectItem value="2">2+</SelectItem>
                 <SelectItem value="3">3+</SelectItem>
                 <SelectItem value="4">4+</SelectItem>
                 <SelectItem value="5">5+</SelectItem>
                 <SelectItem value="6">6+</SelectItem>
+                <SelectItem value="8">8+</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-muted-foreground">Baths</p>
             <Select value={filters.bathrooms} onValueChange={(value) => updateField("bathrooms", value)}>
-              <SelectTrigger className="rounded-2xl"><SelectValue placeholder="Any" /></SelectTrigger>
+              <SelectTrigger className="rounded-2xl">
+                <div className="flex items-center gap-2">
+                  <Bath className="h-4 w-4 text-muted-foreground" />
+                  <span>{formatBathLabel(filters.bathrooms)}</span>
+                </div>
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="any">Any</SelectItem>
                 <SelectItem value="1">1+</SelectItem>
