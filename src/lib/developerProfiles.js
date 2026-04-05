@@ -1,5 +1,5 @@
-import { base44 } from "@/api/base44Client";
 import { normalizeDeveloperQueryValue } from "@/lib/approvedDevelopers";
+import { filterEntitySafe, listEntitySafe } from "@/lib/base44Safeguards";
 import { buildDeveloperDirectory, slugifyText } from "@/lib/developerDirectory";
 
 function normalizeProfile(profile) {
@@ -15,21 +15,13 @@ function normalizeProfile(profile) {
 }
 
 export async function listDeveloperProfiles() {
-  try {
-    const profiles = await base44.entities.DeveloperProfile.list("-updated_date", 200);
-    return Array.isArray(profiles) ? profiles.map(normalizeProfile) : [];
-  } catch {
-    return [];
-  }
+  const profiles = await listEntitySafe("DeveloperProfile", "-updated_date", 200);
+  return Array.isArray(profiles) ? profiles.map(normalizeProfile) : [];
 }
 
 export async function getDeveloperProfileBySlug(slug) {
-  try {
-    const profiles = await base44.entities.DeveloperProfile.filter({ slug });
-    return profiles[0] ? normalizeProfile(profiles[0]) : null;
-  } catch {
-    return null;
-  }
+  const profiles = await filterEntitySafe("DeveloperProfile", { slug });
+  return profiles[0] ? normalizeProfile(profiles[0]) : null;
 }
 
 export function getPublicDeveloperProfiles(profiles = []) {

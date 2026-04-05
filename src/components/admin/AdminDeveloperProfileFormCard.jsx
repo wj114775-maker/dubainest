@@ -60,7 +60,7 @@ function buildDeveloperOptions(approvedDevelopers = []) {
   }));
 }
 
-export default function AdminDeveloperProfileFormCard({ profile, approvedDevelopers = [], onSubmit, onCancel }) {
+export default function AdminDeveloperProfileFormCard({ profile, approvedDevelopers = [], onSubmit, onCancel, disabled = false }) {
   const [form, setForm] = useState(initialForm);
 
   useEffect(() => {
@@ -293,9 +293,12 @@ export default function AdminDeveloperProfileFormCard({ profile, approvedDevelop
         </div>
 
         <div className="flex gap-3">
-          <Button onClick={handleSubmit}>{profile ? "Save developer page" : "Create developer page"}</Button>
+          <Button onClick={handleSubmit} disabled={disabled}>{profile ? "Save developer page" : "Create developer page"}</Button>
           {profile ? <Button variant="outline" onClick={onCancel}>Cancel</Button> : null}
         </div>
+        {disabled ? (
+          <p className="text-xs text-amber-700">DeveloperProfile is not published in the live Base44 app yet.</p>
+        ) : null}
       </CardContent>
     </Card>
   );

@@ -75,7 +75,7 @@ function toForm(profile) {
   };
 }
 
-export default function AdminProjectProfileFormCard({ profile, projects = [], developerProfiles = [], onSubmit, onCancel }) {
+export default function AdminProjectProfileFormCard({ profile, projects = [], developerProfiles = [], onSubmit, onCancel, disabled = false }) {
   const [form, setForm] = useState(initialForm);
 
   useEffect(() => {
@@ -281,10 +281,13 @@ export default function AdminProjectProfileFormCard({ profile, projects = [], de
         </div>
 
         <div className="flex gap-3">
-          <Button onClick={handleSubmit}>{profile ? "Save project page" : "Create project page"}</Button>
+          <Button onClick={handleSubmit} disabled={disabled}>{profile ? "Save project page" : "Create project page"}</Button>
           {profile ? <Button variant="outline" onClick={onCancel}>Cancel</Button> : null}
           {selectedProject?.name ? <span className="self-center text-xs text-muted-foreground">Linked source: {selectedProject.name}</span> : null}
         </div>
+        {disabled ? (
+          <p className="text-xs text-amber-700">ProjectProfile is not published in the live Base44 app yet.</p>
+        ) : null}
       </CardContent>
     </Card>
   );

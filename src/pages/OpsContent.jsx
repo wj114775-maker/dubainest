@@ -16,6 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
+import {
+  createEntitySafe,
+  getBase44ErrorText,
+  getMissingEntitySchemas,
+  isEntitySchemaKnownMissing,
+  updateEntitySafe,
+} from "@/lib/base44Safeguards";
 import { listDeveloperProfiles } from "@/lib/developerProfiles";
 import { listProjectProfiles } from "@/lib/projectProfiles";
 import {
@@ -67,21 +74,47 @@ export default function OpsContent() {
     }
   });
   const saveDeveloperProfile = useMutation({
-    mutationFn: (form) => editingDeveloperProfile?.id
-      ? base44.entities.DeveloperProfile.update(editingDeveloperProfile.id, form)
-      : base44.entities.DeveloperProfile.create(form),
+    mutationFn: async (form) => {
+      const result = editingDeveloperProfile?.id
+        ? await updateEntitySafe("DeveloperProfile", editingDeveloperProfile.id, form)
+        : await createEntitySafe("DeveloperProfile", form);
+
+      if (!result.ok && result.missingSchema) {
+        throw new Error("SchemaMissing:DeveloperProfile");
+      }
+
+      return result.data;
+    },
     onSuccess: () => {
       setEditingDeveloperProfile(null);
       queryClient.invalidateQueries({ queryKey: ["ops-content-developer-profiles"] });
       queryClient.invalidateQueries({ queryKey: ["developer-profiles-public"] });
       queryClient.invalidateQueries({ queryKey: ["developer-profile"] });
       queryClient.invalidateQueries({ queryKey: ["home-developer-profiles"] });
-    }
+    },
+    onError: (error) => {
+      const message = String(error?.message || "");
+      toast({
+        title: "Developer page unavailable",
+        description: message.startsWith("SchemaMissing:")
+          ? "DeveloperProfile is not published in the live Base44 app yet."
+          : getBase44ErrorText(error) || "The developer page could not be saved.",
+        variant: "destructive",
+      });
+    },
   });
   const saveProjectProfile = useMutation({
-    mutationFn: (form) => editingProjectProfile?.id
-      ? base44.entities.ProjectProfile.update(editingProjectProfile.id, form)
-      : base44.entities.ProjectProfile.create(form),
+    mutationFn: async (form) => {
+      const result = editingProjectProfile?.id
+        ? await updateEntitySafe("ProjectProfile", editingProjectProfile.id, form)
+        : await createEntitySafe("ProjectProfile", form);
+
+      if (!result.ok && result.missingSchema) {
+        throw new Error("SchemaMissing:ProjectProfile");
+      }
+
+      return result.data;
+    },
     onSuccess: () => {
       setEditingProjectProfile(null);
       queryClient.invalidateQueries({ queryKey: ["ops-content-project-profiles"] });
@@ -90,26 +123,48 @@ export default function OpsContent() {
       queryClient.invalidateQueries({ queryKey: ["home-project-profiles"] });
       queryClient.invalidateQueries({ queryKey: ["projects-directory"] });
       queryClient.invalidateQueries({ queryKey: ["developer-project-profiles"] });
-    }
+    },
+    onError: (error) => {
+      const message = String(error?.message || "");
+      toast({
+        title: "Project page unavailable",
+        description: message.startsWith("SchemaMissing:")
+          ? "ProjectProfile is not published in the live Base44 app yet."
+          : getBase44ErrorText(error) || "The project page could not be saved.",
+        variant: "destructive",
+      });
+    },
   });
   const starterDeveloper = developerProfiles.find((profile) => profile.slug === DEMO_DEVELOPER_SLUG) || null;
   const starterProject = projectProfiles.find((profile) => profile.slug === DEMO_PROJECT_SLUG) || null;
+  const missingSchemas = getMissingEntitySchemas(["DeveloperProfile", "ProjectProfile"]);
+  const developerSchemaMissing = isEntitySchemaKnownMissing("DeveloperProfile");
+  const projectSchemaMissing = isEntitySchemaKnownMissing("ProjectProfile");
   const createStarterSet = useMutation({
     mutationFn: async () => {
       let developerRecord = starterDeveloper;
       if (!developerRecord) {
-        developerRecord = await base44.entities.DeveloperProfile.create(
+        const developerResult = await createEntitySafe(
+          "DeveloperProfile",
           buildDemoDeveloperProfileTemplate(approvedDevelopers)
         );
+        if (!developerResult.ok && developerResult.missingSchema) {
+          throw new Error("SchemaMissing:DeveloperProfile");
+        }
+        developerRecord = developerResult.data;
       }
 
       let projectRecord = starterProject;
       if (!projectRecord) {
-        projectRecord = await base44.entities.ProjectProfile.create({
+        const projectResult = await createEntitySafe("ProjectProfile", {
           ...buildDemoProjectProfileTemplate(),
           developer_profile_slug: developerRecord.slug || DEMO_DEVELOPER_SLUG,
           developer_name: developerRecord.developer_name || "Meraas",
         });
+        if (!projectResult.ok && projectResult.missingSchema) {
+          throw new Error("SchemaMissing:ProjectProfile");
+        }
+        projectRecord = projectResult.data;
       }
 
       return { developerRecord, projectRecord };
@@ -133,9 +188,12 @@ export default function OpsContent() {
       });
     },
     onError: () => {
+      const publishTargets = getMissingEntitySchemas(["DeveloperProfile", "ProjectProfile"]);
       toast({
         title: "Starter set failed",
-        description: "The demo developer/project records could not be created. Check that the new Base44 entities are published first.",
+        description: publishTargets.length
+          ? `${publishTargets.join(" and ")} ${publishTargets.length === 1 ? "is" : "are"} not published in the live Base44 app yet.`
+          : "The demo developer/project records could not be created. Check that the new Base44 entities are published first.",
         variant: "destructive",
       });
     }
@@ -144,6 +202,17 @@ export default function OpsContent() {
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Content OS" title="Public pages, developer profiles, and conversion content" description="Use this page manager to decide which developer pages can go live, which ones stay hidden, and what content appears on the public site." />
+      {missingSchemas.length ? (
+        <Card className="rounded-[2rem] border-amber-300/60 bg-amber-50">
+          <CardContent className="space-y-2 p-6">
+            <p className="text-xs uppercase tracking-[0.28em] text-amber-700">Base44 publish required</p>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-950">The content manager cannot write public pages until the new schemas are published</h2>
+            <p className="text-sm leading-6 text-slate-700">
+              Missing live schemas: {missingSchemas.join(", ")}. The repo code is ready, but the hosted Base44 app is still returning 404 for those entities.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
       <AccessGuard permission="settings.manage">
         <Card className="rounded-[2rem] border-white/10 bg-card/80">
           <CardContent className="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between">
@@ -160,7 +229,7 @@ export default function OpsContent() {
             <div className="flex flex-wrap gap-3">
               <Button
                 onClick={() => createStarterSet.mutate()}
-                disabled={createStarterSet.isPending || Boolean(starterDeveloper && starterProject)}
+                disabled={createStarterSet.isPending || Boolean(starterDeveloper && starterProject) || developerSchemaMissing || projectSchemaMissing}
               >
                 {starterDeveloper && starterProject ? "Starter set already created" : createStarterSet.isPending ? "Creating starter set..." : "Create starter set"}
               </Button>
@@ -217,6 +286,7 @@ export default function OpsContent() {
                 approvedDevelopers={approvedDevelopers}
                 onSubmit={(form) => saveDeveloperProfile.mutate(form)}
                 onCancel={() => setEditingDeveloperProfile(null)}
+                disabled={developerSchemaMissing}
               />
             </div>
           </AccessGuard>
@@ -256,6 +326,7 @@ export default function OpsContent() {
                 developerProfiles={developerProfiles}
                 onSubmit={(form) => saveProjectProfile.mutate(form)}
                 onCancel={() => setEditingProjectProfile(null)}
+                disabled={projectSchemaMissing}
               />
             </div>
           </AccessGuard>

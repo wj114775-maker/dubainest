@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { filterEntitySafe, listEntitySafe } from "@/lib/base44Safeguards";
 import { findMatchingDeveloperProfile } from "@/lib/developerProfiles";
 import { slugifyText } from "@/lib/developerDirectory";
 
@@ -52,21 +52,13 @@ function orderFeaturedListings(listings = [], featuredListingIds = []) {
 }
 
 export async function listProjectProfiles() {
-  try {
-    const profiles = await base44.entities.ProjectProfile.list("-updated_date", 200);
-    return Array.isArray(profiles) ? profiles.map(normalizeProjectProfile) : [];
-  } catch {
-    return [];
-  }
+  const profiles = await listEntitySafe("ProjectProfile", "-updated_date", 200);
+  return Array.isArray(profiles) ? profiles.map(normalizeProjectProfile) : [];
 }
 
 export async function getProjectProfileBySlug(slug) {
-  try {
-    const profiles = await base44.entities.ProjectProfile.filter({ slug });
-    return profiles[0] ? normalizeProjectProfile(profiles[0]) : null;
-  } catch {
-    return null;
-  }
+  const profiles = await filterEntitySafe("ProjectProfile", { slug });
+  return profiles[0] ? normalizeProjectProfile(profiles[0]) : null;
 }
 
 export function getPublicProjectProfiles(profiles = []) {
