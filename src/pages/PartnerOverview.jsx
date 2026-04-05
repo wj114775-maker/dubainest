@@ -61,7 +61,7 @@ export default function PartnerOverview() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Partner OS" title="Execution workspace for licensed agencies" description="Partners operate lead response, listing readiness, deal progress and payouts inside controlled rules set by the platform." />
+      <SectionHeading eyebrow="Partner workspace" title="Execution workspace for licensed agencies" description="Partners operate lead response, listing readiness, deal progress and payouts inside controlled rules set by the platform." />
       <div className="grid gap-4 md:grid-cols-5">
         <MetricCard label="Open leads" value={String(dashboard.metrics.openLeads)} />
         <MetricCard label="Median response" value={`${dashboard.metrics.medianResponseMinutes} min`} />

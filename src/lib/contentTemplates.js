@@ -31,7 +31,7 @@ export function buildDemoDeveloperProfileTemplate(approvedDevelopers = []) {
     brand_color: "#0f172a",
     contact_email: "developers@dubaisphere.com",
     contact_phone: "",
-    notes: "Starter developer profile generated from the Ops Content quick-start set.",
+    notes: "Starter developer profile generated from the Back Office quick-start set.",
   };
 }
 
@@ -69,6 +69,6 @@ export function buildDemoProjectProfileTemplate() {
     contact_phone: "",
     seo_title: "City Walk Crestlane Dubai Off-Plan Project",
     seo_description: "Review City Walk Crestlane in Dubai with launch positioning, handover timing, payment-plan summary, and linked sale opportunities.",
-    notes: "Starter project profile generated from the Ops Content quick-start set.",
+    notes: "Starter project profile generated from the Back Office quick-start set.",
   };
 }

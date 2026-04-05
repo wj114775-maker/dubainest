@@ -57,7 +57,7 @@ export default function Account() {
         canonicalPath="/account"
         robots="noindex,nofollow"
       />
-      <SectionHeading eyebrow={isInternal ? "Admin account" : "Account"} title={isInternal ? "Your internal workspace access is active" : "Sign in only when you want protected access"} description={isInternal ? "Use this page as the handoff into Internal OS, lead operations, user controls and audit tools." : "Anonymous browsing stays open; registration begins on save, compare, share, enquiry, callback, private inventory or concierge flows."} />
+      <SectionHeading eyebrow={isInternal ? "Back office account" : "Account"} title={isInternal ? "Your back office access is active" : "Sign in only when you want protected access"} description={isInternal ? "Use this page as the handoff into the Back Office, settings, user controls, and audit tools." : "Anonymous browsing stays open; registration begins on save, compare, share, enquiry, callback, private inventory or concierge flows."} />
       <Card className="rounded-[2rem] border-white/10 bg-card/80">
         <CardContent className="space-y-4 p-6">
           <p className="text-sm text-muted-foreground">Current state</p>
@@ -88,7 +88,7 @@ export default function Account() {
                 <Link to="/ops/leads">Open buyers desk</Link>
               </Button>
               <Button asChild variant="outline" className="rounded-full px-5">
-                <Link to="/ops/admin">Open control center</Link>
+                <Link to="/ops/admin">Open settings</Link>
               </Button>
             </CardContent>
           </Card>

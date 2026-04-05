@@ -34,44 +34,51 @@ export const navItems = {
   ],
   internal: [
     {
-      label: "Home",
+      label: "Dashboard",
       path: "/ops",
-      section: "Operations",
+      section: "Back Office",
       description: "Start here. See what needs action first.",
       icon: LayoutDashboard
     },
     {
       label: "Buyers",
       path: "/ops/leads",
-      section: "Operations",
+      section: "Back Office",
       description: "Qualify, protect, assign, and progress buyers.",
       icon: Briefcase
     },
     {
       label: "Listings",
       path: "/ops/listings",
-      section: "Operations",
-      description: "Control listing trust, freshness, and publication.",
+      section: "Core Tables",
+      description: "Add and edit the listings table.",
       icon: Building2
     },
     {
-      label: "Premium",
-      path: "/ops/concierge",
-      section: "Operations",
-      description: "Run private, HNW, and concierge journeys.",
+      label: "Projects",
+      path: "/ops/projects",
+      section: "Core Tables",
+      description: "Add and edit the projects table.",
       icon: Gem
+    },
+    {
+      label: "Developers",
+      path: "/ops/developers",
+      section: "Core Tables",
+      description: "Add and edit the developers table.",
+      icon: Briefcase
     },
     {
       label: "Money",
       path: "/ops/revenue",
-      section: "Operations",
+      section: "Back Office",
       description: "Track fee claims, invoices, payments, and disputes.",
       icon: WalletCards
     },
     {
-      label: "Control center",
+      label: "Settings",
       path: "/ops/admin",
-      section: "Admin",
+      section: "Setup",
       description: "Rules, roles, security, team access, and setup.",
       icon: ShieldCheck
     }

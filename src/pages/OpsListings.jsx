@@ -1,88 +1,118 @@
 import React, { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import AdminSummaryStrip from "@/components/admin/AdminSummaryStrip";
 import AccessGuard from "@/components/admin/AccessGuard";
-import QueueCard from "@/components/common/QueueCard";
+import EmptyStateCard from "@/components/common/EmptyStateCard";
 import ListingGovernanceQueue from "@/components/ops/ListingGovernanceQueue";
+import ListingRegistryTableCard from "@/components/admin/ListingRegistryTableCard";
+import AdminListingEditorDialog from "@/components/admin/AdminListingEditorDialog";
 import { Button } from "@/components/ui/button";
-import { compactLabel } from "@/lib/buyerPipeline";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function OpsListings() {
-  const [showFullQueue, setShowFullQueue] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [editingListing, setEditingListing] = useState(null);
+  const [editorOpen, setEditorOpen] = useState(false);
   const { data: listings = [] } = useQuery({
-    queryKey: ["ops-listings"],
-    queryFn: () => base44.entities.Listing.list("-updated_date", 200),
-    initialData: []
+    queryKey: ["ops-listings-table"],
+    queryFn: () => base44.entities.Listing.list("-updated_date", 300),
+    initialData: [],
   });
 
   const summary = [
-    { label: "Governed listings", value: String(listings.length) },
+    { label: "Listings", value: String(listings.length) },
+    { label: "Draft", value: String(listings.filter((item) => item.status === "draft").length) },
     { label: "Under review", value: String(listings.filter((item) => ["under_review", "verification_pending", "flagged"].includes(item.status)).length) },
-    { label: "Frozen", value: String(listings.filter((item) => item.status === "frozen").length) },
-    { label: "Stale", value: String(listings.filter((item) => item.freshness_status === "stale" || item.freshness_status === "expired").length) },
-    { label: "Published", value: String(listings.filter((item) => item.publication_status === "published").length) }
+    { label: "Published", value: String(listings.filter((item) => item.publication_status === "published").length) },
   ];
 
-  const reviewQueue = useMemo(() => listings
-    .filter((item) => ["under_review", "verification_pending", "flagged"].includes(item.status))
-    .slice(0, 8)
-    .map((item) => ({
-      id: item.id,
-      title: item.title || item.id,
-      meta: [item.partner_agency_id, item.publication_status].filter(Boolean).join(" · "),
-      status: item.status,
-      badges: [item.trust_band, item.freshness_status].filter(Boolean),
-      href: `/ops/listings/${item.id}`
-    })), [listings]);
+  const advancedQueue = useMemo(
+    () => listings.filter((item) => ["under_review", "verification_pending", "flagged", "frozen", "stale"].includes(item.status)),
+    [listings]
+  );
 
-  const correctionQueue = useMemo(() => listings
-    .filter((item) => ["frozen", "suppressed", "rejected"].includes(item.publication_status) || item.status === "frozen")
-    .slice(0, 8)
-    .map((item) => ({
-      id: item.id,
-      title: item.title || item.id,
-      meta: [item.partner_agency_id, item.status].filter(Boolean).join(" · "),
-      status: item.publication_status || item.status,
-      badges: [item.trust_band, item.freshness_status].filter(Boolean),
-      href: `/ops/listings/${item.id}`
-    })), [listings]);
+  const saveListing = useMutation({
+    mutationFn: async (payload) => {
+      if (editingListing?.id) {
+        return await base44.entities.Listing.update(editingListing.id, payload);
+      }
+      return await base44.entities.Listing.create(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ops-listings-table"] });
+      setEditingListing(null);
+      setEditorOpen(false);
+      toast({ title: "Listing saved" });
+    },
+    onError: (error) => {
+      toast({
+        title: "Listing save failed",
+        description: String(error?.message || "The listing could not be saved."),
+        variant: "destructive",
+      });
+    },
+  });
 
-  const freshnessQueue = useMemo(() => listings
-    .filter((item) => ["stale", "expired"].includes(item.freshness_status))
-    .slice(0, 8)
-    .map((item) => ({
-      id: item.id,
-      title: item.title || item.id,
-      meta: [item.partner_agency_id, item.publication_status].filter(Boolean).join(" · "),
-      status: item.freshness_status,
-      badges: [item.trust_band, item.status].filter(Boolean),
-      href: `/ops/listings/${item.id}`
-    })), [listings]);
+  const openCreate = () => {
+    setEditingListing(null);
+    setEditorOpen(true);
+  };
 
-  const queue = listings.filter((item) => ["under_review", "verification_pending", "flagged", "frozen", "stale"].includes(item.status));
+  const openEdit = (listing) => {
+    setEditingListing(listing);
+    setEditorOpen(true);
+  };
 
   return (
     <div className="space-y-6">
       <SectionHeading
-        eyebrow="Supply review"
-        title="Listing trust, verification, and publication"
-        description="This page now stays focused on the three supply questions that matter day to day: what needs review, what needs correction, and what has gone stale."
-        action={<Button variant="outline" onClick={() => setShowFullQueue((current) => !current)}>{showFullQueue ? "Hide full queue" : "Show full queue"}</Button>}
+        eyebrow="Back office"
+        title="Listings"
+        description="This is the listings table. Add and edit stock here first. Advanced review stays available, but it is no longer the main view."
+        action={(
+          <div className="flex gap-3">
+            <Button variant="outline" asChild>
+              <Link to="/properties">Open public property page</Link>
+            </Button>
+            <Button onClick={openCreate}>Add listing</Button>
+          </div>
+        )}
       />
       <AccessGuard permission="compliance_cases.read">
         <AdminSummaryStrip items={summary} />
       </AccessGuard>
       <AccessGuard permission="compliance_cases.read">
-        <div className="grid gap-6 xl:grid-cols-3">
-          <QueueCard title="Needs review" items={reviewQueue} emptyMessage="No listings are waiting for first review." formatStatus={compactLabel} />
-          <QueueCard title="Needs correction" items={correctionQueue} emptyMessage="No listings are frozen or blocked right now." formatStatus={compactLabel} />
-          <QueueCard title="Stale supply" items={freshnessQueue} emptyMessage="No listings have freshness issues right now." formatStatus={compactLabel} />
-        </div>
+        {listings.length ? (
+          <ListingRegistryTableCard listings={listings} onEdit={openEdit} />
+        ) : (
+          <EmptyStateCard title="No listings yet" description="Add your first listing when you are ready." />
+        )}
       </AccessGuard>
       <AccessGuard permission="compliance_cases.read">
-        {showFullQueue ? <ListingGovernanceQueue listings={queue} /> : null}
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={() => setShowAdvanced((current) => !current)}>
+            {showAdvanced ? "Hide advanced review" : "Show advanced review"}
+          </Button>
+        </div>
+        {showAdvanced ? <ListingGovernanceQueue listings={advancedQueue} /> : null}
+      </AccessGuard>
+
+      <AccessGuard permission="compliance_cases.manage">
+        <AdminListingEditorDialog
+          open={editorOpen}
+          onOpenChange={(open) => {
+            setEditorOpen(open);
+            if (!open) setEditingListing(null);
+          }}
+          listing={editingListing}
+          loading={saveListing.isPending}
+          onSubmit={(payload) => saveListing.mutate(payload)}
+        />
       </AccessGuard>
     </div>
   );

@@ -378,19 +378,19 @@ export default function OpsDashboard() {
       icon: Users
     },
     {
-      title: "Operations workspace",
+      title: "Back Office",
       badge: "Staff",
-      description: "This is the daily hub for staff. Start here, then move into buyer pipeline, supply review, premium cases, or money desk.",
+      description: "This is the daily hub for staff. Start here, then move into buyers, listings, projects, developers, or money.",
       rules: [
-        "Use for day-to-day case handling and queue management.",
-        "This is the correct home for ops, concierge, compliance, and finance staff."
+        "Use for day-to-day case handling and table management.",
+        "This is the correct home for buyer, listing, project, developer, and finance work."
       ],
       path: "/ops",
-      actionLabel: "Stay in operations",
+      actionLabel: "Open back office",
       icon: Briefcase
     },
     {
-      title: "Control center",
+      title: "Settings",
       badge: "Admin only",
       description: "Rules, permissions, security, and setup live here. This is configuration, not daily casework.",
       rules: [
@@ -398,7 +398,7 @@ export default function OpsDashboard() {
         "Use for setup, governance, and access management."
       ],
       path: "/ops/admin",
-      actionLabel: "Open control center",
+      actionLabel: "Open settings",
       icon: Landmark
     }
   ];
@@ -406,9 +406,9 @@ export default function OpsDashboard() {
   return (
     <div className="space-y-8">
       <SectionHeading
-        eyebrow="Operations workspace"
-        title="One clear operating flow from inquiry to cash"
-        description="Start here every day. This page now puts today's work first. The broader platform map stays secondary unless you need it."
+        eyebrow="Back Office"
+        title="One clear business flow from inquiry to cash"
+        description="Start here every day. This page puts today's work first. The broader platform map stays secondary unless you need it."
         action={(
           <div className="flex flex-wrap gap-2">
             <Button asChild><Link to="/ops/leads">Open buyer pipeline</Link></Button>
@@ -470,11 +470,11 @@ export default function OpsDashboard() {
             <CardContent className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-primary">Use this rule</p>
-                <h3 className="mt-3 text-2xl font-semibold tracking-tight">Staff do daily work in operations. Admins do setup in control.</h3>
+                <h3 className="mt-3 text-2xl font-semibold tracking-tight">Staff do daily work in the Back Office. Admins do setup in Settings.</h3>
               </div>
               <div className="text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">Operations staff</p>
-                <p className="mt-2">Start in Home, then go to Buyers, Listings, Premium, or Money.</p>
+                <p className="font-medium text-foreground">Back office staff</p>
+                <p className="mt-2">Start in Dashboard, then go to Buyers, Listings, Projects, Developers, or Money.</p>
               </div>
               <div className="text-sm text-muted-foreground">
                 <p className="font-medium text-foreground">Partners</p>
@@ -482,7 +482,7 @@ export default function OpsDashboard() {
               </div>
               <div className="text-sm text-muted-foreground">
                 <p className="font-medium text-foreground">Admins</p>
-                <p className="mt-2">Use Control Center only for governance, permissions, and platform setup.</p>
+                <p className="mt-2">Use Settings only for governance, permissions, and platform setup.</p>
               </div>
             </CardContent>
           </Card>
