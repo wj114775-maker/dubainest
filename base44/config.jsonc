@@ -1,0 +1,9 @@
+{
+  "name": "dubainest",
+  "description": "DubaiSphere Base44 backend resources",
+  "entitiesDir": "./entities",
+  "functionsDir": "./functions",
+  "site": {
+    "outputDirectory": "../dist"
+  }
+}
