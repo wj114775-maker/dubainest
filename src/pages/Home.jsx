@@ -24,7 +24,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
 import useAppConfig from "@/hooks/useAppConfig";
 import { loadBuyerListings } from "@/lib/buyerListings";
-import { buildDeveloperDirectory } from "@/lib/developerDirectory";
+import { buildManagedDeveloperDirectory, listDeveloperProfiles } from "@/lib/developerProfiles";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/lib/seo";
 
 const pathCards = [
@@ -84,6 +84,11 @@ export default function Home() {
     queryFn: () => loadBuyerListings({ limit: 120, includeShowcase: true }),
     initialData: [],
   });
+  const { data: developerProfiles = [] } = useQuery({
+    queryKey: ["home-developer-profiles"],
+    queryFn: () => listDeveloperProfiles(),
+    initialData: [],
+  });
   const { data: homeMetrics } = useQuery({
     queryKey: ["home-metrics"],
     queryFn: async () => {
@@ -122,8 +127,8 @@ export default function Home() {
   const featuredGuideSet = useMemo(() => guides.slice(0, 3), [guides]);
   const featuredAreas = useMemo(() => areas.slice(0, 2), [areas]);
   const featuredDevelopers = useMemo(
-    () => buildDeveloperDirectory(approvedDevelopers, homeListings).slice(0, 3),
-    [approvedDevelopers, homeListings]
+    () => buildManagedDeveloperDirectory(developerProfiles, approvedDevelopers, homeListings, { homepageOnly: true }).slice(0, 3),
+    [approvedDevelopers, developerProfiles, homeListings]
   );
 
   return (
@@ -201,7 +206,7 @@ export default function Home() {
           <SectionHeading
             eyebrow="Developer directory"
             title="Move from brand trust into active opportunities"
-            description="Developer pages give the public a clean way to browse active stock, off-plan weighting, and area concentration by developer."
+            description="Only developers you actively publish appear here, so the public only sees partnered brand pages and controlled profile content."
             action={
               <Button asChild variant="outline" className="rounded-full px-5">
                 <Link to="/developers">View all developers</Link>
@@ -213,7 +218,7 @@ export default function Home() {
               {featuredDevelopers.map((developer) => <DeveloperSpotlightCard key={developer.slug} developer={developer} />)}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No developer pages are available yet.</p>
+            <p className="text-sm text-muted-foreground">No featured developer pages are live yet.</p>
           )}
         </section>
 

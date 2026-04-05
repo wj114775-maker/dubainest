@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
 import { loadBuyerListings } from "@/lib/buyerListings";
 import { buildBreadcrumbJsonLd } from "@/lib/seo";
-import { buildDeveloperDirectory } from "@/lib/developerDirectory";
+import { buildManagedDeveloperDirectory, listDeveloperProfiles } from "@/lib/developerProfiles";
 
 export default function Developers() {
   const { data: approvedDevelopers = [] } = useApprovedDevelopers();
@@ -17,11 +17,15 @@ export default function Developers() {
     queryFn: () => loadBuyerListings({ limit: 200, includeShowcase: true }),
     initialData: [],
   });
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["developer-profiles-public"],
+    queryFn: () => listDeveloperProfiles(),
+    initialData: [],
+  });
 
-  const developers = useMemo(
-    () => buildDeveloperDirectory(approvedDevelopers, listings),
-    [approvedDevelopers, listings]
-  );
+  const developers = useMemo(() => {
+    return buildManagedDeveloperDirectory(profiles, approvedDevelopers, listings);
+  }, [approvedDevelopers, listings, profiles]);
 
   return (
     <div className="space-y-6 pb-28">
@@ -37,7 +41,7 @@ export default function Developers() {
       <SectionHeading
         eyebrow="Developers"
         title="Explore developers behind active Dubai sale opportunities"
-        description="Use this public index to move from developer brand into active stock, off-plan opportunities, and area concentration."
+        description="Only partnered and published developer profiles appear here. Search filters can remain broader, but public brand pages stay under your control."
         action={
           <Button asChild className="rounded-full px-5">
             <Link to="/properties">Open property directory</Link>

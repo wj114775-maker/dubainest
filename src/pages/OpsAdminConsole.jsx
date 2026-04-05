@@ -32,11 +32,12 @@ export default function OpsAdminConsole() {
           },
           {
             title: "Rules and policies",
-            description: "Control the governed logic that drives leads, fees, and compliance.",
+            description: "Control the governed logic and public-page rules that drive leads, fees, compliance, and publishable content.",
             items: [
               { title: "Lead rules", description: "Ownership, attribution, and anti-circumvention governance.", href: "/ops/lead-rules" },
               { title: "Commission rules", description: "Commercial policy used by the money desk.", href: "/ops/commission-rules" },
-              { title: "Compliance rules", description: "Verification triggers, freeze policies, and service SLAs.", href: "/ops/compliance-rules" }
+              { title: "Compliance rules", description: "Verification triggers, freeze policies, and service SLAs.", href: "/ops/compliance-rules" },
+              { title: "Content and pages", description: "Guide publishing and developer page management for the public site.", href: "/ops/content" }
             ]
           },
           {
@@ -56,6 +57,7 @@ export default function OpsAdminConsole() {
           { title: "Lead Rules", description: "Event-driven ownership, attribution and anti-circumvention governance.", href: "/ops/lead-rules", meta: "Lead" },
           { title: "Commission Rules", description: "Explicit commission policy management for payout traceability.", href: "/ops/commission-rules", meta: "Revenue" },
           { title: "Compliance Rules", description: "Case triggers, freeze policies and SLA governance.", href: "/ops/compliance-rules", meta: "Compliance" },
+          { title: "Content and Pages", description: "Manage guides and control which developer profiles are public.", href: "/ops/content", meta: "Content" },
           { title: "System Settings", description: `${configs.length} platform configuration records are available for governance.`, href: "/ops/settings", meta: "System" },
         ],
         summary: [

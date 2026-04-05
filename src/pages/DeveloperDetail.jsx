@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
 import { loadBuyerListings } from "@/lib/buyerListings";
-import { getDeveloperBySlug } from "@/lib/developerDirectory";
+import { getDeveloperProfileBySlug, hydrateDeveloperProfile } from "@/lib/developerProfiles";
 import { buildBreadcrumbJsonLd, truncateSeoDescription } from "@/lib/seo";
 
 function formatPrice(value) {
@@ -26,8 +26,16 @@ export default function DeveloperDetail() {
     queryFn: () => loadBuyerListings({ limit: 200, includeShowcase: true }),
     initialData: [],
   });
+  const { data: profile } = useQuery({
+    queryKey: ["developer-profile", slug],
+    queryFn: () => getDeveloperProfileBySlug(slug),
+    enabled: !!slug,
+    initialData: null,
+  });
 
-  const developer = getDeveloperBySlug(slug, approvedDevelopers, listings);
+  const developer = profile && profile.partnership_status === "partnered" && profile.page_status === "published"
+    ? hydrateDeveloperProfile(profile, approvedDevelopers, listings)
+    : null;
   const featuredListings = developer?.listings?.slice(0, 6) || [];
 
   return (
@@ -77,7 +85,7 @@ export default function DeveloperDetail() {
           <SectionHeading
             eyebrow="Developer profile"
             title={developer.name}
-            description={`${developer.listingCount} active opportunities, ${developer.offPlanCount} off-plan, ${developer.readyCount} ready, and ${developer.privateInventoryCount} private inventory options.`}
+            description={developer.summary || `${developer.listingCount} active opportunities, ${developer.offPlanCount} off-plan, ${developer.readyCount} ready, and ${developer.privateInventoryCount} private inventory options.`}
             action={
               <div className="flex gap-3">
                 <Button asChild className="rounded-full px-5">
@@ -96,6 +104,14 @@ export default function DeveloperDetail() {
             <Badge variant="outline">Ready {developer.readyCount}</Badge>
             {developer.officeNumber ? <Badge variant="outline">Office {developer.officeNumber}</Badge> : null}
           </div>
+
+          {developer.body ? (
+            <Card className="rounded-[1.8rem] border-white/10 bg-card/90">
+              <CardContent className="p-6">
+                <p className="text-sm leading-7 text-muted-foreground">{developer.body}</p>
+              </CardContent>
+            </Card>
+          ) : null}
 
           <div className="grid gap-4 md:grid-cols-4">
             <Card className="rounded-[1.6rem] border-white/10 bg-card/90">

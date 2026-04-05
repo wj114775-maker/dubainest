@@ -1,0 +1,83 @@
+{
+  "name": "DeveloperProfile",
+  "type": "object",
+  "properties": {
+    "developer_name": {
+      "type": "string"
+    },
+    "approved_developer_name": {
+      "type": "string"
+    },
+    "office_number": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "partnership_status": {
+      "type": "string",
+      "enum": [
+        "not_partnered",
+        "partnered",
+        "paused",
+        "archived"
+      ],
+      "default": "not_partnered"
+    },
+    "page_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "hidden"
+      ],
+      "default": "draft"
+    },
+    "show_on_homepage": {
+      "type": "boolean",
+      "default": false
+    },
+    "headline": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "body": {
+      "type": "string"
+    },
+    "hero_image_url": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "primary_city": {
+      "type": "string"
+    },
+    "featured_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "brand_color": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "developer_name",
+    "slug",
+    "partnership_status",
+    "page_status"
+  ]
+}
