@@ -12,13 +12,22 @@ import DeveloperProfileRegistryTableCard from "@/components/admin/DeveloperProfi
 import AdminProjectProfileFormCard from "@/components/admin/AdminProjectProfileFormCard";
 import ProjectProfileRegistryTableCard from "@/components/admin/ProjectProfileRegistryTableCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
 import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
 import { listDeveloperProfiles } from "@/lib/developerProfiles";
 import { listProjectProfiles } from "@/lib/projectProfiles";
+import {
+  buildDemoDeveloperProfileTemplate,
+  buildDemoProjectProfileTemplate,
+  DEMO_DEVELOPER_SLUG,
+  DEMO_PROJECT_SLUG,
+} from "@/lib/contentTemplates";
 
 export default function OpsContent() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [editingGuide, setEditingGuide] = useState(null);
   const [editingDeveloperProfile, setEditingDeveloperProfile] = useState(null);
   const [editingProjectProfile, setEditingProjectProfile] = useState(null);
@@ -83,10 +92,92 @@ export default function OpsContent() {
       queryClient.invalidateQueries({ queryKey: ["developer-project-profiles"] });
     }
   });
+  const starterDeveloper = developerProfiles.find((profile) => profile.slug === DEMO_DEVELOPER_SLUG) || null;
+  const starterProject = projectProfiles.find((profile) => profile.slug === DEMO_PROJECT_SLUG) || null;
+  const createStarterSet = useMutation({
+    mutationFn: async () => {
+      let developerRecord = starterDeveloper;
+      if (!developerRecord) {
+        developerRecord = await base44.entities.DeveloperProfile.create(
+          buildDemoDeveloperProfileTemplate(approvedDevelopers)
+        );
+      }
+
+      let projectRecord = starterProject;
+      if (!projectRecord) {
+        projectRecord = await base44.entities.ProjectProfile.create({
+          ...buildDemoProjectProfileTemplate(),
+          developer_profile_slug: developerRecord.slug || DEMO_DEVELOPER_SLUG,
+          developer_name: developerRecord.developer_name || "Meraas",
+        });
+      }
+
+      return { developerRecord, projectRecord };
+    },
+    onSuccess: ({ developerRecord, projectRecord }) => {
+      queryClient.invalidateQueries({ queryKey: ["ops-content-developer-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["ops-content-project-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["developer-profiles-public"] });
+      queryClient.invalidateQueries({ queryKey: ["developer-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["home-developer-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["project-profiles-public"] });
+      queryClient.invalidateQueries({ queryKey: ["project-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["home-project-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["projects-directory"] });
+      queryClient.invalidateQueries({ queryKey: ["developer-project-profiles"] });
+      setEditingDeveloperProfile(developerRecord);
+      setEditingProjectProfile(projectRecord);
+      toast({
+        title: "Starter set created",
+        description: "A partnered developer page and linked project page are ready to review in the editors.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Starter set failed",
+        description: "The demo developer/project records could not be created. Check that the new Base44 entities are published first.",
+        variant: "destructive",
+      });
+    }
+  });
 
   return (
     <div className="space-y-6">
       <SectionHeading eyebrow="Content OS" title="Public pages, developer profiles, and conversion content" description="Use this page manager to decide which developer pages can go live, which ones stay hidden, and what content appears on the public site." />
+      <AccessGuard permission="settings.manage">
+        <Card className="rounded-[2rem] border-white/10 bg-card/80">
+          <CardContent className="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-3xl space-y-2">
+              <p className="text-xs uppercase tracking-[0.28em] text-primary">Quick-start starter set</p>
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">Create one polished developer page and one linked project page</h2>
+              <p className="text-sm leading-6 text-muted-foreground">
+                This creates a governed Meraas developer profile and a linked City Walk Crestlane project page using the current sale-only demo stock. It is the fastest way to populate the enterprise developer → project → listing hierarchy after Base44 publish.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Status: developer {starterDeveloper ? "ready" : "not created"} · project {starterProject ? "ready" : "not created"}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={() => createStarterSet.mutate()}
+                disabled={createStarterSet.isPending || Boolean(starterDeveloper && starterProject)}
+              >
+                {starterDeveloper && starterProject ? "Starter set already created" : createStarterSet.isPending ? "Creating starter set..." : "Create starter set"}
+              </Button>
+              {starterDeveloper ? (
+                <Button variant="outline" onClick={() => setEditingDeveloperProfile(starterDeveloper)}>
+                  Open developer editor
+                </Button>
+              ) : null}
+              {starterProject ? (
+                <Button variant="outline" onClick={() => setEditingProjectProfile(starterProject)}>
+                  Open project editor
+                </Button>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
+      </AccessGuard>
       <Tabs defaultValue="developers" className="space-y-6">
         <TabsList className="h-auto rounded-[1.2rem] bg-card/80 p-1">
           <TabsTrigger value="developers" className="rounded-[1rem] px-4 py-2">Developer pages</TabsTrigger>
