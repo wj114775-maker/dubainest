@@ -10,6 +10,7 @@ import Properties from '@/pages/Properties';
 import Developers from '@/pages/Developers';
 import DeveloperDetail from '@/pages/DeveloperDetail';
 import Areas from '@/pages/Areas';
+import Projects from '@/pages/Projects';
 import Shortlist from '@/pages/Shortlist';
 import Compare from '@/pages/Compare';
 import Guides from '@/pages/Guides';
@@ -127,6 +128,7 @@ const AuthenticatedApp = () => {
       <Route path="/developers" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Developers /></AppFrame>} />
       <Route path="/developers/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><DeveloperDetail /></AppFrame>} />
       <Route path="/areas" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Areas /></AppFrame>} />
+      <Route path="/projects" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Projects /></AppFrame>} />
       <Route path="/shortlist" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Shortlist /></AppFrame>} />
       <Route path="/compare" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Compare /></AppFrame>} />
       <Route path="/guides" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Guides /></AppFrame>} />

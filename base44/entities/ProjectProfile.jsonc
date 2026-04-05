@@ -1,0 +1,124 @@
+{
+  "name": "ProjectProfile",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string"
+    },
+    "project_name": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "developer_profile_slug": {
+      "type": "string"
+    },
+    "developer_name": {
+      "type": "string"
+    },
+    "page_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "hidden"
+      ],
+      "default": "draft"
+    },
+    "show_on_homepage": {
+      "type": "boolean",
+      "default": false
+    },
+    "primary_city": {
+      "type": "string",
+      "default": "Dubai"
+    },
+    "area_name": {
+      "type": "string"
+    },
+    "project_status_override": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "launched",
+        "under_construction",
+        "completed"
+      ]
+    },
+    "handover_label_override": {
+      "type": "string"
+    },
+    "starting_price_override": {
+      "type": "number"
+    },
+    "headline": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "body": {
+      "type": "string"
+    },
+    "hero_image_url": {
+      "type": "string"
+    },
+    "gallery_image_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "brochure_url": {
+      "type": "string"
+    },
+    "floor_plan_url": {
+      "type": "string"
+    },
+    "payment_plan_summary": {
+      "type": "string"
+    },
+    "unit_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "bedroom_range": {
+      "type": "string"
+    },
+    "amenity_highlights": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "featured_listing_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "seo_title": {
+      "type": "string"
+    },
+    "seo_description": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "project_name",
+    "slug",
+    "page_status"
+  ]
+}

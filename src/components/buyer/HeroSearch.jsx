@@ -87,7 +87,7 @@ export default function HeroSearch({ appName, metrics }) {
           <div className="flex flex-wrap items-center justify-center gap-1.5 border-b border-slate-200 pb-3">
             <Badge className="rounded-full bg-slate-950 px-3.5 py-1.5 text-[11px] text-white hover:bg-slate-950">Properties</Badge>
             <Button asChild variant="ghost" className="rounded-full px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-950">
-              <Link to="/properties?completion=off_plan">New projects</Link>
+              <Link to="/projects">New projects</Link>
             </Button>
             <Button variant="ghost" className="rounded-full px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-950" onClick={() => setOpen(true)}>
               Private client

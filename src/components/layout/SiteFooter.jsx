@@ -8,6 +8,7 @@ const publicGroups = [
     links: [
       { label: "Home", path: "/" },
       { label: "Properties", path: "/properties" },
+      { label: "Projects", path: "/projects" },
       { label: "Developers", path: "/developers" },
       { label: "Areas", path: "/areas" },
       { label: "Guides", path: "/guides" },

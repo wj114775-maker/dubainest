@@ -19,6 +19,7 @@ export const navItems = {
   buyer: [
     { label: "Explore", path: "/" },
     { label: "Properties", path: "/properties" },
+    { label: "Projects", path: "/projects" },
     { label: "Developers", path: "/developers" },
     { label: "Guides", path: "/guides" },
     { label: "Account", path: "/account" }

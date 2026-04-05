@@ -2,15 +2,18 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { Building2, MapPin } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import ListingCard from "@/components/buyer/ListingCard";
+import ProjectSpotlightCard from "@/components/buyer/ProjectSpotlightCard";
 import SeoMeta from "@/components/seo/SeoMeta";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
 import { loadBuyerListings } from "@/lib/buyerListings";
-import { getDeveloperProfileBySlug, hydrateDeveloperProfile } from "@/lib/developerProfiles";
+import { getDeveloperProfileBySlug, hydrateDeveloperProfile, listDeveloperProfiles } from "@/lib/developerProfiles";
+import { buildManagedProjectDirectory, listProjectProfiles } from "@/lib/projectProfiles";
 import { buildBreadcrumbJsonLd, truncateSeoDescription } from "@/lib/seo";
 
 function formatPrice(value) {
@@ -32,11 +35,35 @@ export default function DeveloperDetail() {
     enabled: !!slug,
     initialData: null,
   });
+  const { data: developerProfiles = [] } = useQuery({
+    queryKey: ["developer-project-developer-profiles"],
+    queryFn: () => listDeveloperProfiles(),
+    initialData: [],
+  });
+  const { data: projectProfiles = [] } = useQuery({
+    queryKey: ["developer-project-profiles", slug],
+    queryFn: () => listProjectProfiles(),
+    initialData: [],
+  });
+  const { data: projects = [] } = useQuery({
+    queryKey: ["developer-project-records", slug],
+    queryFn: async () => {
+      try {
+        return await base44.entities.Project.list("-updated_date", 200);
+      } catch {
+        return [];
+      }
+    },
+    initialData: [],
+  });
 
   const developer = profile && profile.partnership_status === "partnered" && profile.page_status === "published"
     ? hydrateDeveloperProfile(profile, approvedDevelopers, listings)
     : null;
   const featuredListings = developer?.listings?.slice(0, 6) || [];
+  const relatedProjects = developer ? buildManagedProjectDirectory(projectProfiles, projects, listings, developerProfiles)
+    .filter((project) => project.developerSlug === developer.slug || project.developerName === developer.name || project.developerName === developer.officialName)
+    .slice(0, 6) : [];
 
   return (
     <div className="space-y-6 pb-28">
@@ -153,6 +180,22 @@ export default function DeveloperDetail() {
                     <MapPin className="h-4 w-4" />
                     {area}
                   </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {relatedProjects.length ? (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">Projects by {developer.name}</h2>
+                <Button asChild variant="outline" className="rounded-full px-5">
+                  <Link to="/projects">All projects</Link>
+                </Button>
+              </div>
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {relatedProjects.map((project) => (
+                  <ProjectSpotlightCard key={project.slug} project={project} />
                 ))}
               </div>
             </section>

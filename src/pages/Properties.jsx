@@ -232,6 +232,7 @@ export default function Properties() {
       const searchableText = [
         listing.title,
         listing.area_name,
+        listing.project_name,
         listing.description,
         listing.property_type,
         listing.developer_name,

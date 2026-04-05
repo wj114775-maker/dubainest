@@ -9,15 +9,19 @@ import AdminGuideFormCard from "@/components/admin/AdminGuideFormCard";
 import GuideRegistryTableCard from "@/components/admin/GuideRegistryTableCard";
 import AdminDeveloperProfileFormCard from "@/components/admin/AdminDeveloperProfileFormCard";
 import DeveloperProfileRegistryTableCard from "@/components/admin/DeveloperProfileRegistryTableCard";
+import AdminProjectProfileFormCard from "@/components/admin/AdminProjectProfileFormCard";
+import ProjectProfileRegistryTableCard from "@/components/admin/ProjectProfileRegistryTableCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
 import { listDeveloperProfiles } from "@/lib/developerProfiles";
+import { listProjectProfiles } from "@/lib/projectProfiles";
 
 export default function OpsContent() {
   const queryClient = useQueryClient();
   const [editingGuide, setEditingGuide] = useState(null);
   const [editingDeveloperProfile, setEditingDeveloperProfile] = useState(null);
+  const [editingProjectProfile, setEditingProjectProfile] = useState(null);
   const { data: approvedDevelopers = [] } = useApprovedDevelopers();
   const { data: guides = [] } = useQuery({
     queryKey: ["ops-content-guides"],
@@ -27,6 +31,22 @@ export default function OpsContent() {
   const { data: developerProfiles = [] } = useQuery({
     queryKey: ["ops-content-developer-profiles"],
     queryFn: () => listDeveloperProfiles(),
+    initialData: []
+  });
+  const { data: projectProfiles = [] } = useQuery({
+    queryKey: ["ops-content-project-profiles"],
+    queryFn: () => listProjectProfiles(),
+    initialData: []
+  });
+  const { data: projects = [] } = useQuery({
+    queryKey: ["ops-content-project-records"],
+    queryFn: async () => {
+      try {
+        return await base44.entities.Project.list("-updated_date", 200);
+      } catch {
+        return [];
+      }
+    },
     initialData: []
   });
 
@@ -49,6 +69,20 @@ export default function OpsContent() {
       queryClient.invalidateQueries({ queryKey: ["home-developer-profiles"] });
     }
   });
+  const saveProjectProfile = useMutation({
+    mutationFn: (form) => editingProjectProfile?.id
+      ? base44.entities.ProjectProfile.update(editingProjectProfile.id, form)
+      : base44.entities.ProjectProfile.create(form),
+    onSuccess: () => {
+      setEditingProjectProfile(null);
+      queryClient.invalidateQueries({ queryKey: ["ops-content-project-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["project-profiles-public"] });
+      queryClient.invalidateQueries({ queryKey: ["project-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["home-project-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["projects-directory"] });
+      queryClient.invalidateQueries({ queryKey: ["developer-project-profiles"] });
+    }
+  });
 
   return (
     <div className="space-y-6">
@@ -56,6 +90,7 @@ export default function OpsContent() {
       <Tabs defaultValue="developers" className="space-y-6">
         <TabsList className="h-auto rounded-[1.2rem] bg-card/80 p-1">
           <TabsTrigger value="developers" className="rounded-[1rem] px-4 py-2">Developer pages</TabsTrigger>
+          <TabsTrigger value="projects" className="rounded-[1rem] px-4 py-2">Project pages</TabsTrigger>
           <TabsTrigger value="guides" className="rounded-[1rem] px-4 py-2">Guides</TabsTrigger>
         </TabsList>
 
@@ -91,6 +126,45 @@ export default function OpsContent() {
                 approvedDevelopers={approvedDevelopers}
                 onSubmit={(form) => saveDeveloperProfile.mutate(form)}
                 onCancel={() => setEditingDeveloperProfile(null)}
+              />
+            </div>
+          </AccessGuard>
+        </TabsContent>
+
+        <TabsContent value="projects" className="space-y-6">
+          <AccessGuard permission="settings.read">
+            {projectProfiles.length ? (
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                {projectProfiles.slice(0, 4).map((profile) => (
+                  <Card key={profile.id} className="rounded-[2rem] border-white/10 bg-card/80">
+                    <CardContent className="space-y-3 p-5">
+                      <p className="text-xs uppercase tracking-[0.28em] text-primary">Project page</p>
+                      <h3 className="text-xl font-semibold tracking-tight">{profile.project_name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {String(profile.page_status || "draft").replace(/_/g, " ")}
+                        {profile.show_on_homepage ? " · homepage" : ""}
+                        {profile.developer_name ? ` · ${profile.developer_name}` : ""}
+                      </p>
+                      <div className="rounded-2xl bg-muted/70 p-4 text-sm text-muted-foreground line-clamp-4">
+                        {profile.summary || "No public summary added yet."}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <EmptyStateCard title="No project pages yet" description="Create governed project pages for launches, off-plan opportunities, and flagship supply you want to rank publicly." />
+            )}
+          </AccessGuard>
+          <AccessGuard permission="settings.manage">
+            <div className="grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
+              <ProjectProfileRegistryTableCard profiles={projectProfiles} onEdit={setEditingProjectProfile} />
+              <AdminProjectProfileFormCard
+                profile={editingProjectProfile}
+                projects={projects}
+                developerProfiles={developerProfiles}
+                onSubmit={(form) => saveProjectProfile.mutate(form)}
+                onCancel={() => setEditingProjectProfile(null)}
               />
             </div>
           </AccessGuard>

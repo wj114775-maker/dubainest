@@ -15,6 +15,7 @@ import HeroSearch from "@/components/buyer/HeroSearch";
 import SeoMeta from "@/components/seo/SeoMeta";
 import AreaSpotlightCard from "@/components/buyer/AreaSpotlightCard";
 import DeveloperSpotlightCard from "@/components/buyer/DeveloperSpotlightCard";
+import ProjectSpotlightCard from "@/components/buyer/ProjectSpotlightCard";
 import StickyInquiryBar from "@/components/buyer/StickyInquiryBar";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import SectionHeading from "@/components/common/SectionHeading";
@@ -25,6 +26,7 @@ import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
 import useAppConfig from "@/hooks/useAppConfig";
 import { loadBuyerListings } from "@/lib/buyerListings";
 import { buildManagedDeveloperDirectory, listDeveloperProfiles } from "@/lib/developerProfiles";
+import { buildManagedProjectDirectory, listProjectProfiles } from "@/lib/projectProfiles";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/lib/seo";
 
 const pathCards = [
@@ -38,7 +40,7 @@ const pathCards = [
   {
     title: "Off-Plan opportunities",
     description: "Jump directly into future-delivery stock with dedicated off-plan badging and filters.",
-    path: "/properties?completion=off_plan",
+    path: "/projects",
     action: "View off-plan",
     icon: Sparkles,
   },
@@ -89,6 +91,22 @@ export default function Home() {
     queryFn: () => listDeveloperProfiles(),
     initialData: [],
   });
+  const { data: projectProfiles = [] } = useQuery({
+    queryKey: ["home-project-profiles"],
+    queryFn: () => listProjectProfiles(),
+    initialData: [],
+  });
+  const { data: projectRecords = [] } = useQuery({
+    queryKey: ["home-project-records"],
+    queryFn: async () => {
+      try {
+        return await base44.entities.Project.list("-updated_date", 100);
+      } catch {
+        return [];
+      }
+    },
+    initialData: [],
+  });
   const { data: homeMetrics } = useQuery({
     queryKey: ["home-metrics"],
     queryFn: async () => {
@@ -129,6 +147,10 @@ export default function Home() {
   const featuredDevelopers = useMemo(
     () => buildManagedDeveloperDirectory(developerProfiles, approvedDevelopers, homeListings, { homepageOnly: true }).slice(0, 3),
     [approvedDevelopers, developerProfiles, homeListings]
+  );
+  const featuredProjects = useMemo(
+    () => buildManagedProjectDirectory(projectProfiles, projectRecords, homeListings, developerProfiles, { homepageOnly: true }).slice(0, 3),
+    [developerProfiles, homeListings, projectProfiles, projectRecords]
   );
 
   return (
@@ -219,6 +241,26 @@ export default function Home() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">No featured developer pages are live yet.</p>
+          )}
+        </section>
+
+        <section className="space-y-6">
+          <SectionHeading
+            eyebrow="Project launches"
+            title="Use project pages for launches, handover timing, and available stock context"
+            description="Project pages sit between developer trust and listing-level choice. They are the right place for launch context, payment-plan language, and linked unit discovery."
+            action={
+              <Button asChild variant="outline" className="rounded-full px-5">
+                <Link to="/projects">View all projects</Link>
+              </Button>
+            }
+          />
+          {featuredProjects.length ? (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {featuredProjects.map((project) => <ProjectSpotlightCard key={project.slug} project={project} />)}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No featured project pages are live yet.</p>
           )}
         </section>
 
