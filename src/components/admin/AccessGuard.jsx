@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 export default function AccessGuard({ permission, children, fallback = null }) {
   const { data, isLoading, isFetching } = useAccessControl();
 
-  if (isLoading || isFetching) {
+  if (isLoading || isFetching || !data) {
     return (
       <Card className="rounded-[2rem] border-white/10 bg-card/80">
         <CardContent className="p-6 text-sm text-muted-foreground">

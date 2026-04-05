@@ -101,7 +101,7 @@ const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
   const { data: current, isLoading: isLoadingRole } = useCurrentUserRole();
 
-  if (isLoadingPublicSettings || isLoadingAuth || isLoadingRole) {
+  if (isLoadingPublicSettings || isLoadingAuth || isLoadingRole || !current) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
@@ -115,8 +115,8 @@ const AuthenticatedApp = () => {
 
   const role = current?.role || 'buyer';
   const permissions = current?.permissions || [];
-  const isInternal = current?.isInternal || roleGroups.internal.includes(role) || permissions.length > 0;
-  const isPartner = roleGroups.partner.includes(role) || permissions.includes('listings.read') || permissions.includes('leads.read');
+  const isInternal = Boolean(current?.isInternal || current?.hasFullAccess || roleGroups.internal.includes(role));
+  const isPartner = Boolean(current?.isPartner || roleGroups.partner.includes(role));
   const headerInternalAccess = isInternal;
   const workspaceTarget = isInternal ? "/ops" : isPartner ? "/partner" : "/account";
 

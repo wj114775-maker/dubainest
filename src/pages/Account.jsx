@@ -11,15 +11,14 @@ import SectionHeading from "@/components/common/SectionHeading";
 import BuyerProfileCard from "@/components/account/BuyerProfileCard";
 import AdminShortcutsCard from "@/components/account/AdminShortcutsCard";
 import AdminDebugCard from "@/components/account/AdminDebugCard";
-import { roleGroups } from "@/lib/appShell";
 
 export default function Account() {
-  const { data } = useCurrentUserRole();
-  const isInternal = roleGroups.internal.includes(data.role) || (data.permissions || []).length > 0;
+  const { data, isLoading, isFetching } = useCurrentUserRole();
+  const isInternal = Boolean(data?.isInternal || data?.hasFullAccess);
   const loginTarget = typeof window !== "undefined" ? new URL("/workspace", window.location.origin).toString() : "/workspace";
   const { data: profile } = useQuery({
-    queryKey: ["buyer-profile", data.user?.id],
-    enabled: !!data.user?.id,
+    queryKey: ["buyer-profile", data?.user?.id],
+    enabled: !!data?.user?.id,
     queryFn: async () => {
       const profiles = await base44.entities.BuyerProfile.filter({ user_id: data.user.id });
       return profiles[0] || {
@@ -38,6 +37,17 @@ export default function Account() {
       golden_visa_interest: false
     }
   });
+
+  if (isLoading || isFetching || !data) {
+    return (
+      <div className="space-y-6 pb-28">
+        <SectionHeading eyebrow="Account" title="Checking your access" description="Loading your current sign-in state and workspace access." />
+        <Card className="rounded-[2rem] border-white/10 bg-card/80">
+          <CardContent className="p-6 text-sm text-muted-foreground">Checking your account session...</CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-28">
