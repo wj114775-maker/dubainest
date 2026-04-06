@@ -483,11 +483,17 @@ export default function Properties() {
                 </Select>
 
                 <div className="flex items-center justify-end gap-3">
-                  {hasActiveSearch ? (
-                    <Button variant="ghost" className="rounded-full px-4 text-sm" onClick={resetFilters}>
-                      Reset search
-                    </Button>
-                  ) : null}
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "min-w-[7.75rem] rounded-full px-4 text-sm transition-opacity",
+                      hasActiveSearch ? "text-foreground" : "text-slate-300 hover:bg-transparent hover:text-slate-300"
+                    )}
+                    onClick={resetFilters}
+                    disabled={!hasActiveSearch}
+                  >
+                    Reset search
+                  </Button>
                   {viewToggle}
                 </div>
               </div>
@@ -621,11 +627,17 @@ export default function Properties() {
 
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 pt-3">
                 <div className="flex items-center gap-3">
-                  {hasActiveSearch ? (
-                    <Button variant="ghost" className="rounded-full px-4 text-sm" onClick={resetFilters}>
-                      Reset search
-                    </Button>
-                  ) : null}
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "min-w-[7.75rem] rounded-full px-4 text-sm transition-opacity",
+                      hasActiveSearch ? "text-foreground" : "text-slate-300 hover:bg-transparent hover:text-slate-300"
+                    )}
+                    onClick={resetFilters}
+                    disabled={!hasActiveSearch}
+                  >
+                    Reset search
+                  </Button>
                   {viewToggle}
                 </div>
               </div>
@@ -704,7 +716,7 @@ export default function Properties() {
               </Card>
             </div>
           ) : (
-            <div className="hidden xl:block xl:sticky xl:top-4 xl:self-start">
+            <div className="hidden xl:block xl:sticky xl:top-[10.5rem] xl:self-start">
               <PropertyDirectorySidebar locations={trackedLocations} />
             </div>
           )}
