@@ -102,7 +102,7 @@ export default function SiteMap() {
         : showcaseListingSeoEntries.slice(0, 12)
       ),
     },
-  ].filter((group) => group.links.length)), [areas, developers, guides, projects]);
+  ].filter((group) => group.links.length)), [areas, developers, guides, listings, projects]);
 
   return (
     <div className="space-y-6 pb-28">

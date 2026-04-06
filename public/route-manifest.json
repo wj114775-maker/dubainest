@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-04-06T07:50:23.213Z",
+  "siteOrigin": "https://dubai-nest-home.base44.app",
+  "routes": [
+    "/",
+    "/areas",
+    "/areas/dubai-hills-estate",
+    "/areas/dubai-marina",
+    "/areas/palm-jumeirah",
+    "/developers",
+    "/golden-visa",
+    "/guides",
+    "/guides/dubai-golden-visa-property-buyers",
+    "/guides/how-to-judge-listing-trust",
+    "/guides/relocating-a-family-to-dubai",
+    "/projects",
+    "/properties",
+    "/properties/bluewaters-branded-off-plan-corner-apartment--demo-bluewaters-branded-apartment",
+    "/properties/business-bay-canal-loft-collection--demo-business-bay-canal-loft",
+    "/properties/city-walk-off-plan-terrace-penthouse--demo-city-walk-penthouse",
+    "/properties/downtown-sky-residence-with-burj-views--demo-downtown-sky-residence",
+    "/properties/dubai-creek-harbour-off-plan-investor-suite--demo-creek-harbour-investor-suite",
+    "/properties/dubai-hills-family-villa-near-the-park--demo-dubai-hills-family-home",
+    "/properties/emirates-hills-grand-estate--demo-emirates-hills-estate",
+    "/properties/jumeirah-golf-estates-manor-home--demo-jumeirah-golf-estates-manor",
+    "/properties/palm-jumeirah-beachfront-duplex--demo-palm-beachfront-duplex",
+    "/properties/waterfront-bulgari-bay-villa--demo-bulgari-bay-villa",
+    "/quiz",
+    "/sitemap"
+  ]
+}
