@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, Globe2, Instagram, Linkedin, Mail, MapPinned, MessageCircleMore, Youtube } from "lucide-react";
 import { defaultAppConfig } from "@/lib/appShell";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const utilityLinks = [
   { label: "About", path: "/about" },
@@ -42,10 +43,10 @@ const publicGroups = [
 ];
 
 const supportLanguages = [
-  { flag: "🇦🇪", label: "English" },
-  { flag: "🇸🇦", label: "Arabic" },
-  { flag: "🇷🇺", label: "Russian" },
-  { flag: "🇨🇳", label: "Mandarin" },
+  { value: "en-ae", flag: "🇦🇪", label: "English", detail: "United Arab Emirates" },
+  { value: "ar-sa", flag: "🇸🇦", label: "Arabic", detail: "Saudi Arabia" },
+  { value: "ru-ru", flag: "🇷🇺", label: "Russian", detail: "Russia" },
+  { value: "zh-cn", flag: "🇨🇳", label: "Mandarin", detail: "China" },
 ];
 
 const socialLinks = [
@@ -61,7 +62,7 @@ function ExternalLinkButton({ href, label, icon: Icon }) {
       target="_blank"
       rel="noreferrer"
       aria-label={label}
-      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 shadow-sm shadow-black/5 transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-white hover:text-slate-950"
     >
       <Icon className="h-4.5 w-4.5" />
     </a>
@@ -69,38 +70,72 @@ function ExternalLinkButton({ href, label, icon: Icon }) {
 }
 
 export default function SiteFooter({ appName }) {
+  const [language, setLanguage] = useState(supportLanguages[0].value);
   const whatsappUrl = `https://wa.me/${String(defaultAppConfig.whatsapp_number || "").replace(/[^\d]/g, "")}`;
+  const selectedLanguage = supportLanguages.find((item) => item.value === language) || supportLanguages[0];
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("dubaisphere-language");
+    if (saved && supportLanguages.some((item) => item.value === saved)) {
+      setLanguage(saved);
+    }
+  }, []);
+
+  const handleLanguageChange = (value) => {
+    setLanguage(value);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("dubaisphere-language", value);
+    }
+  };
 
   return (
     <footer className="mt-16">
       <div className="border-t border-slate-200 bg-slate-100/90">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:px-6 lg:grid-cols-[minmax(0,1.1fr)_auto_minmax(0,0.9fr)] lg:items-center">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Connect and continue</p>
-            <div className="flex flex-wrap items-center gap-3">
-              <ExternalLinkButton href={whatsappUrl} label="WhatsApp" icon={MessageCircleMore} />
-              <ExternalLinkButton href={`mailto:${defaultAppConfig.support_email}`} label="Email" icon={Mail} />
-              {socialLinks.map((item) => <ExternalLinkButton key={item.label} href={item.href} label={item.label} icon={item.icon} />)}
+        <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
+          <div className="grid gap-4 rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-sm shadow-black/5 lg:grid-cols-[minmax(0,1.15fr)_auto_minmax(18rem,0.9fr)] lg:items-center lg:p-5">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Connect and continue</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <ExternalLinkButton href={whatsappUrl} label="WhatsApp" icon={MessageCircleMore} />
+                <ExternalLinkButton href={`mailto:${defaultAppConfig.support_email}`} label="Email" icon={Mail} />
+                {socialLinks.map((item) => <ExternalLinkButton key={item.label} href={item.href} label={item.label} icon={item.icon} />)}
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
-            {utilityLinks.map((link) => (
-              <Link key={link.path} to={link.path} className="transition hover:text-slate-950">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          <div className="space-y-2 lg:justify-self-end">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Support languages</p>
-            <div className="flex flex-wrap gap-2">
-              {supportLanguages.map((item) => (
-                <span key={item.label} className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700">
-                  <span aria-hidden="true">{item.flag}</span>
-                  {item.label}
-                </span>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
+              {utilityLinks.map((link) => (
+                <Link key={link.path} to={link.path} className="transition hover:text-slate-950">
+                  {link.label}
+                </Link>
               ))}
+            </div>
+
+            <div className="space-y-2 lg:justify-self-end">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Language selection</p>
+              <Select value={language} onValueChange={handleLanguageChange}>
+                <SelectTrigger className="h-11 min-w-[16rem] rounded-[1rem] border-slate-300 bg-white px-4 text-sm shadow-none">
+                  <SelectValue>
+                    <span className="inline-flex items-center gap-2 text-slate-800">
+                      <span aria-hidden="true">{selectedLanguage.flag}</span>
+                      <span>{selectedLanguage.label}</span>
+                    </span>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="rounded-[1rem] border-slate-200">
+                  {supportLanguages.map((item) => (
+                    <SelectItem key={item.value} value={item.value} className="rounded-[0.8rem] px-3 py-2">
+                      <span className="inline-flex items-center gap-3">
+                        <span aria-hidden="true">{item.flag}</span>
+                        <span className="flex flex-col">
+                          <span className="font-medium text-slate-900">{item.label}</span>
+                          <span className="text-xs text-slate-500">{item.detail}</span>
+                        </span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
