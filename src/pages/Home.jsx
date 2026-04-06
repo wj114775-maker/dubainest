@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import HeroSearch from "@/components/buyer/HeroSearch";
+import PopularSearchHub from "@/components/buyer/PopularSearchHub";
 import SeoMeta from "@/components/seo/SeoMeta";
 import AreaSpotlightCard from "@/components/buyer/AreaSpotlightCard";
 import DeveloperSpotlightCard from "@/components/buyer/DeveloperSpotlightCard";
@@ -457,6 +458,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <PopularSearchHub />
 
         <StickyInquiryBar />
       </div>
