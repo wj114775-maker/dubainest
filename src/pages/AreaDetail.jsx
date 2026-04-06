@@ -37,7 +37,7 @@ export default function AreaDetail() {
       ])}
     />
     <div className="space-y-6 pb-28">
-      <SectionHeading eyebrow="Area intelligence" title={area?.name || slug?.replace(/-/g, " ") || "Dubai area"} description={area?.description || `City: ${area?.city || 'Dubai'}`} action={<Button onClick={() => setOpen(true)}>Request area consultation</Button>} />
+      <SectionHeading eyebrow="Area intelligence" title={area?.name || slug?.replace(/-/g, " ") || "Dubai area"} description={area?.description || `City: ${area?.city || 'Dubai'}`} titleAs="h1" action={<Button onClick={() => setOpen(true)}>Request area consultation</Button>} />
       <div className="flex flex-wrap gap-2">
         <Badge variant="outline">City {area?.city || 'Dubai'}</Badge>
         {area?.lifestyle_tag ? <Badge variant="outline">{area.lifestyle_tag}</Badge> : null}

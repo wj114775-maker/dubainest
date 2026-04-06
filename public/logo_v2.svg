@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">DubaiSphere logo</title>
+  <desc id="desc">DubaiSphere monogram with a geometric gold skyline on a navy background.</desc>
+  <rect width="512" height="512" rx="108" fill="#0b1220"/>
+  <path d="M120 356V176h40v180zm76 0V132h40v224zm76 0V208h40v148zm76 0V156h40v200z" fill="#d8b067"/>
+  <path d="M96 388h320" stroke="#f8f5ef" stroke-width="20" stroke-linecap="round"/>
+  <path d="M256 94 292 132h-72z" fill="#f8f5ef"/>
+</svg>

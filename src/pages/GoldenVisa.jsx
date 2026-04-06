@@ -49,7 +49,7 @@ export default function GoldenVisa() {
           { name: "Golden Visa", path: "/golden-visa" },
         ])}
       />
-      <SectionHeading eyebrow="Golden Visa" title="Eligibility workflow for property-led residency" description="A premium flow to qualify, route and open concierge support only when the buyer chooses to proceed." action={<Button onClick={() => setOpen(true)}>Start assessment</Button>} />
+      <SectionHeading eyebrow="Golden Visa" title="Eligibility workflow for property-led residency" description="A premium flow to qualify, route and open concierge support only when the buyer chooses to proceed." titleAs="h1" action={<Button onClick={() => setOpen(true)}>Start assessment</Button>} />
       <div className="grid gap-4 md:grid-cols-4">
         <MetricCard label="Qualification path" value={data.qualificationPath} />
         <MetricCard label="Workflow stage" value={data.workflowStage} />

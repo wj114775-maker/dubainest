@@ -42,6 +42,7 @@ export default function Developers() {
         eyebrow="Developers"
         title="Explore developers behind active Dubai sale opportunities"
         description="Only partnered and published developer profiles appear here. Search filters can remain broader, but public brand pages stay under your control."
+        titleAs="h1"
         action={
           <Button asChild className="rounded-full px-5">
             <Link to="/properties">Open property directory</Link>

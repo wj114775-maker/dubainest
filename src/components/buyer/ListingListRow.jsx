@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { buildListingPath } from "@/lib/buyerListings";
 
 function CompactMetric({ value, icon: Icon, label }) {
   return (
@@ -27,7 +28,7 @@ function CompactMetric({ value, icon: Icon, label }) {
 function buildWhatsAppUrl(phone, listing) {
   const number = String(phone || "").replace(/[^\d]/g, "");
   if (!number) {
-    return `/listing/${listing.id}`;
+    return buildListingPath(listing);
   }
 
   const message = `Hi, I'm interested in ${listing.title}${listing.area_name ? ` in ${listing.area_name}` : ""}.`;
@@ -55,8 +56,9 @@ export default function ListingListRow({ listing, whatsappNumber }) {
     : "bg-emerald-700 text-white hover:bg-emerald-700";
   const propertyType = listing.property_type || "Property";
   const whatsappUrl = buildWhatsAppUrl(whatsappNumber, listing);
+  const listingPath = buildListingPath(listing);
 
-  const openListing = () => navigate(`/listing/${listing.id}`);
+  const openListing = () => navigate(listingPath);
 
   const handleKeyDown = (event) => {
     if (event.key === "Enter" || event.key === " ") {

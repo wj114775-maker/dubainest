@@ -24,7 +24,7 @@ import MetricCard from "@/components/common/MetricCard";
 import SeoMeta from "@/components/seo/SeoMeta";
 import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
 import ListingCard from "@/components/buyer/ListingCard";
-import { isShowcaseListing, loadBuyerListingById, loadBuyerListings } from "@/lib/buyerListings";
+import { buildListingPath, extractListingId, isShowcaseListing, loadBuyerListingById, loadBuyerListings } from "@/lib/buyerListings";
 import { buildBreadcrumbJsonLd, truncateSeoDescription } from "@/lib/seo";
 import { findMatchingDeveloperProfile, listDeveloperProfiles } from "@/lib/developerProfiles";
 import { findProjectProfileForListing, hydrateProjectProfile, listProjectProfiles } from "@/lib/projectProfiles";
@@ -51,20 +51,21 @@ function buildWhatsAppUrl(phone, listing) {
 }
 
 export default function ListingDetail() {
-  const { id } = useParams();
+  const { id, listingSlugId } = useParams();
+  const listingId = extractListingId(listingSlugId || id);
   const [intentType, setIntentType] = useState("request_callback");
   const [open, setOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const { data: appConfig } = useAppConfig();
 
   const { data: listing, isLoading } = useQuery({
-    queryKey: ["listing", id],
-    queryFn: async () => loadBuyerListingById(id),
-    enabled: !!id,
+    queryKey: ["listing", listingId],
+    queryFn: async () => loadBuyerListingById(listingId),
+    enabled: !!listingId,
     initialData: null,
   });
   const { data: listings = [] } = useQuery({
-    queryKey: ["listing-related-listings", id],
+    queryKey: ["listing-related-listings", listingId],
     queryFn: () => loadBuyerListings({ limit: 200, includeShowcase: true }),
     initialData: [],
   });
@@ -122,10 +123,10 @@ export default function ListingDetail() {
   if (!listing) {
     return (
       <>
-        <SeoMeta
+      <SeoMeta
           title="Listing Not Found"
           description="The requested property listing could not be found."
-          canonicalPath={`/listing/${id}`}
+          canonicalPath={listingId ? `/properties/property--${listingId}` : "/properties"}
           robots="noindex,nofollow"
         />
         <div className="pb-28 text-sm text-muted-foreground">Listing not found.</div>
@@ -133,18 +134,20 @@ export default function ListingDetail() {
     );
   }
 
+  const listingPath = buildListingPath(listing);
+
   return (
     <>
       <SeoMeta
         title={`${listing.title} in ${listing.area_name || "Dubai"}`}
         description={seoDescription}
-        canonicalPath={`/listing/${id}`}
+        canonicalPath={listingPath}
         image={galleryImages[0] || listing.hero_image_url}
         jsonLd={buildBreadcrumbJsonLd([
           { name: "Home", path: "/" },
           { name: "Properties", path: "/properties" },
           ...(hydratedProject?.slug ? [{ name: hydratedProject.name, path: `/projects/${hydratedProject.slug}` }] : []),
-          { name: listing.title, path: `/listing/${id}` },
+          { name: listing.title, path: listingPath },
         ])}
       />
 

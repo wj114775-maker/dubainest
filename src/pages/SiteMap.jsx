@@ -1,13 +1,19 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import SeoMeta from "@/components/seo/SeoMeta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildBreadcrumbJsonLd } from "@/lib/seo";
+import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
+import { loadBuyerListings } from "@/lib/buyerListings";
+import { buildManagedDeveloperDirectory, listDeveloperProfiles } from "@/lib/developerProfiles";
+import { buildManagedProjectDirectory, listProjectProfiles } from "@/lib/projectProfiles";
 
-const groups = [
+const staticGroups = [
   {
-    title: "Public pages",
+    title: "Core pages",
     links: [
       { label: "Home", path: "/" },
       { label: "Properties", path: "/properties" },
@@ -17,14 +23,79 @@ const groups = [
       { label: "Guides", path: "/guides" },
       { label: "Golden Visa", path: "/golden-visa" },
       { label: "Buyer Qualification", path: "/quiz" },
-      { label: "Shortlist", path: "/shortlist" },
-      { label: "Compare", path: "/compare" },
       { label: "Site map", path: "/sitemap" },
     ],
   },
 ];
 
 export default function SiteMap() {
+  const { data: approvedDevelopers = [] } = useApprovedDevelopers();
+  const { data: guides = [] } = useQuery({
+    queryKey: ["sitemap-guides"],
+    queryFn: () => base44.entities.Guide.filter({ status: "published" }, "-updated_date", 24),
+    initialData: [],
+  });
+  const { data: areas = [] } = useQuery({
+    queryKey: ["sitemap-areas"],
+    queryFn: () => base44.entities.Area.list("-updated_date", 24),
+    initialData: [],
+  });
+  const { data: listings = [] } = useQuery({
+    queryKey: ["sitemap-listings"],
+    queryFn: () => loadBuyerListings({ limit: 60, includeShowcase: false }),
+    initialData: [],
+  });
+  const { data: developerProfiles = [] } = useQuery({
+    queryKey: ["sitemap-developer-profiles"],
+    queryFn: () => listDeveloperProfiles(),
+    initialData: [],
+  });
+  const { data: projectProfiles = [] } = useQuery({
+    queryKey: ["sitemap-project-profiles"],
+    queryFn: () => listProjectProfiles(),
+    initialData: [],
+  });
+  const { data: projectRecords = [] } = useQuery({
+    queryKey: ["sitemap-project-records"],
+    queryFn: async () => {
+      try {
+        return await base44.entities.Project.list("-updated_date", 100);
+      } catch {
+        return [];
+      }
+    },
+    initialData: [],
+  });
+
+  const developers = useMemo(
+    () => buildManagedDeveloperDirectory(developerProfiles, approvedDevelopers, listings).slice(0, 18),
+    [approvedDevelopers, developerProfiles, listings]
+  );
+  const projects = useMemo(
+    () => buildManagedProjectDirectory(projectProfiles, projectRecords, listings, developerProfiles).slice(0, 18),
+    [developerProfiles, listings, projectProfiles, projectRecords]
+  );
+
+  const groups = useMemo(() => ([
+    ...staticGroups,
+    {
+      title: "Published guides",
+      links: guides.map((guide) => ({ label: guide.title, path: `/guides/${guide.slug}` })),
+    },
+    {
+      title: "Area guides",
+      links: areas.map((area) => ({ label: area.name, path: `/areas/${area.slug}` })),
+    },
+    {
+      title: "Developers",
+      links: developers.map((developer) => ({ label: developer.name, path: `/developers/${developer.slug}` })),
+    },
+    {
+      title: "Projects",
+      links: projects.map((project) => ({ label: project.name, path: `/projects/${project.slug}` })),
+    },
+  ].filter((group) => group.links.length)), [areas, developers, guides, projects]);
+
   return (
     <div className="space-y-6 pb-28">
       <SeoMeta
@@ -40,6 +111,7 @@ export default function SiteMap() {
         eyebrow="Site map"
         title="A clearer index of the public website"
         description="Use this page as a simple route directory for the public-facing property search experience."
+        titleAs="h1"
       />
 
       <div className="grid gap-5 md:grid-cols-2">

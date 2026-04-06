@@ -171,6 +171,7 @@ export default function ProjectDetail() {
               eyebrow="Project overview"
               title={project.name}
               description={project.summary || `Status: ${formatProjectStatus(project.status)} · Handover ${project.handoverLabel}`}
+              titleAs="h1"
               action={(
                 <div className="flex gap-3">
                   {project.developerSlug ? (

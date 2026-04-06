@@ -357,6 +357,7 @@ export default function Properties() {
           eyebrow="Property purchase"
           title="Properties for sale in Dubai"
           description="Browse apartments, villas, penthouses, and off-plan opportunities with a cleaner buyer-first list view."
+          titleAs="h1"
           action={<Button className="rounded-full px-5" onClick={() => setOpenIntent(true)}>Request curated shortlist</Button>}
         />
 

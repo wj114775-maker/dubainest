@@ -19,7 +19,7 @@ export default function Guides() {
           { name: "Guides", path: "/guides" },
         ])}
       />
-      <SectionHeading eyebrow="Guides" title="Dubai property guides for buyers and investors" description="Area insight, buying guidance, and relocation support to help clients move forward with more clarity." />
+      <SectionHeading eyebrow="Guides" title="Dubai property guides for buyers and investors" description="Area insight, buying guidance, and relocation support to help clients move forward with more clarity." titleAs="h1" />
       {guides.length ? <div className="grid gap-5 md:grid-cols-3">{guides.map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div> : <p className="text-sm text-muted-foreground">No published guides yet.</p>}
     </div>
   );

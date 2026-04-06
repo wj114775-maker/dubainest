@@ -46,7 +46,7 @@ export default function BuyerQuiz() {
       ])}
     />
     <div className="space-y-6 pb-28">
-      <SectionHeading eyebrow="Qualification" title="Investor, mover or private buyer?" description="This intake captures buying intent and routes the lead into the protected workflow without forcing early registration." action={<Button onClick={() => setOpen(true)}>Start qualified request</Button>} />
+      <SectionHeading eyebrow="Qualification" title="Investor, mover or private buyer?" description="This intake captures buying intent and routes the lead into the protected workflow without forcing early registration." titleAs="h1" action={<Button onClick={() => setOpen(true)}>Start qualified request</Button>} />
       <Card className="rounded-[2rem] border-white/10 bg-card/80">
         <CardContent className="p-6">
           <div className="space-y-3 text-sm text-muted-foreground">

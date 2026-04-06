@@ -59,6 +59,7 @@ export default function Projects() {
         eyebrow="Projects"
         title="Explore governed project pages before drilling into individual listings"
         description="Project pages carry launch context, handover timing, payment-plan positioning, and linked live inventory without exposing projects you do not actively manage."
+        titleAs="h1"
         action={(
           <Button asChild className="rounded-full px-5">
             <Link to="/properties?completion=off_plan">Open off-plan listings</Link>

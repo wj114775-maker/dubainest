@@ -357,6 +357,14 @@ const demoGalleryImages = {
 
 const demoListingsById = Object.fromEntries(demoListings.map((listing) => [listing.id, listing]));
 
+function slugify(value) {
+  return String(value || "property")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    || "property";
+}
+
 function isSaleOnlyListing(listing) {
   if (!listing) return false;
   return String(listing.listing_type || "sale").toLowerCase() !== "rent";
@@ -450,4 +458,16 @@ export function getShowcaseListings(limit = demoListings.length) {
 
 export function isShowcaseListing(listing) {
   return Boolean(listing?.is_demo);
+}
+
+export function buildListingPath(listing) {
+  const slug = slugify(listing?.title || listing?.property_type || "property");
+  return `/properties/${slug}--${listing?.id || ""}`;
+}
+
+export function extractListingId(slugOrId = "") {
+  const raw = String(slugOrId || "");
+  if (!raw) return "";
+  const separatorIndex = raw.lastIndexOf("--");
+  return separatorIndex >= 0 ? raw.slice(separatorIndex + 2) : raw;
 }

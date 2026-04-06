@@ -14,6 +14,7 @@ import Projects from '@/pages/Projects';
 import Shortlist from '@/pages/Shortlist';
 import Compare from '@/pages/Compare';
 import Guides from '@/pages/Guides';
+import GuideDetail from '@/pages/GuideDetail';
 import Account from '@/pages/Account';
 import ListingDetail from '@/pages/ListingDetail';
 import AreaDetail from '@/pages/AreaDetail';
@@ -134,11 +135,13 @@ const AuthenticatedApp = () => {
       <Route path="/shortlist" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Shortlist /></AppFrame>} />
       <Route path="/compare" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Compare /></AppFrame>} />
       <Route path="/guides" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Guides /></AppFrame>} />
+      <Route path="/guides/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><GuideDetail /></AppFrame>} />
       <Route path="/account" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Account /></AppFrame>} />
       <Route path="/notifications" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Notifications /></AppFrame>} />
       <Route path="/sitemap" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><SiteMap /></AppFrame>} />
       <Route path="/workspace" element={<Navigate to={workspaceTarget} replace />} />
       <Route path="/listing/:id" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><ListingDetail /></AppFrame>} />
+      <Route path="/properties/:listingSlugId" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><ListingDetail /></AppFrame>} />
       <Route path="/areas/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><AreaDetail /></AppFrame>} />
       <Route path="/projects/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><ProjectDetail /></AppFrame>} />
       <Route path="/quiz" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><BuyerQuiz /></AppFrame>} />

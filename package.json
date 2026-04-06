@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "npm run seo:generate-sitemap",
     "build": "vite build",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview",
+    "seo:generate-sitemap": "node scripts/generate_sitemap.mjs",
     "sync:developers": "python scripts/sync_approved_developers.py",
     "verify:phase3": "npm run lint && npm run typecheck && npm run build",
     "verify:phase4": "npm run lint && npm run typecheck && npm run build",

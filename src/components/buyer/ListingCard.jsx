@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { BedDouble, Building2, Heart, MapPin, Scale } from "lucide-react";
 import { useToast } from '@/components/ui/use-toast';
 import { saveListingToShortlist, saveListingToCompare } from '@/components/leads/buyerLeadActions';
-import { isShowcaseListing } from "@/lib/buyerListings";
+import { buildListingPath, isShowcaseListing } from "@/lib/buyerListings";
 
 export default function ListingCard({ listing }) {
   const { toast } = useToast();
   const showcase = isShowcaseListing(listing);
+  const listingPath = buildListingPath(listing);
 
   return (
     <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-card/80 shadow-xl shadow-black/5">
@@ -65,7 +66,7 @@ export default function ListingCard({ listing }) {
           >
             <Scale className="mr-2 h-4 w-4" /> Compare
           </Button>
-          <Button asChild className="rounded-2xl"><Link to={`/listing/${listing.id}`}>View</Link></Button>
+          <Button asChild className="rounded-2xl"><Link to={listingPath}>View</Link></Button>
         </div>
       </CardContent>
     </Card>

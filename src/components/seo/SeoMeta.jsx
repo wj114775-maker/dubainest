@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { buildCanonicalUrl, getSiteName } from "@/lib/seo";
+import { buildCanonicalUrl, getDefaultSocialImage, getEffectiveRobots, getSiteName } from "@/lib/seo";
 
 function upsertMeta(attributeName, attributeValue, content) {
   if (typeof document === "undefined") return;
@@ -62,23 +62,25 @@ export default function SeoMeta({
     const siteName = getSiteName();
     const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
     const canonicalUrl = buildCanonicalUrl(canonicalPath);
+    const effectiveRobots = getEffectiveRobots(robots);
+    const resolvedImage = image || getDefaultSocialImage();
 
     document.title = fullTitle;
     upsertMeta("name", "description", description);
-    upsertMeta("name", "robots", robots);
+    upsertMeta("name", "robots", effectiveRobots);
     upsertMeta("property", "og:title", fullTitle);
     upsertMeta("property", "og:description", description);
     upsertMeta("property", "og:type", type);
     upsertMeta("property", "og:site_name", siteName);
     upsertMeta("property", "og:url", canonicalUrl);
-    upsertMeta("name", "twitter:card", image ? "summary_large_image" : "summary");
+    upsertMeta("name", "twitter:card", resolvedImage ? "summary_large_image" : "summary");
     upsertMeta("name", "twitter:title", fullTitle);
     upsertMeta("name", "twitter:description", description);
     upsertLink("canonical", canonicalUrl);
 
-    if (image) {
-      upsertMeta("property", "og:image", image);
-      upsertMeta("name", "twitter:image", image);
+    if (resolvedImage) {
+      upsertMeta("property", "og:image", resolvedImage);
+      upsertMeta("name", "twitter:image", resolvedImage);
     } else {
       removeMeta("property", "og:image");
       removeMeta("name", "twitter:image");

@@ -27,7 +27,7 @@ import useAppConfig from "@/hooks/useAppConfig";
 import { loadBuyerListings } from "@/lib/buyerListings";
 import { buildManagedDeveloperDirectory, listDeveloperProfiles } from "@/lib/developerProfiles";
 import { buildManagedProjectDirectory, listProjectProfiles } from "@/lib/projectProfiles";
-import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/lib/seo";
+import { buildOrganizationJsonLd, buildRealEstateAgentJsonLd, buildWebsiteJsonLd } from "@/lib/seo";
 
 const pathCards = [
   {
@@ -159,7 +159,7 @@ export default function Home() {
         title="Dubai Properties for Sale, Off-Plan and Private Inventory"
         description="Search Dubai properties for sale, compare off-plan opportunities, and request curated private inventory through one buyer-focused journey."
         canonicalPath="/"
-        jsonLd={[buildOrganizationJsonLd(), buildWebsiteJsonLd()]}
+        jsonLd={[buildOrganizationJsonLd(), buildRealEstateAgentJsonLd(), buildWebsiteJsonLd()]}
       />
       <div className="space-y-10 pb-32">
         <HeroSearch appName={appConfig.app_name} metrics={homeMetrics} />

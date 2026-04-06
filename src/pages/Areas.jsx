@@ -30,6 +30,7 @@ export default function Areas() {
         eyebrow="Areas"
         title="Explore Dubai areas before you choose stock"
         description="Area pages help buyers narrow by neighbourhood, lifestyle fit, and market positioning before they commit to listings."
+        titleAs="h1"
         action={
           <Button asChild className="rounded-full px-5">
             <Link to="/properties">Open property directory</Link>

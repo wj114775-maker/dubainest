@@ -90,6 +90,7 @@ export default function DeveloperDetail() {
             eyebrow="Developers"
             title="Developer profile not found"
             description="This developer page is not available yet."
+            titleAs="h1"
           />
           <Button asChild className="rounded-full px-5">
             <Link to="/developers">Back to developers</Link>
@@ -113,6 +114,7 @@ export default function DeveloperDetail() {
             eyebrow="Developer profile"
             title={developer.name}
             description={developer.summary || `${developer.listingCount} active opportunities, ${developer.offPlanCount} off-plan, ${developer.readyCount} ready, and ${developer.privateInventoryCount} private inventory options.`}
+            titleAs="h1"
             action={
               <div className="flex gap-3">
                 <Button asChild className="rounded-full px-5">
