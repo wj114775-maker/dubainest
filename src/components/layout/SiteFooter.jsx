@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Building2, Instagram, Linkedin, Mail, MapPinned, MessageCircleMore, Youtube } from "lucide-react";
-import { defaultAppConfig } from "@/lib/appShell";
+import { ArrowRight, Building2, Instagram, Linkedin, MapPinned, Youtube } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const publicGroups = [
@@ -65,7 +64,6 @@ function ExternalLinkButton({ href, label, icon: Icon }) {
 
 export default function SiteFooter({ appName }) {
   const [language, setLanguage] = useState(supportLanguages[0].value);
-  const whatsappUrl = `https://wa.me/${String(defaultAppConfig.whatsapp_number || "").replace(/[^\d]/g, "")}`;
   const selectedLanguage = supportLanguages.find((item) => item.value === language) || supportLanguages[0];
 
   useEffect(() => {
@@ -86,70 +84,54 @@ export default function SiteFooter({ appName }) {
   return (
     <footer className="mt-16">
       <div className="border-t border-slate-200 bg-slate-100/90">
-        <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
-          <div className="grid gap-5 rounded-[1.9rem] border border-slate-200 bg-white p-5 shadow-sm shadow-black/5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.95fr)] lg:items-center lg:p-6">
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Stay connected</p>
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-950">Talk to DubaiSphere or keep following the market.</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
-                  Fast buyer support on WhatsApp, direct business contact by email, and a cleaner public brand presence across the channels that matter.
-                </p>
-              </div>
+        <div className="mx-auto max-w-7xl px-4 py-5 md:px-6">
+          <div className="grid gap-4 rounded-[1.6rem] border border-slate-200 bg-white px-4 py-4 shadow-sm shadow-black/5 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center lg:px-5">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">DubaiSphere</p>
+              <p className="text-sm text-slate-600">
+                Sale-only property search, project discovery, and guided buyer support.
+              </p>
             </div>
 
-            <div className="flex flex-col gap-4 lg:items-end">
-              <div className="flex flex-wrap justify-start gap-3 lg:justify-end">
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800"
-                >
-                  <MessageCircleMore className="h-4 w-4" />
-                  WhatsApp
-                </a>
-                <a
-                  href={`mailto:${defaultAppConfig.support_email}`}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 transition hover:border-slate-400 hover:text-slate-950"
-                >
-                  <Mail className="h-4 w-4" />
-                  Email us
-                </a>
-              </div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              {socialLinks.map((item) => <ExternalLinkButton key={item.label} href={item.href} label={item.label} icon={item.icon} />)}
+            </div>
 
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center lg:justify-end">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {socialLinks.map((item) => <ExternalLinkButton key={item.label} href={item.href} label={item.label} icon={item.icon} />)}
-                </div>
-
-                <div className="space-y-2 lg:min-w-[17rem]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Language</p>
-                  <Select value={language} onValueChange={handleLanguageChange}>
-                    <SelectTrigger className="h-11 rounded-[1rem] border-slate-300 bg-white px-4 text-sm shadow-none">
-                      <SelectValue>
-                        <span className="inline-flex items-center gap-2 text-slate-800">
-                          <span aria-hidden="true">{selectedLanguage.flag}</span>
-                          <span>{selectedLanguage.label}</span>
-                        </span>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="rounded-[1rem] border-slate-200">
-                      {supportLanguages.map((item) => (
-                        <SelectItem key={item.value} value={item.value} className="rounded-[0.8rem] px-3 py-2">
-                          <span className="inline-flex items-center gap-3">
-                            <span aria-hidden="true">{item.flag}</span>
-                            <span className="flex flex-col">
-                              <span className="font-medium text-slate-900">{item.label}</span>
-                              <span className="text-xs text-slate-500">{item.detail}</span>
-                            </span>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-self-end">
+              <div className="space-y-2 sm:min-w-[15rem]">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Language</p>
+                <Select value={language} onValueChange={handleLanguageChange}>
+                  <SelectTrigger className="h-11 rounded-[1rem] border-slate-300 bg-white px-4 text-sm shadow-none">
+                    <SelectValue>
+                      <span className="inline-flex items-center gap-2 text-slate-800">
+                        <span aria-hidden="true">{selectedLanguage.flag}</span>
+                        <span>{selectedLanguage.label}</span>
+                      </span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-[1rem] border-slate-200">
+                    {supportLanguages.map((item) => (
+                      <SelectItem key={item.value} value={item.value} className="rounded-[0.8rem] px-3 py-2">
+                        <span className="inline-flex items-center gap-3">
+                          <span aria-hidden="true">{item.flag}</span>
+                          <span className="flex flex-col">
+                            <span className="font-medium text-slate-900">{item.label}</span>
+                            <span className="text-xs text-slate-500">{item.detail}</span>
                           </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              <Link
+                to="/contact"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-medium text-white transition hover:bg-slate-800"
+              >
+                Contact us
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
         </div>
@@ -177,10 +159,7 @@ export default function SiteFooter({ appName }) {
                 <MapPinned className="h-4 w-4 text-slate-500" />
                 Dubai, United Arab Emirates
               </span>
-              <a href={`mailto:${defaultAppConfig.support_email}`} className="inline-flex items-center gap-2 transition hover:text-white">
-                <Mail className="h-4 w-4 text-slate-500" />
-                {defaultAppConfig.support_email}
-              </a>
+              <span>Contact form and guided enquiry only</span>
             </div>
           </div>
 
