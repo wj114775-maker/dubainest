@@ -72,7 +72,7 @@ export default function DeveloperPicker({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("justify-between rounded-[1rem] border-slate-200 bg-white text-left font-normal", triggerClassName)}
+          className={cn("h-11 w-full justify-between rounded-[1rem] border-slate-200 bg-white px-4 text-left font-normal shadow-none", triggerClassName)}
         >
           <span className="truncate">
             {selectedDeveloper ? selectedDeveloper.displayName : placeholder}
@@ -80,7 +80,7 @@ export default function DeveloperPicker({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-[360px] rounded-[1.4rem] border-slate-200 p-0 shadow-xl", contentClassName)} align="start">
+      <PopoverContent className={cn("w-[min(24rem,calc(100vw-2rem))] min-w-[18rem] rounded-[1.4rem] border-slate-200 p-0 shadow-xl sm:w-[22rem]", contentClassName)} align="start">
         <Command shouldFilter={false} className={className}>
           <CommandInput
             value={search}

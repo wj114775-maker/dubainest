@@ -71,12 +71,12 @@ export default function PropertyTypePicker({
       }}
     >
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" className={cn("justify-between rounded-[1rem] border-slate-200 bg-white text-left font-normal", triggerClassName)}>
+        <Button type="button" variant="outline" className={cn("h-11 w-full justify-between rounded-[1rem] border-slate-200 bg-white px-4 text-left font-normal shadow-none", triggerClassName)}>
           <span className="truncate">{triggerLabel}</span>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className={cn("w-[27rem] max-w-[calc(100vw-2rem)] rounded-[1.1rem] border-slate-200 bg-white p-0 shadow-[0_0.6rem_1.6rem_rgba(15,23,42,0.16)]", contentClassName)}>
+      <PopoverContent align="start" className={cn("w-[min(30rem,calc(100vw-2rem))] rounded-[1.1rem] border-slate-200 bg-white p-0 shadow-[0_0.6rem_1.6rem_rgba(15,23,42,0.16)]", contentClassName)}>
         <div className="space-y-4 p-4">
           <div className="grid grid-cols-2 gap-2 rounded-[0.9rem] bg-slate-100 p-1">
             {categoryOptions.map((option) => (
