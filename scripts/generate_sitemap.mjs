@@ -15,9 +15,13 @@ const STATIC_ROUTES = [
   "/developers",
   "/areas",
   "/guides",
+  "/about",
+  "/contact",
   "/golden-visa",
+  "/privacy",
   "/quiz",
   "/sitemap",
+  "/terms",
 ];
 
 function buildCanonicalUrl(pathname) {

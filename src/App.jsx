@@ -15,13 +15,17 @@ import Shortlist from '@/pages/Shortlist';
 import Compare from '@/pages/Compare';
 import Guides from '@/pages/Guides';
 import GuideDetail from '@/pages/GuideDetail';
+import About from '@/pages/About';
+import Contact from '@/pages/Contact';
 import Account from '@/pages/Account';
 import ListingDetail from '@/pages/ListingDetail';
 import AreaDetail from '@/pages/AreaDetail';
 import ProjectDetail from '@/pages/ProjectDetail';
 import BuyerQuiz from '@/pages/BuyerQuiz';
 import GoldenVisa from '@/pages/GoldenVisa';
+import Privacy from '@/pages/Privacy';
 import SiteMap from '@/pages/SiteMap';
+import Terms from '@/pages/Terms';
 import PartnerOverview from '@/pages/PartnerOverview';
 import PartnerLeads from '@/pages/PartnerLeads';
 import PartnerListings from '@/pages/PartnerListings';
@@ -136,9 +140,13 @@ const AuthenticatedApp = () => {
       <Route path="/compare" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Compare /></AppFrame>} />
       <Route path="/guides" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Guides /></AppFrame>} />
       <Route path="/guides/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><GuideDetail /></AppFrame>} />
+      <Route path="/about" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><About /></AppFrame>} />
+      <Route path="/contact" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Contact /></AppFrame>} />
       <Route path="/account" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Account /></AppFrame>} />
       <Route path="/notifications" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Notifications /></AppFrame>} />
+      <Route path="/privacy" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Privacy /></AppFrame>} />
       <Route path="/sitemap" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><SiteMap /></AppFrame>} />
+      <Route path="/terms" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Terms /></AppFrame>} />
       <Route path="/workspace" element={<Navigate to={workspaceTarget} replace />} />
       <Route path="/listing/:id" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><ListingDetail /></AppFrame>} />
       <Route path="/properties/:listingSlugId" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><ListingDetail /></AppFrame>} />

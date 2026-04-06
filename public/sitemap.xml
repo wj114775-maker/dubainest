@@ -6,6 +6,11 @@
     <priority>1.00</priority>
   </url>
   <url>
+    <loc>https://dubai-nest-home.base44.app/about</loc>
+    <lastmod>2026-04-06</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
     <loc>https://dubai-nest-home.base44.app/areas</loc>
     <lastmod>2026-04-06</lastmod>
     <priority>0.80</priority>
@@ -24,6 +29,11 @@
     <loc>https://dubai-nest-home.base44.app/areas/palm-jumeirah</loc>
     <lastmod>2026-03-26</lastmod>
     <priority>0.72</priority>
+  </url>
+  <url>
+    <loc>https://dubai-nest-home.base44.app/contact</loc>
+    <lastmod>2026-04-06</lastmod>
+    <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dubai-nest-home.base44.app/developers</loc>
@@ -54,6 +64,11 @@
     <loc>https://dubai-nest-home.base44.app/guides/relocating-a-family-to-dubai</loc>
     <lastmod>2026-03-26</lastmod>
     <priority>0.72</priority>
+  </url>
+  <url>
+    <loc>https://dubai-nest-home.base44.app/privacy</loc>
+    <lastmod>2026-04-06</lastmod>
+    <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dubai-nest-home.base44.app/projects</loc>
@@ -122,6 +137,11 @@
   </url>
   <url>
     <loc>https://dubai-nest-home.base44.app/sitemap</loc>
+    <lastmod>2026-04-06</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://dubai-nest-home.base44.app/terms</loc>
     <lastmod>2026-04-06</lastmod>
     <priority>0.80</priority>
   </url>
