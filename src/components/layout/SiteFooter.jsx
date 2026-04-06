@@ -85,7 +85,7 @@ export default function SiteFooter({ appName }) {
 
   return (
     <footer className="mt-16">
-      <div className="bg-[#f9f9fb] rounded border-t border-slate-200">
+      <div className="bg-[#f9f9fb] ">
         <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
           <div className="grid gap-5 rounded-[1.9rem] border border-slate-200 bg-white p-5 shadow-sm shadow-black/5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.95fr)] lg:items-center lg:p-6">
             <div className="space-y-3">
