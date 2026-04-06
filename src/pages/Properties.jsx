@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpDown, Bath, BedDouble, List, Map, SlidersHorizontal } from "lucide-react";
+import { ArrowUpDown, Bath, BedDouble, List, Map, Search, SlidersHorizontal } from "lucide-react";
 import { createSearchParams, useSearchParams } from "react-router-dom";
 import DeveloperPicker from "@/components/buyer/DeveloperPicker";
 import ListingListRow from "@/components/buyer/ListingListRow";
@@ -363,17 +363,16 @@ export default function Properties() {
         <div className="sticky top-0 z-30 hidden rounded-[1.5rem] bg-white pb-4 xl:block">
           <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-lg shadow-black/8">
             <CardContent className="space-y-4 p-4">
-              <div className="grid grid-cols-12 gap-3">
-                <div className="col-span-1 inline-flex min-w-[88px] items-center justify-center rounded-[1rem] border border-primary/15 bg-primary/8 px-4 py-3 text-sm font-semibold text-foreground">
-                  Buy
+              <div className="grid items-center gap-3 xl:grid-cols-[minmax(0,2.8fr)_minmax(15rem,1.7fr)_minmax(14rem,1.45fr)_11rem]">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={filters.location}
+                    onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))}
+                    placeholder="Search areas, communities, towers, or projects"
+                    className={cn(filterFieldClassName, "pl-10")}
+                  />
                 </div>
-
-                <Input
-                  value={filters.location}
-                  onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))}
-                  placeholder="Enter location"
-                  className={cn("col-span-4", filterFieldClassName)}
-                />
 
                 <DeveloperPicker
                   value={filters.developer}
@@ -381,7 +380,7 @@ export default function Properties() {
                   developers={approvedDevelopers}
                   featuredDeveloperNames={featuredDeveloperNames}
                   placeholder="Developer"
-                  triggerClassName="col-span-3"
+                  triggerClassName="w-full"
                 />
 
                 <PropertyTypePicker
@@ -389,12 +388,25 @@ export default function Properties() {
                   value={filters.propertyType}
                   onCategoryChange={(value) => setFilters((current) => ({ ...current, propertyCategory: value }))}
                   onValueChange={(value) => setFilters((current) => ({ ...current, propertyType: value }))}
-                  triggerClassName="col-span-4"
+                  triggerClassName="w-full"
                 />
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "h-11 justify-between rounded-[1rem] border-slate-200 bg-white px-4 text-sm shadow-none",
+                    extendedFilterCount ? "border-amber-400 bg-amber-50 text-amber-900 shadow-sm" : ""
+                  )}
+                  onClick={() => setFiltersPanelOpen(true)}
+                >
+                  More Filters
+                  {extendedFilterCount ? <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-900">{extendedFilterCount}</span> : null}
+                </Button>
               </div>
 
-              <div className="grid grid-cols-12 gap-3">
-                <div className="col-span-4 grid grid-cols-3 gap-2">
+              <div className="grid items-center gap-3 xl:grid-cols-[minmax(0,1.8fr)_9.5rem_9.5rem_12rem_auto]">
+                <div className="grid grid-cols-3 gap-2 rounded-[1rem] border border-slate-200 bg-slate-50 p-1">
                   {[
                     { value: "all", label: "All" },
                     { value: "ready", label: "Ready" },
@@ -403,8 +415,13 @@ export default function Properties() {
                     <Button
                       key={option.value}
                       type="button"
-                      variant={filters.completionStatus === option.value ? "default" : "outline"}
-                      className={completionButtonClassName}
+                      variant={filters.completionStatus === option.value ? "default" : "ghost"}
+                      className={cn(
+                        "h-9 rounded-[0.85rem] px-3 text-sm shadow-none",
+                        filters.completionStatus === option.value
+                          ? "bg-foreground text-background hover:bg-foreground"
+                          : "text-slate-600 hover:bg-white hover:text-slate-950"
+                      )}
                       onClick={() => setFilters((current) => ({ ...current, completionStatus: option.value }))}
                     >
                       {option.label}
@@ -413,7 +430,7 @@ export default function Properties() {
                 </div>
 
                 <Select value={filters.bedrooms} onValueChange={(value) => setFilters((current) => ({ ...current, bedrooms: value }))}>
-                  <SelectTrigger className={cn("col-span-2", filterSelectClassName)}>
+                  <SelectTrigger className={filterSelectClassName}>
                     <div className="flex items-center gap-2">
                       <BedDouble className="h-4 w-4 text-muted-foreground" />
                       <span>{formatBedLabel(filters.bedrooms)}</span>
@@ -433,7 +450,7 @@ export default function Properties() {
                 </Select>
 
                 <Select value={filters.bathrooms} onValueChange={(value) => setFilters((current) => ({ ...current, bathrooms: value }))}>
-                  <SelectTrigger className={cn("col-span-2", filterSelectClassName)}>
+                  <SelectTrigger className={filterSelectClassName}>
                     <div className="flex items-center gap-2">
                       <Bath className="h-4 w-4 text-muted-foreground" />
                       <span>{formatBathLabel(filters.bathrooms)}</span>
@@ -450,41 +467,21 @@ export default function Properties() {
                   </SelectContent>
                 </Select>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={cn(
-                    "col-span-2 h-11 justify-between rounded-[1rem] border-slate-200 bg-white px-4 text-sm shadow-none",
-                    extendedFilterCount ? "border-amber-400 bg-amber-50 text-amber-900 shadow-sm" : ""
-                  )}
-                  onClick={() => setFiltersPanelOpen(true)}
-                >
-                  More Filters
-                  {extendedFilterCount ? <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-900">{extendedFilterCount}</span> : null}
-                </Button>
+                <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
+                  <SelectTrigger className="h-11 rounded-[1rem] border-slate-200 bg-white px-4 text-sm shadow-none">
+                    <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="featured">Featured</SelectItem>
+                    <SelectItem value="price_low_high">Price: low to high</SelectItem>
+                    <SelectItem value="price_high_low">Price: high to low</SelectItem>
+                    <SelectItem value="size_large_small">Largest size</SelectItem>
+                    <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                <div className="col-span-2">
-                  <Select value={filters.sortBy} onValueChange={(value) => setFilters((current) => ({ ...current, sortBy: value }))}>
-                    <SelectTrigger className="h-11 rounded-[1rem] border-slate-200 bg-white px-4 text-sm shadow-none">
-                      <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="featured">Featured</SelectItem>
-                      <SelectItem value="price_low_high">Price: low to high</SelectItem>
-                      <SelectItem value="price_high_low">Price: high to low</SelectItem>
-                      <SelectItem value="size_large_small">Largest size</SelectItem>
-                      <SelectItem value="off_plan_first">Off-Plan first</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 border-t border-slate-200/80 pt-3">
-                <div className="text-sm text-muted-foreground">
-                  Search by location, developer, completion status, or buyer criteria.
-                </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-end gap-3">
                   {hasActiveSearch ? (
                     <Button variant="ghost" className="rounded-full px-4 text-sm" onClick={resetFilters}>
                       Reset search
@@ -501,12 +498,15 @@ export default function Properties() {
           <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-lg shadow-black/8">
             <CardContent className="space-y-4 p-4 sm:p-5">
               <div className="grid gap-3 sm:grid-cols-2">
-                <Input
-                  value={filters.location}
-                  onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))}
-                  placeholder="Enter location"
-                  className={cn("sm:col-span-2", filterFieldClassName)}
-                />
+                <div className="relative sm:col-span-2">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={filters.location}
+                    onChange={(event) => setFilters((current) => ({ ...current, location: event.target.value }))}
+                    placeholder="Search areas, communities, towers, or projects"
+                    className={cn(filterFieldClassName, "pl-10")}
+                  />
+                </div>
 
                 <DeveloperPicker
                   value={filters.developer}
@@ -564,7 +564,7 @@ export default function Properties() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 rounded-[1rem] border border-slate-200 bg-slate-50 p-1">
                 {[
                   { value: "all", label: "All" },
                   { value: "ready", label: "Ready" },
@@ -573,8 +573,13 @@ export default function Properties() {
                   <Button
                     key={option.value}
                     type="button"
-                    variant={filters.completionStatus === option.value ? "default" : "outline"}
-                    className={completionButtonClassName}
+                    variant={filters.completionStatus === option.value ? "default" : "ghost"}
+                    className={cn(
+                      "h-9 rounded-[0.85rem] px-3 text-sm shadow-none",
+                      filters.completionStatus === option.value
+                        ? "bg-foreground text-background hover:bg-foreground"
+                        : "text-slate-600 hover:bg-white hover:text-slate-950"
+                    )}
                     onClick={() => setFilters((current) => ({ ...current, completionStatus: option.value }))}
                   >
                     {option.label}
@@ -614,7 +619,6 @@ export default function Properties() {
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 pt-3">
-                <div className="text-sm text-muted-foreground">Search by location, developer, property type, or buyer criteria.</div>
                 <div className="flex items-center gap-3">
                   {hasActiveSearch ? (
                     <Button variant="ghost" className="rounded-full px-4 text-sm" onClick={resetFilters}>
