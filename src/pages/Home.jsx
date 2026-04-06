@@ -2,12 +2,17 @@ import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
+  ArrowRight,
   BookOpen,
   BriefcaseBusiness,
   Building2,
+  CheckCircle2,
   Gem,
   Globe2,
   KeyRound,
+  PhoneCall,
+  Search,
+  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -72,6 +77,49 @@ const pathCards = [
     icon: BriefcaseBusiness,
     intentType: "request_callback",
   },
+];
+
+const trustSignals = [
+  {
+    title: "Search-first, not portal-cluttered",
+    description: "The public site stays focused on Dubai property purchase, off-plan, and private inventory rather than noisy marketplace mechanics.",
+    icon: Search,
+  },
+  {
+    title: "Developer-aligned purchase support",
+    description: "Projects, developers, and listings are structured to support informed acquisition and direct advisory execution.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Private client capability built in",
+    description: "Golden Visa, premium buyer handling, and discreet inventory workflows sit inside the same governed business system.",
+    icon: CheckCircle2,
+  },
+];
+
+const purchaseSteps = [
+  {
+    step: "01",
+    title: "Search with clarity",
+    description: "Start with areas, developers, projects, or direct sale stock without being pushed through unnecessary registration first.",
+  },
+  {
+    step: "02",
+    title: "Shortlist with context",
+    description: "Move from listings into project and developer pages, compare relevant stock, and narrow the right purchase route.",
+  },
+  {
+    step: "03",
+    title: "Secure with advisory support",
+    description: "When ready, shift into guided enquiry, private inventory handling, brochure review, and purchase preparation.",
+  },
+];
+
+const advisoryHighlights = [
+  "Direct developer-aligned buyer handling",
+  "Off-plan, private inventory, and Golden Visa support",
+  "WhatsApp-first advisory with governed follow-through",
+  "Structured progression from search to purchase readiness",
 ];
 
 export default function Home() {
@@ -163,6 +211,69 @@ export default function Home() {
       />
       <div className="space-y-10 pb-32">
         <HeroSearch appName={appConfig.app_name} metrics={homeMetrics} />
+
+        <section className="rounded-[2rem] border border-slate-200 bg-slate-100/90 p-5 shadow-sm shadow-black/5 lg:p-6">
+          <div className="grid gap-4 lg:grid-cols-3">
+            {trustSignals.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="rounded-[1.5rem] border border-white/70 bg-white/90 p-5 shadow-sm shadow-black/5">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-[1rem] bg-slate-950 text-white">
+                    <Icon className="h-4.5 w-4.5" />
+                  </div>
+                  <h2 className="mt-4 text-lg font-semibold tracking-tight text-foreground">{item.title}</h2>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_440px] xl:items-stretch">
+          <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+            <CardContent className="space-y-6 p-6 lg:p-7">
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">How it works</p>
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground">A cleaner path from search to secure purchase</h2>
+                <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                  The public experience is designed to feel clear and premium, while the harder operational work stays behind the scenes in the Back Office.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {purchaseSteps.map((item) => (
+                  <div key={item.step} className="grid gap-4 rounded-[1.5rem] border border-white/10 bg-background/70 p-4 md:grid-cols-[72px_minmax(0,1fr)] md:items-start">
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-sm font-semibold text-white">
+                      {item.step}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold tracking-tight text-foreground">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950 shadow-xl shadow-black/10">
+            <div className="relative h-full min-h-[24rem]">
+              <img
+                src="https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1600&q=80"
+                alt="Dubai skyline and premium residential towers"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,14,24,0.15),rgba(8,14,24,0.78))]" />
+              <div className="relative flex h-full flex-col justify-end p-6 text-white lg:p-7">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/75">Market positioning</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight">Premium search outside. Governed execution underneath.</h2>
+                <p className="mt-3 max-w-md text-sm leading-6 text-white/78">
+                  Buyers see a cleaner public experience. Internal teams manage the developer, project, listing, and advisory workflow behind it.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <section className="space-y-6">
           <SectionHeading
@@ -298,6 +409,51 @@ export default function Home() {
               <Button asChild variant="outline" className="rounded-full px-5">
                 <Link to="/properties?completion=off_plan">View off-plan only</Link>
               </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-card/95 shadow-xl shadow-black/5">
+          <div className="grid gap-0 lg:grid-cols-[390px_minmax(0,1fr)]">
+            <div className="relative min-h-[20rem]">
+              <img
+                src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1400&q=80"
+                alt="Luxury residential interior suited to premium Dubai property marketing"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,16,28,0.12),rgba(9,16,28,0.36))]" />
+            </div>
+
+            <div className="space-y-6 p-6 lg:p-8">
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">Advisory desk</p>
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground">Speak to a team that handles purchase execution, not just listing discovery</h2>
+                <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
+                  Use DubaiSphere when you want a cleaner path into project selection, off-plan assessment, private inventory routing, and buyer readiness support.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {advisoryHighlights.map((item) => (
+                  <div key={item} className="inline-flex items-start gap-3 rounded-[1.3rem] border border-white/10 bg-background/70 px-4 py-4 text-sm text-muted-foreground">
+                    <CheckCircle2 className="mt-0.5 h-4.5 w-4.5 shrink-0 text-primary" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button className="rounded-full px-5" onClick={() => setIntentConfig({ open: true, type: "request_callback", title: "Business dealings" })}>
+                  <PhoneCall className="mr-2 h-4 w-4" />
+                  Speak to advisory
+                </Button>
+                <Button asChild variant="outline" className="rounded-full px-5">
+                  <Link to="/contact">
+                    Contact DubaiSphere
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         </section>
