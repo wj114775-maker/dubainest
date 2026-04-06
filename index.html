@@ -16,7 +16,29 @@
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:image" content="https://dubai-nest-home.base44.app/logo_v2.svg" />
     <link rel="manifest" href="/manifest.json" />
+    <link rel="canonical" href="https://dubai-nest-home.base44.app/" />
     <title>DubaiSphere | Dubai Properties for Sale</title>
+    <script>
+      (function () {
+        var productionOrigin = "https://dubai-nest-home.base44.app";
+        var currentOrigin = window.location.origin.replace(/\/$/, "");
+        if (currentOrigin === productionOrigin) return;
+
+        var robots = document.head.querySelector('meta[name="robots"]');
+        if (robots) {
+          robots.setAttribute("content", "noindex,nofollow");
+        }
+
+        var canonical = document.head.querySelector('link[rel="canonical"]');
+        if (!canonical) {
+          canonical = document.createElement("link");
+          canonical.setAttribute("rel", "canonical");
+          document.head.appendChild(canonical);
+        }
+
+        canonical.setAttribute("href", productionOrigin + window.location.pathname + window.location.search);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

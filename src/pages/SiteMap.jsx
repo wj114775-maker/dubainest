@@ -7,9 +7,10 @@ import SeoMeta from "@/components/seo/SeoMeta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildBreadcrumbJsonLd } from "@/lib/seo";
 import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
-import { loadBuyerListings } from "@/lib/buyerListings";
+import { buildListingPath, loadBuyerListings } from "@/lib/buyerListings";
 import { buildManagedDeveloperDirectory, listDeveloperProfiles } from "@/lib/developerProfiles";
 import { buildManagedProjectDirectory, listProjectProfiles } from "@/lib/projectProfiles";
+import { showcaseListingSeoEntries } from "@/data/showcaseSeoCatalog";
 
 const staticGroups = [
   {
@@ -42,7 +43,7 @@ export default function SiteMap() {
   });
   const { data: listings = [] } = useQuery({
     queryKey: ["sitemap-listings"],
-    queryFn: () => loadBuyerListings({ limit: 60, includeShowcase: false }),
+    queryFn: () => loadBuyerListings({ limit: 60, includeShowcase: true }),
     initialData: [],
   });
   const { data: developerProfiles = [] } = useQuery({
@@ -93,6 +94,13 @@ export default function SiteMap() {
     {
       title: "Projects",
       links: projects.map((project) => ({ label: project.name, path: `/projects/${project.slug}` })),
+    },
+    {
+      title: "Featured properties",
+      links: (listings.length
+        ? listings.slice(0, 12).map((listing) => ({ label: listing.title, path: buildListingPath(listing) }))
+        : showcaseListingSeoEntries.slice(0, 12)
+      ),
     },
   ].filter((group) => group.links.length)), [areas, developers, guides, projects]);
 
