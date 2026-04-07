@@ -76,7 +76,7 @@ export default function ProjectSpotlightCard({ project }) {
             <Link to={`/projects/${project.slug}`}>View project</Link>
           </Button>
           <Button asChild variant="outline" className="flex-1 rounded-full">
-            <Link to={`/properties?q=${encodeURIComponent(project.areaName || project.name)}`}>View properties</Link>
+            <Link to={`/properties?q=${encodeURIComponent(project.name || project.areaName || "Dubai project")}`}>View stock</Link>
           </Button>
         </div>
       </CardContent>

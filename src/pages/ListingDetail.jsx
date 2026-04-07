@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ArrowUpRight,
   Bath,
   BedDouble,
   Building2,
@@ -10,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  LayoutGrid,
   MapPin,
   MessageCircleMore,
   Ruler,
@@ -17,30 +19,31 @@ import {
   Sparkles,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import ListingCard from "@/components/buyer/ListingCard";
+import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
+import SeoMeta from "@/components/seo/SeoMeta";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import MetricCard from "@/components/common/MetricCard";
-import SeoMeta from "@/components/seo/SeoMeta";
-import BuyerIntentSheet from "@/components/leads/BuyerIntentSheet";
-import ListingCard from "@/components/buyer/ListingCard";
-import { buildListingPath, extractListingId, isShowcaseListing, loadBuyerListingById, loadBuyerListings } from "@/lib/buyerListings";
-import { buildBreadcrumbJsonLd, truncateSeoDescription } from "@/lib/seo";
+import {
+  buildListingPath,
+  extractListingId,
+  isShowcaseListing,
+  loadBuyerListingById,
+  loadBuyerListings,
+} from "@/lib/buyerListings";
 import { findMatchingDeveloperProfile, listDeveloperProfiles } from "@/lib/developerProfiles";
 import { findProjectProfileForListing, hydrateProjectProfile, listProjectProfiles } from "@/lib/projectProfiles";
+import { buildBreadcrumbJsonLd, truncateSeoDescription } from "@/lib/seo";
 import useAppConfig from "@/hooks/useAppConfig";
-
-function factItems(listing) {
-  return [
-    { label: "Beds", value: listing.bedrooms || 0, icon: BedDouble },
-    { label: "Baths", value: listing.bathrooms || 0, icon: Bath },
-    { label: "Parking", value: listing.parking_spaces || 0, icon: CarFront },
-    { label: "Size", value: `${Number(listing.built_up_area_sqft || 0).toLocaleString()} sqft`, icon: Ruler },
-  ];
-}
 
 function formatPrice(value) {
   return `AED ${Number(value || 0).toLocaleString()}`;
+}
+
+function humanizeLabel(value, fallback = "Not specified") {
+  if (!value) return fallback;
+  return String(value).replace(/_/g, " ");
 }
 
 function buildWhatsAppUrl(phone, listing) {
@@ -48,6 +51,74 @@ function buildWhatsAppUrl(phone, listing) {
   if (!number) return "";
   const message = `Hi, I'm interested in ${listing.title}${listing.area_name ? ` in ${listing.area_name}` : ""}.`;
   return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+}
+
+function factItems(listing) {
+  return [
+    { label: "Property type", value: listing.property_type || "Property", icon: LayoutGrid },
+    { label: "Beds", value: listing.bedrooms || 0, icon: BedDouble },
+    { label: "Baths", value: listing.bathrooms || 0, icon: Bath },
+    { label: "Parking", value: listing.parking_spaces || 0, icon: CarFront },
+    { label: "Built-up area", value: `${Number(listing.built_up_area_sqft || 0).toLocaleString()} sqft`, icon: Ruler },
+    { label: "Completion", value: listing.is_off_plan ? "Off-Plan" : "Ready", icon: CalendarClock },
+  ];
+}
+
+function buildListingHighlights(listing, project, developer) {
+  return [
+    listing.is_off_plan
+      ? `Launch-led purchase route${project?.handoverLabel ? ` with ${project.handoverLabel} handover timing.` : "."}`
+      : "Ready stock route with pricing and core facts available immediately.",
+    listing.floor_plan_available
+      ? "Floor plan support is available for buyer review."
+      : "Floor plan and brochure support can be requested through the enquiry route.",
+    listing.is_private_inventory
+      ? "Handled through a higher-control private inventory workflow."
+      : "Visible within the public buyer directory and suited to a standard enquiry path.",
+    project?.paymentPlanSummary
+      ? project.paymentPlanSummary
+      : listing.is_off_plan
+        ? "Project-led payment-plan detail can be requested before shortlisting."
+        : "Pricing and purchase support can be reviewed directly with the advisory team.",
+    developer?.summary
+      ? developer.summary
+      : listing.developer_name
+        ? `${listing.developer_name} is attached as the developer context for this opportunity.`
+        : "Developer context can be added once the linked project profile is finalised.",
+  ].filter(Boolean).slice(0, 5);
+}
+
+function dedupeListings(items = []) {
+  const seen = new Set();
+  return items.filter((item) => {
+    if (!item?.id || seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
+function FactTile({ icon: Icon, label, value }) {
+  return (
+    <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50/80 px-4 py-4">
+      <div className="flex items-center gap-2 text-slate-500">
+        <Icon className="h-4 w-4 stroke-[2.4]" />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.22em]">{label}</span>
+      </div>
+      <p className="mt-3 text-sm font-semibold text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, action }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-slate-200/80 py-3 last:border-b-0 last:pb-0">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{label}</p>
+        <p className="mt-2 text-sm font-medium text-slate-950">{value}</p>
+      </div>
+      {action}
+    </div>
+  );
 }
 
 export default function ListingDetail() {
@@ -94,27 +165,48 @@ export default function ListingDetail() {
   const showcase = isShowcaseListing(listing);
   const projectProfile = listing ? findProjectProfileForListing(listing, projectProfiles) : null;
   const hydratedProject = projectProfile ? hydrateProjectProfile(projectProfile, projects, listings, developerProfiles) : null;
-  const developerProfile = listing ? findMatchingDeveloperProfile(developerProfiles, listing.developer_name || hydratedProject?.developerName || "") : null;
+  const developerProfile = listing
+    ? findMatchingDeveloperProfile(developerProfiles, listing.developer_name || hydratedProject?.developerName || "")
+    : null;
   const publicDeveloper = developerProfile && developerProfile.partnership_status === "partnered" && developerProfile.page_status === "published"
     ? developerProfile
     : null;
+
   const galleryImages = useMemo(() => {
     if (!listing) return [];
-    return Array.from(new Set([listing.hero_image_url, ...(listing.gallery_image_urls || []), ...(hydratedProject?.galleryImageUrls || [])].filter(Boolean)));
+    return Array.from(
+      new Set([
+        listing.hero_image_url,
+        ...(listing.gallery_image_urls || []),
+        ...(hydratedProject?.galleryImageUrls || []),
+      ].filter(Boolean))
+    );
   }, [hydratedProject?.galleryImageUrls, listing]);
+
   const seoDescription = truncateSeoDescription(
     listing?.description
       || `${listing?.property_type || "Property"} for sale in ${listing?.area_name || "Dubai"}${listing?.developer_name ? ` by ${listing.developer_name}` : ""}.`
   );
-  const whatsappUrl = buildWhatsAppUrl(publicDeveloper?.contact_phone || hydratedProject?.contactPhone || appConfig.whatsapp_number, listing || {});
-  const relatedByProject = hydratedProject?.featuredListings?.filter((item) => item.id !== listing?.id) || [];
-  const relatedListings = relatedByProject.length
-    ? relatedByProject.slice(0, 3)
-    : listings.filter((item) => item.id !== listing?.id && (
-      (hydratedProject?.name && item.project_name === hydratedProject.name)
-      || (listing?.developer_name && item.developer_name === listing.developer_name)
-      || (listing?.area_name && item.area_name === listing.area_name)
-    )).slice(0, 3);
+
+  const whatsappUrl = buildWhatsAppUrl(
+    publicDeveloper?.contact_phone || hydratedProject?.contactPhone || appConfig.whatsapp_number,
+    listing || {}
+  );
+
+  const projectListings = hydratedProject?.featuredListings?.filter((item) => item.id !== listing?.id) || [];
+  const developerListings = listings
+    .filter((item) => item.id !== listing?.id && item.developer_name && item.developer_name === listing?.developer_name)
+    .slice(0, 3);
+  const areaListings = listings
+    .filter((item) => item.id !== listing?.id && item.area_name && item.area_name === listing?.area_name)
+    .slice(0, 3);
+  const galleryCount = galleryImages.length;
+  const listingPath = listing ? buildListingPath(listing) : `/properties/property--${listingId || ""}`;
+  const projectSearchPath = hydratedProject?.name ? `/properties?q=${encodeURIComponent(hydratedProject.name)}` : "/projects";
+  const developerSearchPath = listing?.developer_name ? `/properties?developer=${encodeURIComponent(listing.developer_name)}` : "/properties";
+  const areaSearchPath = listing?.area_name ? `/properties?q=${encodeURIComponent(listing.area_name)}` : "/properties";
+  const highlights = listing ? buildListingHighlights(listing, hydratedProject, publicDeveloper) : [];
+  const connectedRoutes = dedupeListings([...projectListings, ...developerListings, ...areaListings]);
 
   if (isLoading) {
     return <div className="pb-28 text-sm text-muted-foreground">Loading listing...</div>;
@@ -123,18 +215,16 @@ export default function ListingDetail() {
   if (!listing) {
     return (
       <>
-      <SeoMeta
+        <SeoMeta
           title="Listing Not Found"
           description="The requested property listing could not be found."
-          canonicalPath={listingId ? `/properties/property--${listingId}` : "/properties"}
+          canonicalPath={listingPath}
           robots="noindex,nofollow"
         />
         <div className="pb-28 text-sm text-muted-foreground">Listing not found.</div>
       </>
     );
   }
-
-  const listingPath = buildListingPath(listing);
 
   return (
     <>
@@ -146,200 +236,436 @@ export default function ListingDetail() {
         jsonLd={buildBreadcrumbJsonLd([
           { name: "Home", path: "/" },
           { name: "Properties", path: "/properties" },
+          ...(publicDeveloper?.slug ? [{ name: publicDeveloper.developer_name, path: `/developers/${publicDeveloper.slug}` }] : []),
           ...(hydratedProject?.slug ? [{ name: hydratedProject.name, path: `/projects/${hydratedProject.slug}` }] : []),
           { name: listing.title, path: listingPath },
         ])}
       />
 
       <div className="space-y-6 pb-28">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="space-y-5">
-            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-card/90">
-              <div className="relative aspect-[16/10] bg-muted">
-                <img src={galleryImages[activeImageIndex] || listing.hero_image_url} alt={listing.title} className="h-full w-full object-cover" />
-                <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                  <Badge className={`rounded-full ${listing.is_off_plan ? "bg-slate-950 text-white hover:bg-slate-950" : "bg-emerald-700 text-white hover:bg-emerald-700"}`}>
-                    {listing.is_off_plan ? "Off-Plan" : "Ready"}
-                  </Badge>
-                  <Badge className="rounded-full border border-slate-200 bg-white text-slate-900 hover:bg-white">
-                    {listing.property_type || "Property"}
-                  </Badge>
-                  {listing.is_private_inventory ? (
-                    <Badge className="rounded-full bg-emerald-800 text-white hover:bg-emerald-800">Private Inventory</Badge>
-                  ) : null}
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-6">
+            <section className="space-y-5">
+              <div className="overflow-hidden rounded-[2.25rem] border border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
+                <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_18rem]">
+                  <div className="relative aspect-[16/11] bg-slate-100">
+                    <img
+                      src={galleryImages[activeImageIndex] || listing.hero_image_url}
+                      alt={listing.title}
+                      className="h-full w-full object-cover"
+                    />
+
+                    <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                      <Badge className={`rounded-full px-3.5 py-1.5 ${listing.is_off_plan ? "bg-slate-950 text-white hover:bg-slate-950" : "bg-emerald-700 text-white hover:bg-emerald-700"}`}>
+                        {listing.is_off_plan ? "Off-Plan" : "Ready"}
+                      </Badge>
+                      <Badge className="rounded-full border border-white/60 bg-white/90 px-3.5 py-1.5 text-slate-900 hover:bg-white">
+                        {listing.property_type || "Property"}
+                      </Badge>
+                      {listing.is_private_inventory ? (
+                        <Badge className="rounded-full bg-amber-900/90 px-3.5 py-1.5 text-white hover:bg-amber-900/90">
+                          Private Inventory
+                        </Badge>
+                      ) : null}
+                    </div>
+
+                    {galleryCount > 1 ? (
+                      <>
+                        <button
+                          type="button"
+                          aria-label="Previous image"
+                          className="absolute left-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur"
+                          onClick={() => setActiveImageIndex((current) => (current - 1 + galleryCount) % galleryCount)}
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Next image"
+                          className="absolute right-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur"
+                          onClick={() => setActiveImageIndex((current) => (current + 1) % galleryCount)}
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      </>
+                    ) : null}
+
+                    <div className="absolute bottom-4 right-4 rounded-full bg-slate-950/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur">
+                      {galleryCount} image{galleryCount === 1 ? "" : "s"}
+                    </div>
+                  </div>
+
+                  <div className="hidden border-l border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5 lg:flex lg:flex-col lg:justify-between">
+                    <div className="space-y-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Commercial summary</p>
+                      <div>
+                        <p className="text-3xl font-semibold tracking-tight text-slate-950">{formatPrice(listing.price)}</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          {listing.is_off_plan
+                            ? "Project-led off-plan purchase route."
+                            : "Ready stock unit with direct buyer enquiry flow."}
+                        </p>
+                      </div>
+                      <div className="space-y-3">
+                        <DetailRow label="Area" value={listing.area_name || "Dubai"} />
+                        <DetailRow
+                          label="Project"
+                          value={hydratedProject?.name || listing.project_name || "Standalone route"}
+                          action={hydratedProject?.slug ? (
+                            <Button asChild variant="ghost" size="sm" className="rounded-full px-3 text-slate-700">
+                              <Link to={`/projects/${hydratedProject.slug}`}>Open</Link>
+                            </Button>
+                          ) : null}
+                        />
+                        <DetailRow
+                          label="Developer"
+                          value={publicDeveloper?.developer_name || listing.developer_name || "On request"}
+                          action={publicDeveloper?.slug ? (
+                            <Button asChild variant="ghost" size="sm" className="rounded-full px-3 text-slate-700">
+                              <Link to={`/developers/${publicDeveloper.slug}`}>Open</Link>
+                            </Button>
+                          ) : null}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="rounded-[1.4rem] border border-slate-200 bg-white p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Support route</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        Use the project page, developer page, and enquiry flow together for a cleaner purchase process.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                {galleryImages.length > 1 ? (
-                  <>
-                    <button
-                      type="button"
-                      aria-label="Previous image"
-                      className="absolute left-4 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white"
-                      onClick={() => setActiveImageIndex((current) => (current - 1 + galleryImages.length) % galleryImages.length)}
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Next image"
-                      className="absolute right-4 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white"
-                      onClick={() => setActiveImageIndex((current) => (current + 1) % galleryImages.length)}
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                  </>
+
+                {galleryCount > 1 ? (
+                  <div className="grid gap-2 border-t border-slate-200 bg-slate-50/70 p-3 sm:grid-cols-4 lg:grid-cols-5">
+                    {galleryImages.slice(0, 5).map((image, index) => (
+                      <button
+                        type="button"
+                        key={image}
+                        onClick={() => setActiveImageIndex(index)}
+                        className={`overflow-hidden rounded-[1rem] border ${activeImageIndex === index ? "border-slate-950" : "border-slate-200"}`}
+                      >
+                        <img src={image} alt={`${listing.title} ${index + 1}`} className="h-20 w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
                 ) : null}
               </div>
-              {galleryImages.length > 1 ? (
-                <div className="grid gap-2 border-t border-white/10 p-3 sm:grid-cols-4">
-                  {galleryImages.slice(0, 4).map((image, index) => (
-                    <button
-                      type="button"
-                      key={image}
-                      onClick={() => setActiveImageIndex(index)}
-                      className={`overflow-hidden rounded-[1rem] border ${activeImageIndex === index ? "border-slate-950" : "border-white/10"}`}
-                    >
-                      <img src={image} alt={`${listing.title} ${index + 1}`} className="h-20 w-full object-cover" />
-                    </button>
+
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3.5 py-1.5 text-slate-700">
+                    Sale only
+                  </Badge>
+                  {listing.is_off_plan && hydratedProject?.handoverLabel ? (
+                    <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3.5 py-1.5 text-slate-700">
+                      Handover {hydratedProject.handoverLabel}
+                    </Badge>
+                  ) : null}
+                  {listing.floor_plan_available ? (
+                    <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3.5 py-1.5 text-slate-700">
+                      Floor plan available
+                    </Badge>
+                  ) : null}
+                  {listing.furnishing_status && listing.furnishing_status !== "all" ? (
+                    <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3.5 py-1.5 text-slate-700">
+                      {humanizeLabel(listing.furnishing_status)}
+                    </Badge>
+                  ) : null}
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">{formatPrice(listing.price)}</p>
+                  <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+                    {listing.title}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                    <span className="inline-flex items-center gap-1.5">
+                      <MapPin className="h-4 w-4" />
+                      {listing.area_name || "Dubai"}
+                    </span>
+                    {hydratedProject?.slug ? (
+                      <Link to={`/projects/${hydratedProject.slug}`} className="inline-flex items-center gap-1.5 text-slate-950 transition hover:text-primary">
+                        <Building2 className="h-4 w-4" />
+                        {hydratedProject.name}
+                      </Link>
+                    ) : null}
+                    {publicDeveloper?.slug ? (
+                      <Link to={`/developers/${publicDeveloper.slug}`} className="inline-flex items-center gap-1.5 text-slate-950 transition hover:text-primary">
+                        <Sparkles className="h-4 w-4" />
+                        {publicDeveloper.developer_name}
+                      </Link>
+                    ) : listing.developer_name ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Sparkles className="h-4 w-4" />
+                        {listing.developer_name}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="max-w-4xl text-sm leading-7 text-slate-600">
+                    {listing.description
+                      || hydratedProject?.summary
+                      || "A buyer-facing property page should move cleanly from media and pricing into project context, decision support, and enquiry."}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {factItems(listing).map(({ label, value, icon }) => (
+                    <FactTile key={label} label={label} value={value} icon={icon} />
                   ))}
                 </div>
-              ) : null}
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-4xl font-semibold tracking-tight text-foreground">{formatPrice(listing.price)}</p>
-                <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{listing.title}</h1>
-                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4" />
-                    {listing.area_name || "Dubai"}
-                  </span>
-                  {hydratedProject?.slug ? (
-                    <Link to={`/projects/${hydratedProject.slug}`} className="inline-flex items-center gap-1.5 text-foreground hover:text-primary">
-                      <Building2 className="h-4 w-4" />
-                      {hydratedProject.name}
-                    </Link>
-                  ) : null}
-                  {publicDeveloper?.slug ? (
-                    <Link to={`/developers/${publicDeveloper.slug}`} className="inline-flex items-center gap-1.5 text-foreground hover:text-primary">
-                      <Sparkles className="h-4 w-4" />
-                      {publicDeveloper.developer_name}
-                    </Link>
-                  ) : listing.developer_name ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Sparkles className="h-4 w-4" />
-                      {listing.developer_name}
-                    </span>
-                  ) : null}
-                </div>
               </div>
+            </section>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {factItems(listing).map(({ label, value, icon: Icon }) => (
-                  <div key={label} className="rounded-[1.1rem] border border-white/10 bg-card/80 px-4 py-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Icon className="h-4 w-4 stroke-[2.45]" />
-                      <span className="text-[11px] uppercase tracking-[0.22em]">{label}</span>
-                    </div>
-                    <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>
+            <section className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+              <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
+                <CardContent className="space-y-5 p-6 lg:p-7">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Why this property stands out</p>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">A cleaner unit-level conversion page</h2>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="space-y-3">
+                    {highlights.map((item) => (
+                      <div key={item} className="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm leading-6 text-slate-700">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
+                <CardContent className="space-y-5 p-6 lg:p-7">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Purchase snapshot</p>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">What the buyer should know first</h2>
+                  </div>
+
+                  <div className="space-y-1">
+                    <DetailRow
+                      label="Availability"
+                      value={listing.is_private_inventory ? "Restricted route" : listing.is_off_plan ? "Launch inventory" : "Published sale stock"}
+                    />
+                    <DetailRow
+                      label="Project route"
+                      value={hydratedProject?.name || "No project profile attached yet"}
+                      action={hydratedProject?.slug ? (
+                        <Button asChild variant="ghost" size="sm" className="rounded-full px-3 text-slate-700">
+                          <Link to={`/projects/${hydratedProject.slug}`}>Project</Link>
+                        </Button>
+                      ) : null}
+                    />
+                    <DetailRow
+                      label="Developer route"
+                      value={publicDeveloper?.developer_name || listing.developer_name || "On request"}
+                      action={publicDeveloper?.slug ? (
+                        <Button asChild variant="ghost" size="sm" className="rounded-full px-3 text-slate-700">
+                          <Link to={`/developers/${publicDeveloper.slug}`}>Developer</Link>
+                        </Button>
+                      ) : null}
+                    />
+                    <DetailRow label="Publication" value={humanizeLabel(listing.publication_status, "Published")} />
+                    <DetailRow label="Freshness" value={humanizeLabel(listing.freshness_status, "Fresh")} />
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
 
             {hydratedProject ? (
-              <Card className="rounded-[1.8rem] border-white/10 bg-card/90">
-                <CardContent className="space-y-4 p-6">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-primary">Project context</p>
-                      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{hydratedProject.name}</h2>
+              <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
+                <CardContent className="space-y-6 p-6 lg:p-7">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="max-w-3xl">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Project context</p>
+                      <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{hydratedProject.name}</h2>
+                      <p className="mt-3 text-sm leading-7 text-slate-600">
+                        {hydratedProject.summary || "Project pages should carry the launch story, handover, and payment-plan context so the unit page can stay commercially clear."}
+                      </p>
                     </div>
-                    <Button asChild variant="outline" className="rounded-full px-5">
-                      <Link to={`/projects/${hydratedProject.slug}`}>View project</Link>
-                    </Button>
-                  </div>
-                  <p className="text-sm leading-7 text-muted-foreground">
-                    {hydratedProject.summary || "Project context, launch positioning, and handover timing are managed separately from the unit page so the listing can stay focused on conversion."}
-                  </p>
-                  <div className="grid gap-4 md:grid-cols-4">
-                    <MetricCard label="Project status" value={String(hydratedProject.status).replace(/_/g, " ")} />
-                    <MetricCard label="Handover" value={hydratedProject.handoverLabel || "TBC"} />
-                    <MetricCard label="Price from" value={formatPrice(hydratedProject.priceFrom)} />
-                    <MetricCard label="Unit mix" value={hydratedProject.unitTypes?.slice(0, 2).join(", ") || "Available"} />
-                  </div>
-                  {hydratedProject.paymentPlanSummary ? (
-                    <div className="rounded-[1.2rem] border border-white/10 bg-background/60 p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Payment plan</p>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">{hydratedProject.paymentPlanSummary}</p>
+
+                    <div className="flex flex-wrap gap-3">
+                      <Button asChild className="rounded-full px-5">
+                        <Link to={`/projects/${hydratedProject.slug}`}>View project</Link>
+                      </Button>
+                      <Button asChild variant="outline" className="rounded-full px-5">
+                        <Link to={projectSearchPath}>View project stock</Link>
+                      </Button>
                     </div>
-                  ) : null}
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <FactTile icon={CalendarClock} label="Project status" value={humanizeLabel(hydratedProject.status, "Planned")} />
+                    <FactTile icon={CalendarClock} label="Handover" value={hydratedProject.handoverLabel || "TBC"} />
+                    <FactTile icon={LayoutGrid} label="Unit mix" value={hydratedProject.unitTypes?.slice(0, 2).join(", ") || "Available"} />
+                    <FactTile icon={Sparkles} label="Price from" value={formatPrice(hydratedProject.priceFrom)} />
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+                    <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50/80 p-5">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Payment plan</p>
+                      <p className="mt-3 text-sm leading-7 text-slate-700">
+                        {hydratedProject.paymentPlanSummary || "Request the project pack for live payment-plan detail and brochure support."}
+                      </p>
+                    </div>
+
+                    <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50/80 p-5">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Developer context</p>
+                      <p className="mt-3 text-sm leading-7 text-slate-700">
+                        {hydratedProject.developerSummary
+                          || publicDeveloper?.summary
+                          || `${hydratedProject.developerName || listing.developer_name || "Developer"} is the linked brand context for this project route.`}
+                      </p>
+                      {publicDeveloper?.slug ? (
+                        <Button asChild variant="ghost" className="mt-3 rounded-full px-0 text-slate-950 hover:bg-transparent">
+                          <Link to={`/developers/${publicDeveloper.slug}`}>
+                            Open developer page
+                            <ArrowUpRight className="ml-2 h-4 w-4" />
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ) : null}
 
-            <Card className="rounded-[1.8rem] border-white/10 bg-card/90">
-              <CardContent className="space-y-4 p-6">
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground">Listing details</h2>
-                <p className="text-sm leading-7 text-muted-foreground">
-                  {listing.description || "Full listing narrative will appear here once the property notes are finalised."}
-                </p>
-              </CardContent>
-            </Card>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
+                <CardContent className="space-y-5 p-6">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Verification</p>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Factual publication signals</h2>
+                  </div>
+                  <div className="space-y-1">
+                    <DetailRow label="Permit status" value={listing.permit_verified ? "Verified" : "Pending review"} />
+                    <DetailRow label="Project status check" value={listing.project_status_verified ? "Checked" : "Pending review"} />
+                    <DetailRow label="Verification band" value={humanizeLabel(listing.trust_band, "Standard")} />
+                    <DetailRow label="Publication state" value={humanizeLabel(listing.publication_status, "Published")} />
+                  </div>
+                </CardContent>
+              </Card>
 
-            <Card className="rounded-[1.8rem] border-white/10 bg-card/90">
-              <CardContent className="space-y-4 p-6">
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground">Verification and publication</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="rounded-[1.2rem] border border-white/10 bg-background/60 p-4">
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Permit</p>
-                    <p className="mt-2 font-semibold text-foreground">{listing.permit_verified ? "Verified" : "Pending"}</p>
+              <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
+                <CardContent className="space-y-5 p-6">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Buyer support</p>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Next actions from this page</h2>
                   </div>
-                  <div className="rounded-[1.2rem] border border-white/10 bg-background/60 p-4">
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Project status</p>
-                    <p className="mt-2 font-semibold text-foreground">{listing.project_status_verified ? "Checked" : "Pending"}</p>
+                  <div className="space-y-3">
+                    <Button
+                      className="h-11 w-full rounded-full"
+                      onClick={() => {
+                        setIntentType("request_callback");
+                        setOpen(true);
+                      }}
+                    >
+                      Request a callback
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-11 w-full rounded-full"
+                      onClick={() => {
+                        setIntentType(listing.is_private_inventory ? "request_private_inventory" : "project_enquiry");
+                        setOpen(true);
+                      }}
+                    >
+                      {listing.is_private_inventory ? "Request private access" : "Request brochure"}
+                    </Button>
+                    <Button asChild variant="ghost" className="h-11 w-full rounded-full">
+                      <Link to="/contact">Open contact page</Link>
+                    </Button>
                   </div>
-                  <div className="rounded-[1.2rem] border border-white/10 bg-background/60 p-4">
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Freshness</p>
-                    <p className="mt-2 font-semibold text-foreground">{String(listing.freshness_status || "fresh").replace(/_/g, " ")}</p>
-                  </div>
-                  <div className="rounded-[1.2rem] border border-white/10 bg-background/60 p-4">
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Publication</p>
-                    <p className="mt-2 font-semibold text-foreground">{String(listing.publication_status || "published").replace(/_/g, " ")}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
-            {relatedListings.length ? (
+            {projectListings.length ? (
               <section className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
-                  <h2 className="text-2xl font-semibold tracking-tight text-foreground">Related opportunities</h2>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">More in the same project</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Available units connected to this launch</h2>
+                  </div>
                   <Button asChild variant="outline" className="rounded-full px-5">
-                    <Link to={hydratedProject?.slug ? `/projects/${hydratedProject.slug}` : "/properties"}>Continue exploring</Link>
+                    <Link to={projectSearchPath}>See project stock</Link>
                   </Button>
                 </div>
                 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {relatedListings.map((item) => (
+                  {projectListings.slice(0, 3).map((item) => (
+                    <ListingCard key={item.id} listing={item} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {developerListings.length ? (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">More by this developer</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Continue through the developer route</h2>
+                  </div>
+                  <Button asChild variant="outline" className="rounded-full px-5">
+                    <Link to={developerSearchPath}>Open developer stock</Link>
+                  </Button>
+                </div>
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {developerListings.map((item) => (
+                    <ListingCard key={item.id} listing={item} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {areaListings.length ? (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Continue in the same area</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Nearby opportunities in {listing.area_name || "Dubai"}</h2>
+                  </div>
+                  <Button asChild variant="outline" className="rounded-full px-5">
+                    <Link to={areaSearchPath}>Explore the area</Link>
+                  </Button>
+                </div>
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {areaListings.map((item) => (
+                    <ListingCard key={item.id} listing={item} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {!projectListings.length && !developerListings.length && !areaListings.length && connectedRoutes.length ? (
+              <section className="space-y-4">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-950">Continue exploring</h2>
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {connectedRoutes.slice(0, 3).map((item) => (
                     <ListingCard key={item.id} listing={item} />
                   ))}
                 </div>
               </section>
             ) : null}
           </div>
-
-          <div className="space-y-4 xl:sticky xl:top-24 xl:self-start">
-            <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
-              <CardContent className="space-y-4 p-6">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Purchase support</p>
-                  <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{formatPrice(listing.price)}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {listing.property_type || "Property"} · {listing.area_name || "Dubai"}
-                  </p>
+          <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+            <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
+              <CardContent className="space-y-5 p-6">
+                <div className="space-y-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Buyer advisory</p>
+                  <p className="text-3xl font-semibold tracking-tight text-slate-950">{formatPrice(listing.price)}</p>
+                  <div className="space-y-2 text-sm text-slate-600">
+                    <p className="font-medium text-slate-950">{listing.title}</p>
+                    <p>{listing.property_type || "Property"} · {listing.area_name || "Dubai"}</p>
+                  </div>
                 </div>
 
-                <div className="space-y-3 text-sm text-muted-foreground">
+                <div className="space-y-3 rounded-[1.4rem] border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-700">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    {listing.area_name || "Dubai"}
+                  </div>
                   {hydratedProject?.handoverLabel ? (
                     <div className="flex items-center gap-2">
                       <CalendarClock className="h-4 w-4" />
@@ -350,10 +676,6 @@ export default function ListingDetail() {
                     <ShieldCheck className="h-4 w-4" />
                     Permit {listing.permit_verified ? "verified" : "pending"}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    {listing.area_name || "Dubai"}
-                  </div>
                   {listing.developer_name ? (
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4" />
@@ -362,9 +684,9 @@ export default function ListingDetail() {
                   ) : null}
                 </div>
 
-                <div className="grid gap-2">
+                <div className="grid gap-2.5">
                   <Button
-                    className="rounded-full"
+                    className="h-11 rounded-full"
                     onClick={() => {
                       setIntentType("request_callback");
                       setOpen(true);
@@ -373,7 +695,7 @@ export default function ListingDetail() {
                     Enquire now
                   </Button>
                   {whatsappUrl ? (
-                    <Button asChild variant="outline" className="rounded-full">
+                    <Button asChild variant="outline" className="h-11 rounded-full">
                       <a href={whatsappUrl} target="_blank" rel="noreferrer">
                         <MessageCircleMore className="mr-2 h-4 w-4" />
                         WhatsApp
@@ -382,38 +704,57 @@ export default function ListingDetail() {
                   ) : null}
                   <Button
                     variant="outline"
-                    className="rounded-full"
+                    className="h-11 rounded-full"
                     onClick={() => {
-                      setIntentType(listing.is_private_inventory ? "request_private_inventory" : "request_callback");
+                      setIntentType(listing.is_private_inventory ? "request_private_inventory" : "project_enquiry");
                       setOpen(true);
                     }}
                   >
-                    {listing.is_private_inventory ? "Request private access" : "Request callback"}
+                    {listing.is_private_inventory ? "Request private access" : "Request brochure"}
                   </Button>
                   {hydratedProject?.brochureUrl ? (
-                    <Button asChild variant="ghost" className="rounded-full">
+                    <Button asChild variant="ghost" className="h-11 rounded-full">
                       <a href={hydratedProject.brochureUrl} target="_blank" rel="noreferrer">
                         <FileText className="mr-2 h-4 w-4" />
                         Open brochure
                       </a>
                     </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      className="rounded-full"
-                      onClick={() => {
-                        setIntentType("project_enquiry");
-                        setOpen(true);
-                      }}
-                    >
-                      <FileText className="mr-2 h-4 w-4" />
-                      Request brochure
+                  ) : null}
+                  <Button asChild variant="ghost" className="h-11 rounded-full">
+                    <Link to="/contact">Contact us</Link>
+                  </Button>
+                </div>
+
+                <div className="space-y-2 border-t border-slate-200 pt-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Connected public routes</p>
+                  <div className="grid gap-2">
+                    {hydratedProject?.slug ? (
+                      <Button asChild variant="outline" className="justify-between rounded-full px-4">
+                        <Link to={`/projects/${hydratedProject.slug}`}>
+                          Project page
+                          <ArrowUpRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    ) : null}
+                    {publicDeveloper?.slug ? (
+                      <Button asChild variant="outline" className="justify-between rounded-full px-4">
+                        <Link to={`/developers/${publicDeveloper.slug}`}>
+                          Developer page
+                          <ArrowUpRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    ) : null}
+                    <Button asChild variant="outline" className="justify-between rounded-full px-4">
+                      <Link to={areaSearchPath}>
+                        Area search
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Link>
                     </Button>
-                  )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </aside>
         </div>
       </div>
 
