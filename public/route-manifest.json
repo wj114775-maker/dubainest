@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-06T22:43:02.037Z",
+  "generatedAt": "2026-04-07T00:02:40.084Z",
   "siteOrigin": "https://dubai-nest-home.base44.app",
   "routes": [
     "/",
@@ -8,6 +8,7 @@
     "/areas/dubai-hills-estate",
     "/areas/dubai-marina",
     "/areas/palm-jumeirah",
+    "/buyer-qualification",
     "/contact",
     "/developers",
     "/golden-visa",
@@ -15,7 +16,9 @@
     "/guides/dubai-golden-visa-property-buyers",
     "/guides/how-to-judge-listing-trust",
     "/guides/relocating-a-family-to-dubai",
+    "/off-plan",
     "/privacy",
+    "/private-inventory",
     "/projects",
     "/properties",
     "/properties/bluewaters-branded-off-plan-corner-apartment--demo-bluewaters-branded-apartment",
@@ -28,7 +31,6 @@
     "/properties/jumeirah-golf-estates-manor-home--demo-jumeirah-golf-estates-manor",
     "/properties/palm-jumeirah-beachfront-duplex--demo-palm-beachfront-duplex",
     "/properties/waterfront-bulgari-bay-villa--demo-bulgari-bay-villa",
-    "/quiz",
     "/sitemap",
     "/terms"
   ]

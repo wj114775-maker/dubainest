@@ -53,11 +53,11 @@ export default function PropertyDirectorySidebar({ locations = [] }) {
     { label: "2 bedroom apartments for sale", path: "/properties?propertyType=Apartment&beds=2" },
     { label: "Villas for sale in Dubai", path: "/properties?propertyType=Villa" },
     { label: "Penthouses for sale in Dubai", path: "/properties?propertyType=Penthouse" },
-    { label: "Private inventory opportunities", path: "/properties?privateInventory=1" },
+    { label: "Private inventory opportunities", path: "/private-inventory" },
   ];
 
   const offPlanLinks = [
-    { label: "Off-plan properties in Dubai", path: "/properties?completion=off_plan" },
+    { label: "Off-plan properties in Dubai", path: "/off-plan" },
     { label: "Map view for off-plan stock", path: "/properties?completion=off_plan&map_active=true" },
   ];
 

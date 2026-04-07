@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { base44 } from '@/api/base44Client';
 import { captureBuyerIntent } from '@/components/leads/buyerLeadActions';
+import { verifyRecaptchaAction } from '@/lib/recaptcha';
 
 const defaultForm = {
   full_name: '',
@@ -38,6 +39,8 @@ export default function BuyerIntentSheet({ open, onOpenChange, intentType, listi
 
   const mutation = useMutation({
     mutationFn: async () => {
+      await verifyRecaptchaAction('buyer_intent_form');
+
       const lead = await captureBuyerIntent({
         ...form,
         budget_min: form.budget_min ? Number(form.budget_min) : undefined,
@@ -90,6 +93,13 @@ export default function BuyerIntentSheet({ open, onOpenChange, intentType, listi
       toast({ title: 'Request captured' });
       setForm(defaultForm);
       onOpenChange(false);
+    },
+    onError: (error) => {
+      toast({
+        title: 'Submission blocked',
+        description: String(error?.message || 'Please retry the form submission.'),
+        variant: 'destructive',
+      });
     },
   });
 

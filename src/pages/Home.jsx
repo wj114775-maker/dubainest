@@ -408,7 +408,7 @@ export default function Home() {
                 </Link>
               </Button>
               <Button asChild variant="outline" className="rounded-full px-5">
-                <Link to="/properties?completion=off_plan">View off-plan only</Link>
+                <Link to="/off-plan">View off-plan only</Link>
               </Button>
             </div>
           </div>

@@ -62,7 +62,7 @@ export default function Projects() {
         titleAs="h1"
         action={(
           <Button asChild className="rounded-full px-5">
-            <Link to="/properties?completion=off_plan">Open off-plan listings</Link>
+            <Link to="/off-plan">Open off-plan overview</Link>
           </Button>
         )}
       />

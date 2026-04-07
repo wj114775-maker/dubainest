@@ -20,6 +20,7 @@ Any change pushed to the repo will also be reflected in the Base44 Builder.
 ```
 VITE_BASE44_APP_ID=your_app_id
 VITE_BASE44_APP_BASE_URL=your_backend_url
+VITE_RECAPTCHA_SITE_KEY=your_public_recaptcha_site_key
 
 e.g.
 VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
@@ -61,6 +62,16 @@ npm run verify:phase5
 **Publish your changes**
 
 Open [Base44.com](http://Base44.com) and click on Publish.
+
+**reCAPTCHA v3**
+
+Public forms use reCAPTCHA v3 on the buyer-facing website.
+
+- Client-side site key: set `VITE_RECAPTCHA_SITE_KEY` in `.env.local` if you need to override the default public key.
+- Server-side verification: set `RECAPTCHA_SECRET_KEY` in the Base44 function environment before publishing.
+- Optional server-side settings:
+  - `RECAPTCHA_MIN_SCORE`
+  - `RECAPTCHA_EXPECTED_HOSTNAME`
 
 **Docs & Support**
 

@@ -39,10 +39,10 @@ export default function BuyerQuiz() {
     <SeoMeta
       title="Dubai Property Buyer Qualification"
       description="Start a buyer qualification flow for investors, movers, and private buyers exploring Dubai property purchases."
-      canonicalPath="/quiz"
+      canonicalPath="/buyer-qualification"
       jsonLd={buildBreadcrumbJsonLd([
         { name: "Home", path: "/" },
-        { name: "Buyer Qualification", path: "/quiz" },
+        { name: "Buyer Qualification", path: "/buyer-qualification" },
       ])}
     />
     <div className="space-y-6 pb-28">

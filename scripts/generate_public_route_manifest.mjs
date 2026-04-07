@@ -17,8 +17,10 @@ const STATIC_ROUTES = [
   "/about",
   "/contact",
   "/golden-visa",
+  "/off-plan",
+  "/private-inventory",
   "/privacy",
-  "/quiz",
+  "/buyer-qualification",
   "/sitemap",
   "/terms",
 ];

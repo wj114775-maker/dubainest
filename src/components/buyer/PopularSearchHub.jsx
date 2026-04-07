@@ -33,7 +33,7 @@ const searchRegions = [
         title: "Buyer routes",
         icon: MapPinned,
         links: [
-          { label: "Private inventory only", to: "/properties?privateInventory=1" },
+          { label: "Private inventory only", to: "/private-inventory" },
           { label: "Browse published developers", to: "/developers" },
           { label: "Explore area intelligence", to: "/areas" },
           { label: "Read buyer guides", to: "/guides" },
@@ -70,7 +70,7 @@ const searchRegions = [
         title: "Buyer routes",
         icon: MapPinned,
         links: [
-          { label: "Private client property search", to: "/properties?privateInventory=1" },
+          { label: "Private client property search", to: "/private-inventory" },
           { label: "Compare active developers", to: "/developers" },
           { label: "Review supported areas", to: "/areas" },
           { label: "Golden Visa pathway", to: "/golden-visa" },

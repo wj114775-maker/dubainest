@@ -23,6 +23,8 @@ import AreaDetail from '@/pages/AreaDetail';
 import ProjectDetail from '@/pages/ProjectDetail';
 import BuyerQuiz from '@/pages/BuyerQuiz';
 import GoldenVisa from '@/pages/GoldenVisa';
+import OffPlan from '@/pages/OffPlan';
+import PrivateInventory from '@/pages/PrivateInventory';
 import Privacy from '@/pages/Privacy';
 import SiteMap from '@/pages/SiteMap';
 import Terms from '@/pages/Terms';
@@ -61,6 +63,7 @@ import AppHeader from '@/components/layout/AppHeader';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import SideRail from '@/components/layout/SideRail';
 import SiteFooter from '@/components/layout/SiteFooter';
+import PublicRecaptchaBoot from '@/components/security/PublicRecaptchaBoot';
 import SeoMeta from '@/components/seo/SeoMeta';
 import useAppConfig from '@/hooks/useAppConfig';
 import useCurrentUserRole from '@/hooks/useCurrentUserRole';
@@ -99,6 +102,7 @@ const AppFrame = ({ children, mode = 'buyer', title, showInternalAccess = false,
         {mode !== 'buyer' ? <SideRail title={displayRailTitle} items={items} /> : null}
         <main className="min-h-screen flex-1 px-4 py-6 md:px-6 md:py-8">{children}</main>
       </div>
+      {mode === 'buyer' ? <PublicRecaptchaBoot /> : null}
       {mode === 'buyer' ? <SiteFooter appName={appConfig.app_name} /> : null}
       {mode === 'buyer' ? <MobileBottomNav items={items} /> : null}
     </div>
@@ -142,6 +146,8 @@ const AuthenticatedApp = () => {
       <Route path="/guides/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><GuideDetail /></AppFrame>} />
       <Route path="/about" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><About /></AppFrame>} />
       <Route path="/contact" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Contact /></AppFrame>} />
+      <Route path="/off-plan" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><OffPlan /></AppFrame>} />
+      <Route path="/private-inventory" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><PrivateInventory /></AppFrame>} />
       <Route path="/account" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Account /></AppFrame>} />
       <Route path="/notifications" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Notifications /></AppFrame>} />
       <Route path="/privacy" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><Privacy /></AppFrame>} />
@@ -152,7 +158,8 @@ const AuthenticatedApp = () => {
       <Route path="/properties/:listingSlugId" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><ListingDetail /></AppFrame>} />
       <Route path="/areas/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><AreaDetail /></AppFrame>} />
       <Route path="/projects/:slug" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><ProjectDetail /></AppFrame>} />
-      <Route path="/quiz" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><BuyerQuiz /></AppFrame>} />
+      <Route path="/buyer-qualification" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><BuyerQuiz /></AppFrame>} />
+      <Route path="/quiz" element={<Navigate to="/buyer-qualification" replace />} />
       <Route path="/golden-visa" element={<AppFrame mode="buyer" showInternalAccess={headerInternalAccess}><GoldenVisa /></AppFrame>} />
       <Route path="/partner" element={isPartner ? <AppFrame mode="partner" title="Partner Workspace"><PartnerOverview /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/partner/leads" element={isPartner ? <AppFrame mode="partner" title="Partner Workspace"><PartnerLeads /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />

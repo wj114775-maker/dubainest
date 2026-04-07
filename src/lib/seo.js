@@ -74,7 +74,6 @@ export function buildOrganizationJsonLd() {
       {
         "@type": "ContactPoint",
         contactType: "sales",
-        email: defaultAppConfig.support_email,
         telephone: defaultAppConfig.whatsapp_number,
         areaServed: "AE",
         availableLanguage: ["en"],
@@ -90,7 +89,6 @@ export function buildRealEstateAgentJsonLd() {
     name: getSiteName(),
     url: getSiteOrigin(),
     image: getDefaultSocialImage(),
-    email: defaultAppConfig.support_email,
     telephone: defaultAppConfig.whatsapp_number,
     areaServed: "Dubai, UAE",
   };
