@@ -130,7 +130,6 @@ const formatBathLabel = (value) => {
 
 const filterFieldClassName = "h-11 w-full rounded-[1rem] border-slate-200 bg-white px-4 text-sm shadow-none";
 const filterSelectClassName = "h-11 w-full rounded-[1rem] border-slate-200 bg-white px-4 text-sm shadow-none";
-const completionButtonClassName = "h-11 rounded-[1rem] border-slate-200 px-4 text-sm font-medium shadow-none";
 
 export default function Properties() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -305,6 +304,22 @@ export default function Properties() {
     () => JSON.stringify(filters) !== JSON.stringify(defaultFilters) || viewMode !== "list",
     [filters, viewMode]
   );
+  const activeFilterLabels = useMemo(() => {
+    const labels = [];
+
+    if (filters.location.trim()) labels.push(`Area: ${filters.location.trim()}`);
+    if (filters.developer !== "all") labels.push(`Developer: ${filters.developer}`);
+    if (filters.propertyCategory !== "all") labels.push(`Category: ${filters.propertyCategory}`);
+    if (filters.completionStatus !== "all") labels.push(filters.completionStatus === "off_plan" ? "Off-Plan" : "Ready");
+    if (filters.propertyType.length) labels.push(...filters.propertyType.slice(0, 2));
+    if (filters.bedrooms !== "any") labels.push(formatBedLabel(filters.bedrooms));
+    if (filters.bathrooms !== "any") labels.push(formatBathLabel(filters.bathrooms));
+    if (filters.privateInventoryOnly) labels.push("Private inventory");
+    if (filters.withFloorPlans) labels.push("Floor plans");
+    if (filters.sortBy !== "featured") labels.push(`Sort: ${String(filters.sortBy).replace(/_/g, " ")}`);
+
+    return labels.slice(0, 7);
+  }, [filters]);
 
   const resetFilters = () => {
     setFilters(defaultFilters);
@@ -362,7 +377,7 @@ export default function Properties() {
         />
 
         <div className="sticky top-0 z-30 hidden rounded-[1.5rem] bg-white pb-4 xl:block">
-          <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-lg shadow-black/8">
+          <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
             <CardContent className="space-y-4 p-4">
               <div className="grid items-center gap-3 xl:grid-cols-[minmax(0,2.8fr)_minmax(15rem,1.7fr)_minmax(14rem,1.45fr)_11rem]">
                 <div className="relative">
@@ -502,7 +517,7 @@ export default function Properties() {
         </div>
 
         <div className="sticky top-0 z-30 space-y-4 rounded-[1.5rem] bg-white pb-4 xl:hidden">
-          <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-lg shadow-black/8">
+          <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
             <CardContent className="space-y-4 p-4 sm:p-5">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="relative sm:col-span-2">
@@ -647,8 +662,46 @@ export default function Properties() {
 
         <div className={cn("grid gap-6", viewMode === "map" ? "xl:grid-cols-[minmax(0,780px),390px]" : "xl:grid-cols-[minmax(0,780px),320px] xl:justify-center")}>
           <div className="space-y-4 xl:max-w-[780px]">
+            <Card className="rounded-[1.85rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
+              <CardContent className="space-y-4 p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-500">Directory overview</p>
+                    <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+                      {filteredListings.length} properties ready to review
+                    </h2>
+                    <p className="text-sm leading-7 text-slate-600">
+                      Sale-only stock routed through a cleaner browse experience with project and developer context built in.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3.5 py-1.5 text-slate-700">
+                      {viewMode === "map" ? "Map view" : "List view"}
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3.5 py-1.5 text-slate-700">
+                      {filters.completionStatus === "all" ? "All sale stock" : filters.completionStatus === "off_plan" ? "Off-Plan focus" : "Ready stock focus"}
+                    </Badge>
+                  </div>
+                </div>
+
+                {activeFilterLabels.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {activeFilterLabels.map((label) => (
+                      <Badge key={label} variant="outline" className="rounded-full border-slate-200 bg-white px-3.5 py-1.5 text-slate-700">
+                        {label}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600">
+                    Start with an area, project, or developer to narrow the directory without losing the broader purchase context.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {viewMode === "map" ? (
-              <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5 xl:hidden">
+              <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)] xl:hidden">
                 <CardContent className="space-y-3 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -677,7 +730,7 @@ export default function Properties() {
                 ))}
               </div>
             ) : (
-              <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+              <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
                 <CardContent className="space-y-3 p-8">
                   <p className="text-xl font-semibold tracking-tight text-foreground">No properties match those filters.</p>
                   <p className="text-sm text-muted-foreground">
@@ -694,7 +747,7 @@ export default function Properties() {
 
           {viewMode === "map" ? (
             <div className="hidden xl:block xl:sticky xl:top-[10.5rem] xl:self-start">
-              <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+              <Card className="overflow-hidden rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
                 <CardContent className="space-y-4 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>

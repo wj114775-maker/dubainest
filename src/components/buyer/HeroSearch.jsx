@@ -17,6 +17,12 @@ const collectionOptions = [
   { value: "private_inventory", label: "Private inventory" },
 ];
 
+const heroHighlights = [
+  "Sale-only buyer journey",
+  "Developer-aligned advisory",
+  "Private inventory on request",
+];
+
 export default function HeroSearch({ appName, metrics }) {
   const navigate = useNavigate();
   const [location, setLocation] = useState("");
@@ -68,38 +74,40 @@ export default function HeroSearch({ appName, metrics }) {
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(8,14,24,0.88),rgba(13,22,38,0.74),rgba(8,14,24,0.82))]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(201,165,92,0.22),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(20,92,76,0.18),transparent_28%)]" />
 
-      <div className="relative mx-auto flex min-h-[39rem] max-w-7xl flex-col justify-center px-4 py-14 sm:px-6 lg:px-8">
+      <div className="relative mx-auto flex min-h-[41rem] max-w-7xl flex-col justify-center px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center text-white">
-          <Badge className="rounded-full border border-white/15 bg-white px-4 py-1.5 text-[11px] uppercase tracking-[0.24em] text-slate-900 hover:bg-white">
+          <Badge className="rounded-full border border-white/15 bg-white px-4 py-1.5 text-[11px] uppercase tracking-[0.24em] text-slate-900 shadow-[0_12px_30px_rgba(0,0,0,0.12)] hover:bg-white">
             Dubai property purchase
           </Badge>
           <div className="mt-6 space-y-4">
-            <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+            <h1 className="text-[2.65rem] font-semibold tracking-tight md:text-[4.2rem] md:leading-[1.02]">
               Search Dubai properties for sale through one clear buyer journey.
             </h1>
-            <p className="mx-auto max-w-3xl text-sm leading-6 text-white/78 md:text-base">
+            <p className="mx-auto max-w-3xl text-sm leading-7 text-white/78 md:text-base">
               {appName} is built for purchase only: ready homes, off-plan launches, and private inventory routed into direct advisory support.
             </p>
           </div>
         </div>
 
-        <div className="mx-auto mt-9 w-full max-w-[72rem] rounded-[1.8rem] border border-slate-200/80 bg-white p-3.5 shadow-[0_24px_80px_rgba(4,12,24,0.22)] md:p-4">
-          <div className="flex flex-wrap items-center justify-center gap-1.5 border-b border-slate-200 pb-3">
-            <Badge className="rounded-full bg-slate-950 px-3.5 py-1.5 text-[11px] text-white hover:bg-slate-950">Properties</Badge>
-            <Button asChild variant="ghost" className="rounded-full px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-950">
-              <Link to="/projects">New projects</Link>
-            </Button>
-            <Button variant="ghost" className="rounded-full px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-950" onClick={() => setOpen(true)}>
-              Private client
-            </Button>
-            <Button asChild variant="ghost" className="rounded-full px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-950">
-              <Link to="/guides">Guides</Link>
-            </Button>
+        <div className="mx-auto mt-10 w-full max-w-[74rem] rounded-[2rem] border border-slate-200/85 bg-white/95 p-4 shadow-[0_28px_90px_rgba(4,12,24,0.22)] backdrop-blur md:p-5">
+          <div className="flex justify-center">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-slate-50/90 p-1.5">
+              <Badge className="rounded-full bg-slate-950 px-4 py-2 text-[11px] text-white hover:bg-slate-950">Properties</Badge>
+              <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-white hover:text-slate-950">
+                <Link to="/projects">New projects</Link>
+              </Button>
+              <Button variant="ghost" className="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-white hover:text-slate-950" onClick={() => setOpen(true)}>
+                Private client
+              </Button>
+              <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-white hover:text-slate-950">
+                <Link to="/guides">Guides</Link>
+              </Button>
+            </div>
           </div>
 
-          <form className="mt-3.5 space-y-3.5" onSubmit={handleSubmit}>
-            <div className="grid gap-2.5 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-              <div className="rounded-[1.15rem] border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+          <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1.05fr)_minmax(0,1.05fr)_12rem]">
+              <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
                 <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
                   <MapPin className="h-3.5 w-3.5 text-slate-700" />
                   Location
@@ -108,11 +116,11 @@ export default function HeroSearch({ appName, metrics }) {
                   placeholder="Search area, community, or project"
                   value={location}
                   onChange={(event) => setLocation(event.target.value)}
-                  className="mt-1.5 h-7 border-none px-0 text-sm text-slate-950 shadow-none focus-visible:ring-0"
+                  className="mt-2 h-8 border-none px-0 text-[15px] text-slate-950 shadow-none focus-visible:ring-0"
                 />
               </div>
 
-              <div className="rounded-[1.15rem] border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+              <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
                 <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
                   <Building2 className="h-3.5 w-3.5 text-slate-700" />
                   Developer
@@ -123,12 +131,12 @@ export default function HeroSearch({ appName, metrics }) {
                   developers={approvedDevelopers}
                   featuredDeveloperNames={featuredDeveloperNames}
                   placeholder="Any developer"
-                  triggerClassName="mt-1 h-7 border-none px-0 text-sm text-slate-950 shadow-none focus-visible:ring-0"
+                  triggerClassName="mt-2 h-8 border-none px-0 text-[15px] text-slate-950 shadow-none focus-visible:ring-0"
                   contentClassName="w-[380px]"
                 />
               </div>
 
-              <div className="rounded-[1.15rem] border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+              <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
                 <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
                   <Sparkles className="h-3.5 w-3.5 text-slate-700" />
                   Property type
@@ -138,18 +146,18 @@ export default function HeroSearch({ appName, metrics }) {
                   value={propertyType}
                   onCategoryChange={setPropertyCategory}
                   onValueChange={setPropertyType}
-                  triggerClassName="mt-1 h-7 border-none px-0 text-sm text-slate-950 shadow-none focus-visible:ring-0"
+                  triggerClassName="mt-2 h-8 border-none px-0 text-[15px] text-slate-950 shadow-none focus-visible:ring-0"
                   contentClassName="w-[400px]"
                 />
               </div>
 
-              <Button type="submit" className="h-full min-h-[4.4rem] rounded-[1.2rem] bg-slate-950 px-5 text-sm font-semibold text-white hover:bg-slate-900">
+              <Button type="submit" className="h-full min-h-[5rem] rounded-[1.35rem] bg-slate-950 px-6 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(15,23,42,0.16)] hover:bg-slate-900">
                 <Search className="mr-2 h-4 w-4" />
-                Search
+                Search properties
               </Button>
             </div>
 
-            <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="grid gap-3 border-t border-slate-200 pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
               <div className="flex flex-wrap gap-1.5">
                 {collectionOptions.map((option) => (
                   <button
@@ -165,6 +173,18 @@ export default function HeroSearch({ appName, metrics }) {
                   >
                     {option.label}
                   </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 text-xs font-medium text-slate-500 lg:justify-end">
+                {heroHighlights.map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-slate-950" />
+                    {item}
+                  </span>
                 ))}
               </div>
             </div>

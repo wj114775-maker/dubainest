@@ -87,7 +87,7 @@ export default function ListingListRow({ listing, whatsappNumber }) {
   };
 
   return (
-    <Card className="overflow-hidden rounded-[1.5rem] border-white/10 bg-card shadow-lg shadow-black/5 md:max-w-[780px]">
+    <Card className="overflow-hidden rounded-[1.85rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)] md:max-w-[780px]">
       <CardContent className="p-0">
         <article
           data-listing-row={listing.id}
@@ -95,14 +95,15 @@ export default function ListingListRow({ listing, whatsappNumber }) {
           tabIndex={0}
           onClick={openListing}
           onKeyDown={handleKeyDown}
-          className="grid cursor-pointer gap-0 md:h-[246px] md:grid-cols-[325px,1fr]"
+          className="grid cursor-pointer gap-0 md:h-[262px] md:grid-cols-[336px,1fr]"
         >
-          <div className="relative aspect-[360/255] overflow-hidden bg-muted md:h-[246px] md:w-[325px]">
+          <div className="relative aspect-[360/255] overflow-hidden bg-muted md:h-[262px] md:w-[336px]">
             <img
               src={galleryImages[activeImageIndex]}
               alt={listing.title}
               className="h-full w-full object-cover"
             />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.02),rgba(15,23,42,0.5))]" />
 
             <div className="absolute left-3 top-3 flex flex-wrap gap-2">
               <Badge className={`rounded-full ${statusClassName}`}>{statusLabel}</Badge>
@@ -119,7 +120,7 @@ export default function ListingListRow({ listing, whatsappNumber }) {
                 <button
                   type="button"
                   aria-label="Previous photo"
-                  className="absolute left-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white"
+                  className="absolute left-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur"
                   onClick={showPrevImage}
                 >
                   <ChevronLeft className="h-5 w-5 stroke-[2.45]" />
@@ -127,7 +128,7 @@ export default function ListingListRow({ listing, whatsappNumber }) {
                 <button
                   type="button"
                   aria-label="Next photo"
-                  className="absolute right-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white"
+                  className="absolute right-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur"
                   onClick={showNextImage}
                 >
                   <ChevronRight className="h-5 w-5 stroke-[2.45]" />
@@ -139,8 +140,19 @@ export default function ListingListRow({ listing, whatsappNumber }) {
             ) : null}
           </div>
 
-          <div className="grid h-full grid-rows-[1fr_auto] overflow-hidden p-4">
-            <div className="min-h-0 space-y-2">
+          <div className="grid h-full grid-rows-[1fr_auto] overflow-hidden p-5">
+            <div className="min-h-0 space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {listing.project_name ? (
+                  <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
+                    {listing.project_name}
+                  </Badge>
+                ) : null}
+                <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
+                  Sale only
+                </Badge>
+              </div>
+
               <p className="text-2xl font-semibold tracking-tight text-foreground">
                 AED {Number(listing.price || 0).toLocaleString()}
               </p>
@@ -166,11 +178,11 @@ export default function ListingListRow({ listing, whatsappNumber }) {
                 ) : null}
               </div>
 
-              <h3 className="truncate text-lg font-semibold tracking-tight text-foreground md:text-[1.3rem]">
+              <h3 className="truncate text-xl font-semibold tracking-tight text-foreground md:text-[1.38rem]">
                 {listing.title}
               </h3>
 
-              <p className="max-w-3xl truncate text-sm leading-5 text-muted-foreground">
+              <p className="max-w-3xl truncate text-sm leading-6 text-muted-foreground">
                 {shortSummary || "Dubai purchase opportunity with clean pricing and key property details."}
               </p>
 
@@ -184,7 +196,10 @@ export default function ListingListRow({ listing, whatsappNumber }) {
               </div>
             </div>
 
-            <div className="mt-3 flex shrink-0 flex-wrap items-center justify-start gap-2 border-t border-white/10 pt-3">
+            <div className="mt-3 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+              <div className="text-xs font-medium uppercase tracking-[0.22em] text-slate-500">
+                Buyer-ready detail page
+              </div>
               <Button
                 asChild
                 variant="outline"

@@ -218,12 +218,12 @@ export default function Home() {
             {trustSignals.map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.title} className="rounded-[1.5rem] border border-white/70 bg-white/90 p-5 shadow-sm shadow-black/5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-[1rem] bg-slate-950 text-white">
+                <div key={item.title} className="rounded-[1.5rem] border border-white/70 bg-white/95 p-5 shadow-[0_18px_48px_rgba(15,23,42,0.04)]">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-[1rem] bg-slate-950 text-white shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
                     <Icon className="h-4.5 w-4.5" />
                   </div>
                   <h2 className="mt-4 text-lg font-semibold tracking-tight text-foreground">{item.title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">{item.description}</p>
                 </div>
               );
             })}
@@ -231,7 +231,7 @@ export default function Home() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_440px] xl:items-stretch">
-          <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+          <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
             <CardContent className="space-y-6 p-6 lg:p-7">
               <div className="space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">How it works</p>
@@ -243,7 +243,7 @@ export default function Home() {
 
               <div className="space-y-4">
                 {purchaseSteps.map((item) => (
-                  <div key={item.step} className="grid gap-4 rounded-[1.5rem] border border-white/10 bg-background/70 p-4 md:grid-cols-[72px_minmax(0,1fr)] md:items-start">
+                  <div key={item.step} className="grid gap-4 rounded-[1.5rem] border border-slate-200 bg-slate-50/75 p-4 md:grid-cols-[72px_minmax(0,1fr)] md:items-start">
                     <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-sm font-semibold text-white">
                       {item.step}
                     </div>
@@ -286,15 +286,15 @@ export default function Home() {
             {pathCards.map((item) => {
               const Icon = item.icon;
               return (
-                <Card key={item.title} className="rounded-[2rem] border-white/10 bg-card/95 shadow-xl shadow-black/5">
+                <Card key={item.title} className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
                   <CardContent className="flex h-full flex-col justify-between gap-6 p-6">
                     <div className="space-y-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-[1.2rem] bg-primary/10 text-primary">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-[1.2rem] bg-slate-950 text-white shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
                         <Icon className="h-5 w-5" />
                       </div>
                       <div>
                         <h3 className="text-xl font-semibold tracking-tight text-foreground">{item.title}</h3>
-                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-600">{item.description}</p>
                       </div>
                     </div>
                     {item.path ? (
@@ -391,7 +391,7 @@ export default function Home() {
           )}
         </section>
 
-        <section className="rounded-[2rem] border border-white/10 bg-card/95 p-6 shadow-xl shadow-black/5">
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <p className="text-xs uppercase tracking-[0.3em] text-primary">Purchase pathway</p>
@@ -414,7 +414,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-card/95 shadow-xl shadow-black/5">
+        <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
           <div className="grid gap-0 lg:grid-cols-[390px_minmax(0,1fr)]">
             <div className="relative min-h-[20rem]">
               <img
