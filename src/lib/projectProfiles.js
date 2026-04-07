@@ -1,4 +1,5 @@
 import { filterEntitySafe, listEntitySafe } from "@/lib/base44Safeguards";
+import { showcaseProjectProfiles } from "@/data/showcaseProfiles";
 import { findMatchingDeveloperProfile } from "@/lib/developerProfiles";
 import { slugifyText } from "@/lib/developerDirectory";
 
@@ -58,11 +59,26 @@ export async function listProjectProfiles() {
 
 export async function getProjectProfileBySlug(slug) {
   const profiles = await filterEntitySafe("ProjectProfile", { slug });
-  return profiles[0] ? normalizeProjectProfile(profiles[0]) : null;
+  if (profiles[0]) return normalizeProjectProfile(profiles[0]);
+  return getShowcaseProjectProfileBySlug(slug);
+}
+
+function mergeShowcaseProjectProfiles(profiles = []) {
+  const normalizedProfiles = Array.isArray(profiles) ? profiles.map(normalizeProjectProfile) : [];
+  const publicProfiles = normalizedProfiles.filter((profile) => profile.page_status === "published");
+
+  if (publicProfiles.length) return normalizedProfiles;
+  return showcaseProjectProfiles.map(normalizeProjectProfile);
+}
+
+export function getShowcaseProjectProfileBySlug(slug) {
+  return showcaseProjectProfiles
+    .map(normalizeProjectProfile)
+    .find((profile) => profile.slug === slug) || null;
 }
 
 export function getPublicProjectProfiles(profiles = []) {
-  return profiles.filter((profile) => profile.page_status === "published");
+  return mergeShowcaseProjectProfiles(profiles).filter((profile) => profile.page_status === "published");
 }
 
 export function getHomepageProjectProfiles(profiles = []) {
@@ -72,8 +88,9 @@ export function getHomepageProjectProfiles(profiles = []) {
 export function findProjectProfileForListing(listing, profiles = []) {
   const listingProjectId = String(listing?.project_id || "").trim();
   const listingProjectName = normalizeCompareValue(listing?.project_name);
+  const sourceProfiles = mergeShowcaseProjectProfiles(profiles);
 
-  return profiles.find((profile) => (
+  return sourceProfiles.find((profile) => (
     profile.featured_listing_ids?.includes(listing?.id)
     || (listingProjectId && String(profile.project_id || "").trim() === listingProjectId)
     || (listingProjectName && normalizeCompareValue(profile.project_name) === listingProjectName)

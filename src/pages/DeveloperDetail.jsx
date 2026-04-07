@@ -1,9 +1,15 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { Building2, MapPin } from "lucide-react";
+import {
+  ArrowUpRight,
+  Building2,
+  Layers3,
+  MapPin,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import SectionHeading from "@/components/common/SectionHeading";
 import ListingCard from "@/components/buyer/ListingCard";
 import ProjectSpotlightCard from "@/components/buyer/ProjectSpotlightCard";
 import SeoMeta from "@/components/seo/SeoMeta";
@@ -19,6 +25,36 @@ import { buildBreadcrumbJsonLd, truncateSeoDescription } from "@/lib/seo";
 function formatPrice(value) {
   if (!value) return "On request";
   return `AED ${Number(value).toLocaleString()}`;
+}
+
+function buildPriceBand(developer) {
+  if (!developer?.minPrice && !developer?.maxPrice) return "On request";
+  if (!developer?.maxPrice || developer.minPrice === developer.maxPrice) return formatPrice(developer.minPrice || developer.maxPrice);
+  return `${formatPrice(developer.minPrice)} - ${formatPrice(developer.maxPrice)}`;
+}
+
+function DetailRow({ label, value, action }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-slate-200/80 py-3 last:border-b-0 last:pb-0">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{label}</p>
+        <p className="mt-2 text-sm font-medium text-slate-950">{value}</p>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function FactTile({ icon: Icon, label, value }) {
+  return (
+    <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50/80 px-4 py-4">
+      <div className="flex items-center gap-2 text-slate-500">
+        <Icon className="h-4 w-4 stroke-[2.4]" />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.22em]">{label}</span>
+      </div>
+      <p className="mt-3 text-sm font-semibold text-slate-950">{value}</p>
+    </div>
+  );
 }
 
 export default function DeveloperDetail() {
@@ -60,168 +96,353 @@ export default function DeveloperDetail() {
   const developer = profile && profile.partnership_status === "partnered" && profile.page_status === "published"
     ? hydrateDeveloperProfile(profile, approvedDevelopers, listings)
     : null;
+
+  const relatedProjects = useMemo(() => {
+    if (!developer) return [];
+    return buildManagedProjectDirectory(projectProfiles, projects, listings, developerProfiles)
+      .filter((project) => (
+        project.developerSlug === developer.slug
+        || project.developerName === developer.name
+        || project.developerName === developer.officialName
+      ))
+      .slice(0, 6);
+  }, [developer, developerProfiles, listings, projectProfiles, projects]);
+
   const featuredListings = developer?.listings?.slice(0, 6) || [];
-  const relatedProjects = developer ? buildManagedProjectDirectory(projectProfiles, projects, listings, developerProfiles)
-    .filter((project) => project.developerSlug === developer.slug || project.developerName === developer.name || project.developerName === developer.officialName)
-    .slice(0, 6) : [];
+  const featuredAreas = developer?.topAreas || [];
+  const portfolioNotes = useMemo(() => {
+    if (!developer) return [];
+    return [
+      `${developer.name} currently routes into ${developer.listingCount} active public sale opportunities.`,
+      developer.offPlanCount
+        ? `${developer.offPlanCount} off-plan opportunities are connected to the developer route for launch-stage buyers.`
+        : "The active public route is currently weighted more toward ready or immediately reviewable stock.",
+      developer.privateInventoryCount
+        ? `${developer.privateInventoryCount} private inventory opportunity${developer.privateInventoryCount === 1 ? " is" : "ies are"} attached to this developer profile.`
+        : "Private inventory is currently handled through separate buyer-advisory routing rather than broad public publication.",
+      featuredAreas.length
+        ? `The strongest public location tie-ins for this developer are ${featuredAreas.join(", ")}.`
+        : "Area-led routes can be attached here once more community context is published.",
+    ];
+  }, [developer, featuredAreas]);
 
-  return (
-    <div className="space-y-6 pb-28">
-      <SeoMeta
-        title={`${developer?.name || "Developer"} Properties and Off-Plan Opportunities`}
-        description={truncateSeoDescription(
-          developer
-            ? `${developer.name} has ${developer.listingCount} active Dubai properties${developer.topAreas.length ? ` across ${developer.topAreas.join(", ")}` : ""}, including ${developer.offPlanCount} off-plan opportunities.`
-            : "Developer profile not found."
-        )}
-        canonicalPath={`/developers/${slug}`}
-        robots={developer ? "index,follow" : "noindex,nofollow"}
-        image={developer?.heroImageUrl}
-        jsonLd={buildBreadcrumbJsonLd([
-          { name: "Home", path: "/" },
-          { name: "Developers", path: "/developers" },
-          { name: developer?.name || "Developer", path: `/developers/${slug}` },
-        ])}
-      />
-
-      {!developer ? (
-        <div className="space-y-4">
-          <SectionHeading
-            eyebrow="Developers"
-            title="Developer profile not found"
-            description="This developer page is not available yet."
-            titleAs="h1"
-          />
+  if (!developer) {
+    return (
+      <>
+        <SeoMeta
+          title="Developer Profile Not Found"
+          description="The requested developer profile could not be found."
+          canonicalPath={`/developers/${slug}`}
+          robots="noindex,nofollow"
+        />
+        <div className="space-y-4 pb-28">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Developer profile not found</h1>
+          <p className="text-sm text-slate-600">This developer page is not available yet.</p>
           <Button asChild className="rounded-full px-5">
             <Link to="/developers">Back to developers</Link>
           </Button>
         </div>
-      ) : (
-        <>
-          <div className="overflow-hidden rounded-[2rem] border border-white/10">
-            {developer.heroImageUrl ? (
-              <img src={developer.heroImageUrl} alt={developer.name} className="h-[280px] w-full object-cover md:h-[380px]" />
-            ) : (
-              <div className="flex h-[280px] items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 text-white md:h-[380px]">
-                <div className="flex h-24 w-24 items-center justify-center rounded-[1.8rem] bg-white/10">
-                  <Building2 className="h-10 w-10" />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <SeoMeta
+        title={`${developer.name} Dubai Properties and Projects`}
+        description={truncateSeoDescription(
+          developer.summary
+          || `${developer.name} has ${developer.listingCount} active Dubai sale opportunities${featuredAreas.length ? ` across ${featuredAreas.join(", ")}` : ""}, including linked projects and off-plan routes.`
+        )}
+        canonicalPath={`/developers/${slug}`}
+        robots="index,follow"
+        image={developer.heroImageUrl}
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Developers", path: "/developers" },
+          { name: developer.name, path: `/developers/${slug}` },
+        ])}
+      />
+
+      <div className="space-y-6 pb-28">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-6">
+            <section className="space-y-5">
+              <div className="overflow-hidden rounded-[2.25rem] border border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
+                <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_18rem]">
+                  <div className="relative aspect-[16/11] bg-slate-100">
+                    {developer.heroImageUrl ? (
+                      <img src={developer.heroImageUrl} alt={developer.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 text-white">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] bg-white/10">
+                          <Building2 className="h-9 w-9" />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.06),rgba(15,23,42,0.72))]" />
+
+                    <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                      <Badge className="rounded-full bg-slate-950 px-3.5 py-1.5 text-white hover:bg-slate-950">
+                        Developer profile
+                      </Badge>
+                      <Badge className="rounded-full border border-white/60 bg-white/90 px-3.5 py-1.5 text-slate-900 hover:bg-white">
+                        Sale only
+                      </Badge>
+                    </div>
+
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">{developer.name}</h1>
+                      <p className="mt-3 max-w-3xl text-sm leading-7 text-white/78">
+                        {developer.summary || "A governed developer page should move from brand trust into project context and then into relevant stock, without exposing the entire operational layer."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="hidden border-l border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5 lg:flex lg:flex-col lg:justify-between">
+                    <div className="space-y-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Portfolio summary</p>
+                      <div>
+                        <p className="text-3xl font-semibold tracking-tight text-slate-950">{buildPriceBand(developer)}</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          {developer.primaryCity || "Dubai"} public route with projects, active stock, and controlled advisory paths.
+                        </p>
+                      </div>
+                      <div className="space-y-3">
+                        <DetailRow label="Active stock" value={String(developer.listingCount || 0)} />
+                        <DetailRow label="Off-plan stock" value={String(developer.offPlanCount || 0)} />
+                        <DetailRow label="Private inventory" value={String(developer.privateInventoryCount || 0)} />
+                      </div>
+                    </div>
+
+                    <div className="rounded-[1.4rem] border border-slate-200 bg-white p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Route logic</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        Buyers should move from brand trust into a smaller set of project pages and then into the most relevant live units.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
 
-          <SectionHeading
-            eyebrow="Developer profile"
-            title={developer.name}
-            description={developer.summary || `${developer.listingCount} active opportunities, ${developer.offPlanCount} off-plan, ${developer.readyCount} ready, and ${developer.privateInventoryCount} private inventory options.`}
-            titleAs="h1"
-            action={
-              <div className="flex gap-3">
-                <Button asChild className="rounded-full px-5">
-                  <Link to={`/properties?developer=${encodeURIComponent(developer.officialName || developer.name)}`}>View properties</Link>
-                </Button>
-                <Button asChild variant="outline" className="rounded-full px-5">
-                  <Link to="/developers">All developers</Link>
-                </Button>
-              </div>
-            }
-          />
-
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">Listings {developer.listingCount}</Badge>
-            <Badge variant="outline">Off-plan {developer.offPlanCount}</Badge>
-            <Badge variant="outline">Ready {developer.readyCount}</Badge>
-            {developer.officeNumber ? <Badge variant="outline">Office {developer.officeNumber}</Badge> : null}
-          </div>
-
-          {developer.body ? (
-            <Card className="rounded-[1.8rem] border-white/10 bg-card/90">
-              <CardContent className="p-6">
-                <p className="text-sm leading-7 text-muted-foreground">{developer.body}</p>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card className="rounded-[1.6rem] border-white/10 bg-card/90">
-              <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Price from</p>
-                <p className="mt-2 text-xl font-semibold text-foreground">{formatPrice(developer.minPrice)}</p>
-              </CardContent>
-            </Card>
-            <Card className="rounded-[1.6rem] border-white/10 bg-card/90">
-              <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Highest stock</p>
-                <p className="mt-2 text-xl font-semibold text-foreground">{developer.topAreas[0] || "Dubai"}</p>
-              </CardContent>
-            </Card>
-            <Card className="rounded-[1.6rem] border-white/10 bg-card/90">
-              <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Private inventory</p>
-                <p className="mt-2 text-xl font-semibold text-foreground">{developer.privateInventoryCount}</p>
-              </CardContent>
-            </Card>
-            <Card className="rounded-[1.6rem] border-white/10 bg-card/90">
-              <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Price ceiling</p>
-                <p className="mt-2 text-xl font-semibold text-foreground">{formatPrice(developer.maxPrice)}</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {developer.topAreas.length ? (
-            <section className="space-y-3">
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground">Top areas for {developer.name}</h2>
               <div className="flex flex-wrap gap-2">
-                {developer.topAreas.map((area) => (
-                  <Link
-                    key={area}
-                    to={`/properties?developer=${encodeURIComponent(developer.officialName || developer.name)}&q=${encodeURIComponent(area)}`}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm text-muted-foreground transition hover:border-primary/30 hover:text-foreground"
-                  >
-                    <MapPin className="h-4 w-4" />
+                <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3.5 py-1.5 text-slate-700">
+                  Partnered profile
+                </Badge>
+                {developer.primaryCity ? (
+                  <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3.5 py-1.5 text-slate-700">
+                    {developer.primaryCity}
+                  </Badge>
+                ) : null}
+                {featuredAreas.slice(0, 2).map((area) => (
+                  <Badge key={area} variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3.5 py-1.5 text-slate-700">
                     {area}
-                  </Link>
+                  </Badge>
                 ))}
               </div>
-            </section>
-          ) : null}
 
-          {relatedProjects.length ? (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <FactTile icon={Layers3} label="Developer projects" value={String(relatedProjects.length)} />
+                <FactTile icon={Building2} label="Live listings" value={String(developer.listingCount || 0)} />
+                <FactTile icon={Sparkles} label="Off-plan stock" value={String(developer.offPlanCount || 0)} />
+                <FactTile icon={ShieldCheck} label="Private inventory" value={String(developer.privateInventoryCount || 0)} />
+              </div>
+            </section>
+
+            <section className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+              <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
+                <CardContent className="space-y-5 p-6 lg:p-7">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Brand story</p>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Why this developer page matters</h2>
+                  </div>
+                  <p className="text-sm leading-7 text-slate-600">
+                    {developer.body || developer.summary || "Use the developer layer to carry the brand narrative, area focus, and linked project pages before the buyer drills into individual units."}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
+                <CardContent className="space-y-5 p-6 lg:p-7">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Portfolio snapshot</p>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">How the public route is structured</h2>
+                  </div>
+                  <div className="space-y-1">
+                    <DetailRow label="Brand name" value={developer.officialName || developer.name} />
+                    <DetailRow label="Primary city" value={developer.primaryCity || "Dubai"} />
+                    <DetailRow label="Price band" value={buildPriceBand(developer)} />
+                    <DetailRow label="Projects" value={String(relatedProjects.length || 0)} />
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
+              <CardContent className="space-y-5 p-6 lg:p-7">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Buyer perspective</p>
+                  <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">What this public route tells the buyer</h2>
+                </div>
+                <div className="space-y-3">
+                  {portfolioNotes.map((note) => (
+                    <div key={note} className="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm leading-6 text-slate-700">
+                      {note}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {featuredAreas.length ? (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Top areas</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Where this developer is most visible</h2>
+                  </div>
+                  <Button asChild variant="outline" className="rounded-full px-5">
+                    <Link to={`/properties?developer=${encodeURIComponent(developer.officialName || developer.name)}`}>
+                      View all matching stock
+                      <ArrowUpRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {featuredAreas.map((area) => (
+                    <Link
+                      key={area}
+                      to={`/properties?developer=${encodeURIComponent(developer.officialName || developer.name)}&q=${encodeURIComponent(area)}`}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-950"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      {area}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {relatedProjects.length ? (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Related projects</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Projects currently published for {developer.name}</h2>
+                  </div>
+                  <Button asChild variant="outline" className="rounded-full px-5">
+                    <Link to="/projects">All projects</Link>
+                  </Button>
+                </div>
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {relatedProjects.map((project) => (
+                    <ProjectSpotlightCard key={project.slug} project={project} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             <section className="space-y-4">
               <div className="flex items-center justify-between gap-4">
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground">Projects by {developer.name}</h2>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Linked sale stock</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Properties attached to this developer route</h2>
+                </div>
                 <Button asChild variant="outline" className="rounded-full px-5">
-                  <Link to="/projects">All projects</Link>
+                  <Link to={`/properties?developer=${encodeURIComponent(developer.officialName || developer.name)}`}>
+                    Open property directory
+                    <ArrowUpRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
               </div>
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {relatedProjects.map((project) => (
-                  <ProjectSpotlightCard key={project.slug} project={project} />
-                ))}
-              </div>
+              {featuredListings.length ? (
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {featuredListings.map((listing) => (
+                    <ListingCard key={listing.id} listing={listing} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-600">No active sale stock is currently linked to this developer profile.</p>
+              )}
             </section>
-          ) : null}
+          </div>
 
-          <section className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground">Properties by {developer.name}</h2>
-              <Button asChild variant="outline" className="rounded-full px-5">
-                <Link to={`/properties?developer=${encodeURIComponent(developer.officialName || developer.name)}`}>See all matching stock</Link>
-              </Button>
-            </div>
-            {featuredListings.length ? (
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {featuredListings.map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No active properties are currently linked to this developer.</p>
-            )}
-          </section>
-        </>
-      )}
-    </div>
+          <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+            <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
+              <CardContent className="space-y-5 p-6">
+                <div className="space-y-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Developer advisory</p>
+                  <p className="text-3xl font-semibold tracking-tight text-slate-950">{buildPriceBand(developer)}</p>
+                  <div className="space-y-2 text-sm text-slate-600">
+                    <p className="font-medium text-slate-950">{developer.name}</p>
+                    <p>{developer.primaryCity || "Dubai"} developer route with projects and live sale stock.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 rounded-[1.4rem] border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-700">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    {developer.listingCount} live listing{developer.listingCount === 1 ? "" : "s"}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    {developer.offPlanCount} off-plan route{developer.offPlanCount === 1 ? "" : "s"}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4" />
+                    {developer.privateInventoryCount} private inventory
+                  </div>
+                  {featuredAreas[0] ? (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      Strongest area: {featuredAreas[0]}
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-2.5">
+                  <Button asChild className="h-11 rounded-full">
+                    <Link to={`/properties?developer=${encodeURIComponent(developer.officialName || developer.name)}`}>
+                      View properties
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="h-11 rounded-full">
+                    <Link to="/contact">Contact us</Link>
+                  </Button>
+                  <Button asChild variant="outline" className="h-11 rounded-full">
+                    <Link to="/projects">Browse projects</Link>
+                  </Button>
+                </div>
+
+                <div className="space-y-2 border-t border-slate-200 pt-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Connected public routes</p>
+                  <div className="grid gap-2">
+                    <Button asChild variant="outline" className="justify-between rounded-full px-4">
+                      <Link to={`/properties?developer=${encodeURIComponent(developer.officialName || developer.name)}`}>
+                        Property directory
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="justify-between rounded-full px-4">
+                      <Link to="/projects">
+                        Project directory
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="justify-between rounded-full px-4">
+                      <Link to="/contact">
+                        Contact route
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </aside>
+        </div>
+      </div>
+    </>
   );
 }

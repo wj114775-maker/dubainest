@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { showcaseListingSeoEntries } from "../src/data/showcaseSeoCatalog.js";
+import { showcaseDeveloperRouteEntries, showcaseProjectRouteEntries } from "../src/data/showcaseProfiles.js";
 
 const SITE_ORIGIN = String(process.env.VITE_PUBLIC_SITE_URL || "https://dubai-nest-home.base44.app").replace(/\/$/, "");
 const APP_ID = process.env.BASE44_APP_ID || "69c5253502450cc74466ea9c";
@@ -114,9 +115,15 @@ async function generateSitemap() {
     ...developerProfiles
       .filter((profile) => profile.page_status === "published" && profile.partnership_status === "partnered" && profile.slug)
       .map((profile) => toUrlEntry(`/developers/${profile.slug}`, pickLastModified(profile), "0.76")),
+    ...(developerProfiles.some((profile) => profile.page_status === "published" && profile.partnership_status === "partnered" && profile.slug)
+      ? []
+      : showcaseDeveloperRouteEntries.map((profile) => toUrlEntry(profile.path, TODAY, "0.74"))),
     ...projectProfiles
       .filter((profile) => profile.page_status === "published" && profile.slug)
       .map((profile) => toUrlEntry(`/projects/${profile.slug}`, pickLastModified(profile), "0.76")),
+    ...(projectProfiles.some((profile) => profile.page_status === "published" && profile.slug)
+      ? []
+      : showcaseProjectRouteEntries.map((profile) => toUrlEntry(profile.path, TODAY, "0.74"))),
   ];
 
   const uniqueEntries = Array.from(

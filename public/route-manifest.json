@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-07T01:07:24.336Z",
+  "generatedAt": "2026-04-07T01:21:47.111Z",
   "siteOrigin": "https://dubai-nest-home.base44.app",
   "routes": [
     "/",
@@ -11,6 +11,9 @@
     "/buyer-qualification",
     "/contact",
     "/developers",
+    "/developers/emaar",
+    "/developers/meraas",
+    "/developers/omniyat",
     "/golden-visa",
     "/guides",
     "/guides/dubai-golden-visa-property-buyers",
@@ -20,6 +23,11 @@
     "/privacy",
     "/private-inventory",
     "/projects",
+    "/projects/bluewaters-signature-residences",
+    "/projects/burj-crown-residences",
+    "/projects/city-walk-crestlane",
+    "/projects/creek-harbour-altan",
+    "/projects/the-lana-residences",
     "/properties",
     "/properties/bluewaters-branded-off-plan-corner-apartment--demo-bluewaters-branded-apartment",
     "/properties/business-bay-canal-loft-collection--demo-business-bay-canal-loft",

@@ -1,11 +1,13 @@
 import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { ArrowUpRight, CalendarClock, Layers3, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import SectionHeading from "@/components/common/SectionHeading";
 import ProjectSpotlightCard from "@/components/buyer/ProjectSpotlightCard";
 import SeoMeta from "@/components/seo/SeoMeta";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { loadBuyerListings } from "@/lib/buyerListings";
 import { buildBreadcrumbJsonLd } from "@/lib/seo";
 import { listDeveloperProfiles } from "@/lib/developerProfiles";
@@ -43,6 +45,12 @@ export default function Projects() {
     () => buildManagedProjectDirectory(projectProfiles, projects, listings, developerProfiles),
     [developerProfiles, listings, projectProfiles, projects]
   );
+  const summary = useMemo(() => ({
+    projectCount: directory.length,
+    unitCount: directory.reduce((sum, project) => sum + Number(project.featuredListings?.length || 0), 0),
+    offPlanCount: directory.filter((project) => project.status === "under_construction" || project.status === "planned").length,
+    readyCount: directory.filter((project) => project.status === "completed").length,
+  }), [directory]);
 
   return (
     <div className="space-y-6 pb-28">
@@ -66,6 +74,70 @@ export default function Projects() {
           </Button>
         )}
       />
+
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_360px]">
+        <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.06)]">
+          <CardContent className="space-y-5 p-6 lg:p-7">
+            <div className="space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Launch directory</p>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-950">Project pages sit between brand trust and listing-level choice.</h2>
+              <p className="max-w-3xl text-sm leading-7 text-slate-600">
+                This index is meant to carry launch context, handover timing, price range, and linked inventory before the buyer drills into a specific property page. It should feel governed and premium rather than portal-like.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Project pages</p>
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{summary.projectCount}</p>
+              </div>
+              <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Linked units</p>
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{summary.unitCount}</p>
+              </div>
+              <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Launch-stage</p>
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{summary.offPlanCount}</p>
+              </div>
+              <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Ready projects</p>
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{summary.readyCount}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-[2rem] border-slate-200 bg-[linear-gradient(160deg,#0f172a_0%,#18253a_58%,#1d3147_100%)] text-white shadow-[0_28px_80px_rgba(15,23,42,0.18)]">
+          <CardContent className="space-y-5 p-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-white/10">
+              <Layers3 className="h-5 w-5" />
+            </div>
+            <div className="space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/65">Project positioning</p>
+              <h2 className="text-2xl font-semibold tracking-tight">Launch pages need facts, not noise.</h2>
+              <p className="text-sm leading-7 text-white/76">
+                A strong project page should explain delivery timing, pricing range, and linked opportunities before the buyer decides which specific listing to pursue.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/10 px-3 py-1.5 text-xs text-white/82">
+                <CalendarClock className="h-3.5 w-3.5" />
+                Handover context
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/10 px-3 py-1.5 text-xs text-white/82">
+                <Sparkles className="h-3.5 w-3.5" />
+                Payment-plan positioning
+              </span>
+            </div>
+            <Button asChild variant="secondary" className="rounded-full bg-white text-slate-950 hover:bg-white/92">
+              <Link to="/properties?completion=off_plan">
+                Open off-plan stock
+                <ArrowUpRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
 
       {directory.length ? (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">

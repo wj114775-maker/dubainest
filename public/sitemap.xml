@@ -46,6 +46,21 @@
     <priority>0.80</priority>
   </url>
   <url>
+    <loc>https://dubai-nest-home.base44.app/developers/emaar</loc>
+    <lastmod>2026-04-07</lastmod>
+    <priority>0.74</priority>
+  </url>
+  <url>
+    <loc>https://dubai-nest-home.base44.app/developers/meraas</loc>
+    <lastmod>2026-04-07</lastmod>
+    <priority>0.74</priority>
+  </url>
+  <url>
+    <loc>https://dubai-nest-home.base44.app/developers/omniyat</loc>
+    <lastmod>2026-04-07</lastmod>
+    <priority>0.74</priority>
+  </url>
+  <url>
     <loc>https://dubai-nest-home.base44.app/golden-visa</loc>
     <lastmod>2026-04-07</lastmod>
     <priority>0.80</priority>
@@ -89,6 +104,31 @@
     <loc>https://dubai-nest-home.base44.app/projects</loc>
     <lastmod>2026-04-07</lastmod>
     <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://dubai-nest-home.base44.app/projects/bluewaters-signature-residences</loc>
+    <lastmod>2026-04-07</lastmod>
+    <priority>0.74</priority>
+  </url>
+  <url>
+    <loc>https://dubai-nest-home.base44.app/projects/burj-crown-residences</loc>
+    <lastmod>2026-04-07</lastmod>
+    <priority>0.74</priority>
+  </url>
+  <url>
+    <loc>https://dubai-nest-home.base44.app/projects/city-walk-crestlane</loc>
+    <lastmod>2026-04-07</lastmod>
+    <priority>0.74</priority>
+  </url>
+  <url>
+    <loc>https://dubai-nest-home.base44.app/projects/creek-harbour-altan</loc>
+    <lastmod>2026-04-07</lastmod>
+    <priority>0.74</priority>
+  </url>
+  <url>
+    <loc>https://dubai-nest-home.base44.app/projects/the-lana-residences</loc>
+    <lastmod>2026-04-07</lastmod>
+    <priority>0.74</priority>
   </url>
   <url>
     <loc>https://dubai-nest-home.base44.app/properties</loc>

@@ -1,5 +1,6 @@
 import { normalizeDeveloperQueryValue } from "@/lib/approvedDevelopers";
 import { filterEntitySafe, listEntitySafe } from "@/lib/base44Safeguards";
+import { showcaseDeveloperProfiles } from "@/data/showcaseProfiles";
 import { buildDeveloperDirectory, slugifyText } from "@/lib/developerDirectory";
 
 function normalizeProfile(profile) {
@@ -21,11 +22,28 @@ export async function listDeveloperProfiles() {
 
 export async function getDeveloperProfileBySlug(slug) {
   const profiles = await filterEntitySafe("DeveloperProfile", { slug });
-  return profiles[0] ? normalizeProfile(profiles[0]) : null;
+  if (profiles[0]) return normalizeProfile(profiles[0]);
+  return getShowcaseDeveloperProfileBySlug(slug);
+}
+
+function mergeShowcaseProfiles(profiles = []) {
+  const normalizedProfiles = Array.isArray(profiles) ? profiles.map(normalizeProfile) : [];
+  const publicProfiles = normalizedProfiles.filter((profile) => (
+    profile.partnership_status === "partnered" && profile.page_status === "published"
+  ));
+
+  if (publicProfiles.length) return normalizedProfiles;
+  return showcaseDeveloperProfiles.map(normalizeProfile);
+}
+
+export function getShowcaseDeveloperProfileBySlug(slug) {
+  return showcaseDeveloperProfiles
+    .map(normalizeProfile)
+    .find((profile) => profile.slug === slug) || null;
 }
 
 export function getPublicDeveloperProfiles(profiles = []) {
-  return profiles.filter((profile) => (
+  return mergeShowcaseProfiles(profiles).filter((profile) => (
     profile.partnership_status === "partnered" && profile.page_status === "published"
   ));
 }
@@ -37,8 +55,9 @@ export function getHomepageDeveloperProfiles(profiles = []) {
 export function findMatchingDeveloperProfile(profiles = [], developerName = "") {
   const normalizedName = normalizeDeveloperQueryValue(developerName);
   const slug = slugifyText(developerName);
+  const sourceProfiles = mergeShowcaseProfiles(profiles);
 
-  return profiles.find((profile) => (
+  return sourceProfiles.find((profile) => (
     profile.slug === slug
     || normalizeDeveloperQueryValue(profile.developer_name) === normalizedName
     || normalizeDeveloperQueryValue(profile.approved_developer_name) === normalizedName
