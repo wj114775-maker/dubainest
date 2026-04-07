@@ -1,25 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Building2,
   Check,
   ChevronDown,
-  Globe2,
   Instagram,
   Linkedin,
   MapPinned,
+  Search,
   ShieldCheck,
   Youtube,
 } from "lucide-react";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -58,10 +50,38 @@ const footerGroups = [
 const supportLanguages = [
   { value: "en-ae", flag: "🇦🇪", label: "English", detail: "United Arab Emirates" },
   { value: "ar-ae", flag: "🇦🇪", label: "Arabic", detail: "United Arab Emirates" },
+  { value: "fr-fr", flag: "🇫🇷", label: "French", detail: "Français" },
+  { value: "de-de", flag: "🇩🇪", label: "German", detail: "Deutsch" },
+  { value: "es-es", flag: "🇪🇸", label: "Spanish", detail: "Español" },
+  { value: "pt-pt", flag: "🇵🇹", label: "Portuguese", detail: "Português" },
+  { value: "it-it", flag: "🇮🇹", label: "Italian", detail: "Italiano" },
+  { value: "nl-nl", flag: "🇳🇱", label: "Dutch", detail: "Nederlands" },
   { value: "ru-ru", flag: "🇷🇺", label: "Russian", detail: "Russia" },
+  { value: "uk-ua", flag: "🇺🇦", label: "Ukrainian", detail: "Українська" },
+  { value: "tr-tr", flag: "🇹🇷", label: "Turkish", detail: "Türkçe" },
+  { value: "he-il", flag: "🇮🇱", label: "Hebrew", detail: "עברית" },
+  { value: "fa-ir", flag: "🇮🇷", label: "Persian", detail: "فارسی" },
+  { value: "hi-in", flag: "🇮🇳", label: "Hindi", detail: "हिन्दी" },
+  { value: "ur-pk", flag: "🇵🇰", label: "Urdu", detail: "اردو" },
+  { value: "pa-in", flag: "🇮🇳", label: "Punjabi", detail: "ਪੰਜਾਬੀ" },
+  { value: "bn-bd", flag: "🇧🇩", label: "Bengali", detail: "বাংলা" },
+  { value: "ta-in", flag: "🇮🇳", label: "Tamil", detail: "தமிழ்" },
   { value: "zh-cn", flag: "🇨🇳", label: "Mandarin", detail: "China" },
-  { value: "hi-in", flag: "🇮🇳", label: "Hindi", detail: "India" },
-  { value: "fr-fr", flag: "🇫🇷", label: "French", detail: "France" },
+  { value: "zh-tw", flag: "🇹🇼", label: "Chinese Traditional", detail: "繁體中文" },
+  { value: "ja-jp", flag: "🇯🇵", label: "Japanese", detail: "日本語" },
+  { value: "ko-kr", flag: "🇰🇷", label: "Korean", detail: "한국어" },
+  { value: "th-th", flag: "🇹🇭", label: "Thai", detail: "ไทย" },
+  { value: "vi-vn", flag: "🇻🇳", label: "Vietnamese", detail: "Tiếng Việt" },
+  { value: "id-id", flag: "🇮🇩", label: "Indonesian", detail: "Bahasa Indonesia" },
+  { value: "ms-my", flag: "🇲🇾", label: "Malay", detail: "Bahasa Melayu" },
+  { value: "fil-ph", flag: "🇵🇭", label: "Filipino", detail: "Filipino" },
+  { value: "pl-pl", flag: "🇵🇱", label: "Polish", detail: "Polski" },
+  { value: "el-gr", flag: "🇬🇷", label: "Greek", detail: "Ελληνικά" },
+  { value: "ro-ro", flag: "🇷🇴", label: "Romanian", detail: "Română" },
+  { value: "sv-se", flag: "🇸🇪", label: "Swedish", detail: "Svenska" },
+  { value: "no-no", flag: "🇳🇴", label: "Norwegian", detail: "Norsk" },
+  { value: "da-dk", flag: "🇩🇰", label: "Danish", detail: "Dansk" },
+  { value: "fi-fi", flag: "🇫🇮", label: "Finnish", detail: "Suomi" },
 ];
 
 const socialLinks = [
@@ -85,31 +105,51 @@ function SocialLink({ href, label, icon: Icon }) {
 }
 
 function LanguageList({ value, onValueChange, onClose }) {
+  const [query, setQuery] = useState("");
+  const filteredLanguages = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return supportLanguages;
+
+    return supportLanguages.filter((item) =>
+      `${item.label} ${item.detail}`.toLowerCase().includes(normalized)
+    );
+  }, [query]);
+
   return (
-    <Command className="overflow-hidden rounded-[1.35rem] bg-transparent text-white">
-      <div className="border-b border-white/10 px-4 py-3">
-        <CommandInput
-          placeholder="Search language"
-          className="h-11 rounded-[1rem] border border-white/10 bg-white/[0.05] px-0 text-sm text-white placeholder:text-slate-400"
-        />
+    <div className="overflow-hidden rounded-[1.35rem] bg-slate-950 text-white">
+      <div className="border-b border-slate-800 px-4 py-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <input
+            type="text"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search languages"
+            className="h-11 w-full rounded-[1rem] border border-slate-800 bg-slate-900 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-slate-700"
+          />
+        </div>
       </div>
-      <CommandList className="max-h-[18.5rem] p-2">
-        <CommandEmpty className="py-6 text-sm text-slate-400">No matching language found.</CommandEmpty>
-        <CommandGroup
-          heading="Support languages"
-          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.24em] [&_[cmdk-group-heading]]:text-slate-500"
+      <div className="px-2 pb-2 pt-2">
+        <div
+          className="max-h-[21rem] overflow-y-auto pr-1"
+          style={{ scrollbarGutter: "stable" }}
         >
-          {supportLanguages.map((item) => {
+          {filteredLanguages.length ? filteredLanguages.map((item) => {
             const selected = item.value === value;
             return (
-              <CommandItem
+              <button
                 key={item.value}
-                value={`${item.label} ${item.detail}`}
-                onSelect={() => {
+                type="button"
+                onClick={() => {
                   onValueChange(item.value);
                   onClose();
                 }}
-                className="rounded-[1rem] px-3 py-3 text-slate-200 data-[selected=true]:bg-white/[0.08] data-[selected=true]:text-white"
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-[1rem] px-3 py-3 text-left transition",
+                  selected
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-200 hover:bg-slate-900/80"
+                )}
               >
                 <span className="text-base" aria-hidden="true">{item.flag}</span>
                 <span className="flex min-w-0 flex-1 flex-col">
@@ -117,12 +157,14 @@ function LanguageList({ value, onValueChange, onClose }) {
                   <span className="truncate text-xs text-slate-400">{item.detail}</span>
                 </span>
                 <Check className={cn("h-4 w-4 text-slate-500", selected ? "opacity-100 text-white" : "opacity-0")} />
-              </CommandItem>
+              </button>
             );
-          })}
-        </CommandGroup>
-      </CommandList>
-    </Command>
+          }) : (
+            <div className="px-3 py-6 text-sm text-slate-400">No matching language found.</div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -130,7 +172,7 @@ function FooterLanguageSelector({ value, onValueChange }) {
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const selectedLanguage = supportLanguages.find((item) => item.value === value) || supportLanguages[0];
-  const triggerClassName = "inline-flex h-12 w-full items-center justify-between gap-3 rounded-[1rem] border border-white/10 bg-white/[0.05] px-4 text-left text-sm text-white shadow-[0_16px_30px_rgba(2,6,23,0.16)] transition hover:border-white/20 hover:bg-white/[0.08]";
+  const triggerClassName = "inline-flex h-12 w-full items-center justify-between gap-3 rounded-[1rem] border border-slate-800 bg-slate-950 px-4 text-left text-sm text-white shadow-[0_16px_30px_rgba(2,6,23,0.18)] transition hover:border-slate-700";
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -150,21 +192,18 @@ function FooterLanguageSelector({ value, onValueChange }) {
         <button type="button" onClick={() => setOpen(true)} className={triggerClassName}>
           <span className="inline-flex min-w-0 items-center gap-3">
             <span className="text-base" aria-hidden="true">{selectedLanguage.flag}</span>
-            <span className="flex min-w-0 flex-col">
-              <span className="truncate text-xs font-medium uppercase tracking-[0.22em] text-slate-400">Language</span>
-              <span className="truncate text-sm font-medium text-white">{selectedLanguage.label}</span>
-            </span>
+            <span className="truncate text-sm font-medium text-white">{selectedLanguage.label}</span>
           </span>
           <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
         </button>
         <SheetContent
           side="bottom"
-          className="rounded-t-[1.8rem] border-white/10 bg-slate-950 px-0 pb-0 text-white"
+          className="rounded-t-[1.8rem] border-slate-800 bg-slate-950 px-0 pb-0 text-white"
         >
           <SheetHeader className="px-5 pb-3 pt-1 text-left">
-            <SheetTitle className="text-white">Language and region</SheetTitle>
+            <SheetTitle className="text-white">Choose language</SheetTitle>
             <SheetDescription className="text-slate-400">
-              Choose the language that feels most natural for your enquiry.
+              Pick the language that feels most natural to you.
             </SheetDescription>
           </SheetHeader>
           <div className="px-3 pb-3">
@@ -181,10 +220,7 @@ function FooterLanguageSelector({ value, onValueChange }) {
         <button type="button" className={triggerClassName}>
           <span className="inline-flex min-w-0 items-center gap-3">
             <span className="text-base" aria-hidden="true">{selectedLanguage.flag}</span>
-            <span className="flex min-w-0 flex-col">
-              <span className="truncate text-xs font-medium uppercase tracking-[0.22em] text-slate-400">Language</span>
-              <span className="truncate text-sm font-medium text-white">{selectedLanguage.label}</span>
-            </span>
+            <span className="truncate text-sm font-medium text-white">{selectedLanguage.label}</span>
           </span>
           <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
         </button>
@@ -193,7 +229,7 @@ function FooterLanguageSelector({ value, onValueChange }) {
         side="top"
         align="end"
         sideOffset={12}
-        className="w-[22rem] rounded-[1.5rem] border-white/10 bg-slate-950/98 p-0 text-white shadow-[0_30px_70px_rgba(2,6,23,0.38)] backdrop-blur-xl"
+        className="w-[24rem] rounded-[1.5rem] border-slate-800 bg-slate-950 p-0 text-white shadow-[0_30px_70px_rgba(2,6,23,0.38)]"
       >
         <LanguageList value={value} onValueChange={onValueChange} onClose={() => setOpen(false)} />
       </PopoverContent>
@@ -302,30 +338,18 @@ export default function SiteFooter({ appName }) {
               </div>
             ))}
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <p className="border-b border-white/10 pb-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
                 Connect
               </p>
 
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                <p className="text-sm leading-7 text-slate-400">
-                  Follow DubaiSphere and choose the language that feels most natural for your enquiry.
-                </p>
-
-                <div className="mt-4 flex flex-wrap gap-2.5" aria-label="Social links">
-                  {socialLinks.map((item) => (
-                    <SocialLink key={item.label} href={item.href} label={item.label} icon={item.icon} />
-                  ))}
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                    <Globe2 className="h-3.5 w-3.5" />
-                    Language
-                  </div>
-                  <FooterLanguageSelector value={language} onValueChange={handleLanguageChange} />
-                </div>
+              <div className="flex flex-wrap gap-2.5" aria-label="Social links">
+                {socialLinks.map((item) => (
+                  <SocialLink key={item.label} href={item.href} label={item.label} icon={item.icon} />
+                ))}
               </div>
+
+              <FooterLanguageSelector value={language} onValueChange={handleLanguageChange} />
             </div>
           </div>
 

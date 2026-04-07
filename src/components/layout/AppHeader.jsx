@@ -20,7 +20,7 @@ export default function AppHeader({
 }) {
   return (
     <header className={cn(
-      "z-40 border-b border-white/10 bg-background",
+      "relative z-40 border-b border-slate-200/80 bg-background/92 shadow-[0_10px_28px_rgba(15,23,42,0.04)] backdrop-blur-xl supports-[backdrop-filter]:bg-background/80",
       sticky ? "sticky top-0" : "relative"
     )}>
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 md:px-6">
@@ -91,6 +91,10 @@ export default function AppHeader({
           </Button>
         </div>
       </div>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-slate-300/80 to-transparent"
+      />
     </header>
   );
 }
