@@ -33,8 +33,8 @@ export default function DeveloperSpotlightCard({ developer }) {
           <h3 className="text-2xl font-semibold tracking-tight text-white">{developer.name}</h3>
           <p className="mt-2 text-sm leading-6 text-white/78">
             {developer.listingCount
-              ? `${developer.listingCount} active properties, ${developer.offPlanCount} off-plan, ${developer.readyCount} ready`
-              : "Approved developer profile"}
+              ? `${developer.listingCount} homes available, ${developer.offPlanCount} off-plan, ${developer.readyCount} ready to move`
+              : "Developer profile"}
           </p>
         </div>
       </div>

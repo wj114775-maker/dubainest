@@ -22,6 +22,10 @@ function normalizeProjectProfile(profile) {
   };
 }
 
+function isPublicProjectProfile(profile) {
+  return profile?.page_status === "published";
+}
+
 function normalizeCompareValue(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -60,16 +64,25 @@ export async function listProjectProfiles() {
 
 export async function getProjectProfileBySlug(slug) {
   const profiles = await filterEntitySafe("ProjectProfile", { slug });
-  if (profiles[0]) return normalizeProjectProfile(profiles[0]);
+  const normalizedProfiles = Array.isArray(profiles) ? profiles.map(normalizeProjectProfile) : [];
+  const publishedProfile = normalizedProfiles.find(isPublicProjectProfile);
+  if (publishedProfile) return publishedProfile;
   return getShowcaseProjectProfileBySlug(slug);
 }
 
 function mergeShowcaseProjectProfiles(profiles = []) {
   const normalizedProfiles = Array.isArray(profiles) ? profiles.map(normalizeProjectProfile) : [];
-  const publicProfiles = normalizedProfiles.filter((profile) => profile.page_status === "published");
+  const mergedProfiles = new Map(
+    showcaseProjectProfiles.map(normalizeProjectProfile).map((profile) => [profile.slug, profile])
+  );
 
-  if (publicProfiles.length) return normalizedProfiles;
-  return showcaseProjectProfiles.map(normalizeProjectProfile);
+  normalizedProfiles
+    .filter(isPublicProjectProfile)
+    .forEach((profile) => {
+      mergedProfiles.set(profile.slug, profile);
+    });
+
+  return Array.from(mergedProfiles.values());
 }
 
 export function getShowcaseProjectProfileBySlug(slug) {
@@ -79,7 +92,7 @@ export function getShowcaseProjectProfileBySlug(slug) {
 }
 
 export function getPublicProjectProfiles(profiles = []) {
-  return mergeShowcaseProjectProfiles(profiles).filter((profile) => profile.page_status === "published");
+  return mergeShowcaseProjectProfiles(profiles).filter(isPublicProjectProfile);
 }
 
 export function getHomepageProjectProfiles(profiles = []) {

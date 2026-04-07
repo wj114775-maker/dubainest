@@ -68,24 +68,24 @@ function factItems(listing) {
 function buildListingHighlights(listing, project, developer) {
   return [
     listing.is_off_plan
-      ? `Launch-led purchase route${project?.handoverLabel ? ` with ${project.handoverLabel} handover timing.` : "."}`
-      : "Ready stock route with pricing and core facts available immediately.",
+      ? `This is an off-plan home${project?.handoverLabel ? ` with expected handover in ${project.handoverLabel}.` : "."}`
+      : "This home is ready to review now, with price and key details shown up front.",
     listing.floor_plan_available
-      ? "Floor plan support is available for buyer review."
-      : "Floor plan and brochure support can be requested through the enquiry route.",
+      ? "A floor plan is available to review."
+      : "A floor plan or brochure can be requested from the team.",
     listing.is_private_inventory
-      ? "Handled through a higher-control private inventory workflow."
-      : "Visible within the public buyer directory and suited to a standard enquiry path.",
+      ? "This home is being handled through a more private enquiry process."
+      : "This home is part of the public property search and can be enquired on directly.",
     project?.paymentPlanSummary
       ? project.paymentPlanSummary
       : listing.is_off_plan
-        ? "Project-led payment-plan detail can be requested before shortlisting."
-        : "Pricing and purchase support can be reviewed directly with the advisory team.",
+        ? "Payment plan details can be requested before you shortlist."
+        : "The team can help with next steps, pricing, and purchase support.",
     developer?.summary
       ? developer.summary
       : listing.developer_name
-        ? `${listing.developer_name} is attached as the developer context for this opportunity.`
-        : "Developer context can be added once the linked project profile is finalised.",
+        ? `${listing.developer_name} is the developer connected to this property.`
+        : "Developer information can be added here once available.",
   ].filter(Boolean).slice(0, 5);
 }
 
@@ -228,7 +228,7 @@ export default function ListingDetail() {
           canonicalPath={listingPath}
           robots="noindex,nofollow"
         />
-        <div className="pb-28 text-sm text-muted-foreground">Listing not found.</div>
+        <div className="pb-28 text-sm text-muted-foreground">This property page is not available right now.</div>
       </>
     );
   }
@@ -304,20 +304,20 @@ export default function ListingDetail() {
 
                   <div className="hidden border-l border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5 lg:flex lg:flex-col lg:justify-between">
                     <div className="space-y-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Commercial summary</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">At a glance</p>
                       <div>
                         <p className="text-3xl font-semibold tracking-tight text-slate-950">{formatPrice(listing.price)}</p>
                         <p className="mt-2 text-sm leading-6 text-slate-600">
                           {listing.is_off_plan
-                            ? "Project-led off-plan purchase route."
-                            : "Ready stock unit with direct buyer enquiry flow."}
+                            ? "Off-plan property with project details and enquiry options."
+                            : "Ready home with direct enquiry options."}
                         </p>
                       </div>
                       <div className="space-y-3">
                         <DetailRow label="Area" value={listing.area_name || "Dubai"} />
                         <DetailRow
                           label="Project"
-                          value={hydratedProject?.name || listing.project_name || "Standalone route"}
+                          value={hydratedProject?.name || listing.project_name || "Standalone property"}
                           action={hydratedProject?.slug ? (
                             <Button asChild variant="ghost" size="sm" className="rounded-full px-3 text-slate-700">
                               <Link to={`/projects/${hydratedProject.slug}`}>Open</Link>
@@ -337,9 +337,9 @@ export default function ListingDetail() {
                     </div>
 
                     <div className="rounded-[1.4rem] border border-slate-200 bg-white p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Support route</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Helpful next step</p>
                       <p className="mt-2 text-sm leading-6 text-slate-600">
-                        Use the project page, developer page, and enquiry flow together for a cleaner purchase process.
+                        You can check the project, view the developer, or contact the team from here.
                       </p>
                     </div>
                   </div>
@@ -414,7 +414,7 @@ export default function ListingDetail() {
                   <p className="max-w-4xl text-sm leading-7 text-slate-600">
                     {listing.description
                       || hydratedProject?.summary
-                      || "A buyer-facing property page should move cleanly from media and pricing into project context, decision support, and enquiry."}
+                      || "View the photos, key property details, and the project behind it before deciding on your next step."}
                   </p>
                 </div>
 
@@ -431,7 +431,7 @@ export default function ListingDetail() {
                 <CardContent className="space-y-5 p-6 lg:p-7">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Why this property stands out</p>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">A cleaner unit-level conversion page</h2>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Why this property stands out</h2>
                   </div>
                   <div className="space-y-3">
                     {highlights.map((item) => (
@@ -447,17 +447,17 @@ export default function ListingDetail() {
                 <CardContent className="space-y-5 p-6 lg:p-7">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Purchase snapshot</p>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">What the buyer should know first</h2>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Key details</h2>
                   </div>
 
                   <div className="space-y-1">
                     <DetailRow
                       label="Availability"
-                      value={listing.is_private_inventory ? "Restricted route" : listing.is_off_plan ? "Launch inventory" : "Published sale stock"}
+                      value={listing.is_private_inventory ? "Private enquiry" : listing.is_off_plan ? "Off-plan property" : "Property for sale"}
                     />
                     <DetailRow
-                      label="Project route"
-                      value={hydratedProject?.name || "No project profile attached yet"}
+                      label="Project"
+                      value={hydratedProject?.name || "No project page linked yet"}
                       action={hydratedProject?.slug ? (
                         <Button asChild variant="ghost" size="sm" className="rounded-full px-3 text-slate-700">
                           <Link to={`/projects/${hydratedProject.slug}`}>Project</Link>
@@ -465,7 +465,7 @@ export default function ListingDetail() {
                       ) : null}
                     />
                     <DetailRow
-                      label="Developer route"
+                      label="Developer"
                       value={publicDeveloper?.developer_name || listing.developer_name || "On request"}
                       action={publicDeveloper?.slug ? (
                         <Button asChild variant="ghost" size="sm" className="rounded-full px-3 text-slate-700">
@@ -488,7 +488,7 @@ export default function ListingDetail() {
                       <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Project context</p>
                       <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{hydratedProject.name}</h2>
                       <p className="mt-3 text-sm leading-7 text-slate-600">
-                        {hydratedProject.summary || "Project pages should carry the launch story, handover, and payment-plan context so the unit page can stay commercially clear."}
+                        {hydratedProject.summary || "The project page gives buyers a wider view of the development, its timing, and the homes available in it."}
                       </p>
                     </div>
 
@@ -522,7 +522,7 @@ export default function ListingDetail() {
                       <p className="mt-3 text-sm leading-7 text-slate-700">
                         {hydratedProject.developerSummary
                           || publicDeveloper?.summary
-                          || `${hydratedProject.developerName || listing.developer_name || "Developer"} is the linked brand context for this project route.`}
+                          || `${hydratedProject.developerName || listing.developer_name || "The developer"} is connected to this property.`}
                       </p>
                       {publicDeveloper?.slug ? (
                         <Button asChild variant="ghost" className="mt-3 rounded-full px-0 text-slate-950 hover:bg-transparent">
@@ -543,7 +543,7 @@ export default function ListingDetail() {
                 <CardContent className="space-y-5 p-6">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Verification</p>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Factual publication signals</h2>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Verification details</h2>
                   </div>
                   <div className="space-y-1">
                     <DetailRow label="Permit status" value={listing.permit_verified ? "Verified" : "Pending review"} />
@@ -558,7 +558,7 @@ export default function ListingDetail() {
                 <CardContent className="space-y-5 p-6">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Buyer support</p>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Next actions from this page</h2>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Next steps</h2>
                   </div>
                   <div className="space-y-3">
                     <Button
@@ -612,7 +612,7 @@ export default function ListingDetail() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">More by this developer</p>
-                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Continue through the developer route</h2>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">More from this developer</h2>
                   </div>
                   <Button asChild variant="outline" className="rounded-full px-5">
                     <Link to={developerSearchPath}>Open developer stock</Link>
@@ -660,7 +660,7 @@ export default function ListingDetail() {
             <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
               <CardContent className="space-y-5 p-6">
                 <div className="space-y-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Buyer advisory</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Property summary</p>
                   <p className="text-3xl font-semibold tracking-tight text-slate-950">{formatPrice(listing.price)}</p>
                   <div className="space-y-2 text-sm text-slate-600">
                     <p className="font-medium text-slate-950">{listing.title}</p>
@@ -733,7 +733,7 @@ export default function ListingDetail() {
                 </div>
 
                 <div className="space-y-2 border-t border-slate-200 pt-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Connected public routes</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Related pages</p>
                   <div className="grid gap-2">
                     {hydratedProject?.slug ? (
                       <Button asChild variant="outline" className="justify-between rounded-full px-4">

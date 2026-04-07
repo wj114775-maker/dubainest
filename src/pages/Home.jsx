@@ -38,43 +38,43 @@ import { buildOrganizationJsonLd, buildRealEstateAgentJsonLd, buildWebsiteJsonLd
 const pathCards = [
   {
     title: "Property purchase",
-    description: "Open the list-first property directory built for clean buying decisions.",
+    description: "Browse homes for sale in Dubai with filters for area, developer, project, and property type.",
     path: "/properties",
     action: "Browse listings",
     icon: Building2,
   },
   {
     title: "Off-Plan opportunities",
-    description: "Jump directly into future-delivery stock with dedicated off-plan badging and filters.",
+    description: "Go straight to new launches and upcoming developments across Dubai.",
     path: "/projects",
     action: "View off-plan",
     icon: Sparkles,
   },
   {
     title: "Private inventory",
-    description: "Request access to discreet stock, concierge handling, and private client workflows.",
+    description: "Request access to a more discreet selection of homes not shown in the main search.",
     action: "Request access",
     icon: Gem,
     intentType: "request_private_inventory",
   },
   {
     title: "Golden Visa",
-    description: "Start with the residency pathway and let property discovery follow the right route.",
+    description: "Start with the residency route if your property search is linked to a visa plan.",
     path: "/golden-visa",
     action: "Start assessment",
     icon: Globe2,
   },
   {
     title: "Guides and research",
-    description: "Use area intelligence, investment content, and relocation guides before committing.",
+    description: "Read area guides and practical buying information before you decide.",
     path: "/guides",
     action: "Open guides",
     icon: BookOpen,
   },
   {
-    title: "Business dealings",
-    description: "Speak to the team about investment support, partner-led execution, or premium deal handling.",
-    action: "Speak to advisory",
+    title: "Contact the team",
+    description: "Contact the team about buying support, partnership enquiries, or a more tailored search.",
+    action: "Contact the team",
     icon: BriefcaseBusiness,
     intentType: "request_callback",
   },
@@ -83,17 +83,17 @@ const pathCards = [
 const trustSignals = [
   {
     title: "Search-first, not portal-cluttered",
-    description: "The public site stays focused on Dubai property purchase, off-plan, and private inventory rather than noisy marketplace mechanics.",
+    description: "The site is designed to help buyers search clearly without the clutter of a large portal.",
     icon: Search,
   },
   {
     title: "Developer-aligned purchase support",
-    description: "Projects, developers, and listings are structured to support informed acquisition and direct advisory execution.",
+    description: "Developer pages, project pages, and listing pages are connected so buyers can understand the full picture.",
     icon: ShieldCheck,
   },
   {
     title: "Private client capability built in",
-    description: "Golden Visa, premium buyer handling, and discreet inventory workflows sit inside the same governed business system.",
+    description: "Private inventory, Golden Visa guidance, and direct support are all built into the same experience.",
     icon: CheckCircle2,
   },
 ];
@@ -102,25 +102,25 @@ const purchaseSteps = [
   {
     step: "01",
     title: "Search with clarity",
-    description: "Start with areas, developers, projects, or direct sale stock without being pushed through unnecessary registration first.",
+    description: "Start with an area, developer, project, or property type without unnecessary steps.",
   },
   {
     step: "02",
     title: "Shortlist with context",
-    description: "Move from listings into project and developer pages, compare relevant stock, and narrow the right purchase route.",
+    description: "Compare homes, explore the project behind them, and see the developer before making contact.",
   },
   {
     step: "03",
-    title: "Secure with advisory support",
-    description: "When ready, shift into guided enquiry, private inventory handling, brochure review, and purchase preparation.",
+    title: "Move forward with support",
+    description: "When you are ready, request a brochure, ask for a callback, or contact the team directly.",
   },
 ];
 
 const advisoryHighlights = [
-  "Direct developer-aligned buyer handling",
-  "Off-plan, private inventory, and Golden Visa support",
-  "WhatsApp-first advisory with governed follow-through",
-  "Structured progression from search to purchase readiness",
+  "Help with buying, off-plan, and private inventory",
+  "Clear project and developer information",
+  "Direct contact when you are ready to move",
+  "A smoother path from search to shortlist",
 ];
 
 export default function Home() {
@@ -237,7 +237,7 @@ export default function Home() {
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">How it works</p>
                 <h2 className="text-3xl font-semibold tracking-tight text-foreground">A cleaner path from search to secure purchase</h2>
                 <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                  The public experience is designed to feel clear and premium, while the harder operational work stays behind the scenes in the Back Office.
+                  Search, compare, and shortlist with a clearer public experience while the internal admin work stays out of sight.
                 </p>
               </div>
 
@@ -269,7 +269,7 @@ export default function Home() {
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/75">Market positioning</p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-tight">Premium search outside. Governed execution underneath.</h2>
                 <p className="mt-3 max-w-md text-sm leading-6 text-white/78">
-                  Buyers see a cleaner public experience. Internal teams manage the developer, project, listing, and advisory workflow behind it.
+                  The front end stays simple for buyers, while your team manages developers, projects, and listings behind the scenes.
                 </p>
               </div>
             </div>
@@ -279,8 +279,8 @@ export default function Home() {
         <section className="space-y-6">
           <SectionHeading
             eyebrow="Beyond search"
-            title="Continue with curated routes when the buyer is not ready for direct search"
-            description="The homepage now starts with sale search. These routes stay below it for private inventory, visa-led journeys, guides, and advisory support."
+            title="More ways to start if you are not ready to search listings yet"
+            description="The homepage starts with property search, but buyers can also begin through private inventory, visa guidance, guides, or direct contact."
           />
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {pathCards.map((item) => {
@@ -339,8 +339,8 @@ export default function Home() {
         <section className="space-y-6">
           <SectionHeading
             eyebrow="Developer directory"
-            title="Move from brand trust into active opportunities"
-            description="Only developers you actively publish appear here, so the public only sees partnered brand pages and controlled profile content."
+            title="Explore developers behind featured projects and homes"
+            description="Only the developer pages you choose to show publicly appear here."
             action={
               <Button asChild variant="outline" className="rounded-full px-5">
                 <Link to="/developers">View all developers</Link>
@@ -359,8 +359,8 @@ export default function Home() {
         <section className="space-y-6">
           <SectionHeading
             eyebrow="Project launches"
-            title="Use project pages for launches, handover timing, and available stock context"
-            description="Project pages sit between developer trust and listing-level choice. They are the right place for launch context, payment-plan language, and linked unit discovery."
+            title="Explore project pages before choosing a specific property"
+            description="Project pages help buyers understand the location, developer, timing, and available homes in one place."
             action={
               <Button asChild variant="outline" className="rounded-full px-5">
                 <Link to="/projects">View all projects</Link>
@@ -379,8 +379,8 @@ export default function Home() {
         <section className="space-y-6">
           <SectionHeading
             eyebrow="Guides"
-            title="Research and guidance remain a first-class entry route"
-            description="Keep content visible on the Explore page so buyers who are not ready for property search can still progress intelligently."
+            title="Guides are here for buyers who want to research first"
+            description="Area guides and buying advice help people move forward even if they are not ready to search properties yet."
           />
           {featuredGuideSet.length ? (
             <div className="grid gap-5 md:grid-cols-3">
@@ -397,7 +397,7 @@ export default function Home() {
               <p className="text-xs uppercase tracking-[0.3em] text-primary">Purchase pathway</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">When the buyer is ready, send them into the property directory</h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                The property page now carries the heavier Bayut-style filter work. Explore stays lighter and acts as the business overview page.
+                The property directory is where buyers can use the full search and filter tools. The Explore page stays broader and easier to understand.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -430,7 +430,7 @@ export default function Home() {
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">Advisory desk</p>
                 <h2 className="text-3xl font-semibold tracking-tight text-foreground">Speak to a team that handles purchase execution, not just listing discovery</h2>
                 <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-                  Use DubaiSphere when you want a cleaner path into project selection, off-plan assessment, private inventory routing, and buyer readiness support.
+                  Use DubaiSphere if you want help choosing the right project, reviewing off-plan options, or getting access to more tailored opportunities.
                 </p>
               </div>
 
@@ -444,9 +444,9 @@ export default function Home() {
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Button className="rounded-full px-5" onClick={() => setIntentConfig({ open: true, type: "request_callback", title: "Business dealings" })}>
+                <Button className="rounded-full px-5" onClick={() => setIntentConfig({ open: true, type: "request_callback", title: "Contact the team" })}>
                   <PhoneCall className="mr-2 h-4 w-4" />
-                  Speak to advisory
+                  Contact the team
                 </Button>
                 <Button asChild variant="outline" className="rounded-full px-5">
                   <Link to="/contact">

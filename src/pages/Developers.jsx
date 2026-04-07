@@ -43,7 +43,7 @@ export default function Developers() {
     <div className="space-y-6 pb-28">
       <SeoMeta
         title="Dubai Developers and Active Property Opportunities"
-        description="Browse Dubai property developers with live active stock, off-plan opportunities, and direct routes into each developer’s available properties."
+        description="Browse Dubai developers, explore their featured projects, and view homes currently available for sale."
         canonicalPath="/developers"
         jsonLd={buildBreadcrumbJsonLd([
           { name: "Home", path: "/" },
@@ -52,8 +52,8 @@ export default function Developers() {
       />
       <SectionHeading
         eyebrow="Developers"
-        title="Explore developers behind active Dubai sale opportunities"
-        description="Only partnered and published developer profiles appear here. Search filters can remain broader, but public brand pages stay under your control."
+        title="Explore developers behind featured Dubai properties"
+        description="Browse the developer pages you have chosen to show publicly, then move into their projects and available homes."
         titleAs="h1"
         action={
           <Button asChild className="rounded-full px-5">
@@ -67,9 +67,9 @@ export default function Developers() {
           <CardContent className="space-y-5 p-6 lg:p-7">
             <div className="space-y-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Directory overview</p>
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-950">Brand pages should lead buyers into projects and live stock, not into clutter.</h2>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-950">Developer pages should help buyers quickly understand who builds what.</h2>
               <p className="max-w-3xl text-sm leading-7 text-slate-600">
-                This directory is structured around controlled public developer pages. Each route should carry the brand story, top areas, active launches, and linked sale stock with a much cleaner information hierarchy than a standard property portal.
+                Each page should give buyers a simple overview of the developer, the best-known areas, active projects, and homes currently for sale.
               </p>
             </div>
 
@@ -100,10 +100,10 @@ export default function Developers() {
               <Building2 className="h-5 w-5" />
             </div>
             <div className="space-y-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/65">Public route logic</p>
-              <h2 className="text-2xl font-semibold tracking-tight">Developers should feel curated, not generic.</h2>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/65">Why this matters</p>
+              <h2 className="text-2xl font-semibold tracking-tight">Many buyers know the developer before they know the exact property.</h2>
               <p className="text-sm leading-7 text-white/76">
-                Buyers often recognise the developer before the unit. This layer exists to convert that brand recognition into project discovery and then into the right listings.
+                This page helps turn that brand recognition into a clear next step: view the project, then view the homes available in it.
               </p>
             </div>
             {featuredAreas.length ? (

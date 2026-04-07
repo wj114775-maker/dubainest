@@ -138,7 +138,7 @@ export default function ProjectDetail() {
           canonicalPath={`/projects/${slug}`}
           robots="noindex,nofollow"
         />
-        <div className="pb-28 text-sm text-muted-foreground">Project page not found.</div>
+        <div className="pb-28 text-sm text-muted-foreground">This project page is not live yet.</div>
       </>
     );
   }
@@ -230,9 +230,9 @@ export default function ProjectDetail() {
                     </div>
 
                     <div className="rounded-[1.4rem] border border-slate-200 bg-white p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Project route</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">What this page does</p>
                       <p className="mt-2 text-sm leading-6 text-slate-600">
-                        This page should carry the launch story, project economics, and linked units before the buyer moves deeper into enquiry.
+                        It gives buyers the key project details first, then links them to the homes available in it.
                       </p>
                     </div>
                   </div>
@@ -294,7 +294,7 @@ export default function ProjectDetail() {
                     ) : null}
                   </div>
                   <p className="max-w-4xl text-sm leading-7 text-slate-600">
-                    {project.summary || "A good project page should explain the launch logic, the developer, and the available unit route before the buyer drills into a specific listing."}
+                    {project.summary || "This page explains the project, the developer behind it, and the homes currently available to review."}
                   </p>
                 </div>
 
@@ -312,10 +312,10 @@ export default function ProjectDetail() {
                 <CardContent className="space-y-5 p-6 lg:p-7">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Project story</p>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Launch positioning and project narrative</h2>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">About this project</h2>
                   </div>
                   <p className="text-sm leading-7 text-slate-600">
-                    {project.body || project.summary || "Add a stronger project narrative in the page manager to explain the community, launch logic, and buyer profile for this scheme."}
+                    {project.body || project.summary || "This section should explain the location, style of homes, and who the project is likely to suit."}
                   </p>
                 </CardContent>
               </Card>
@@ -324,7 +324,7 @@ export default function ProjectDetail() {
                 <CardContent className="space-y-5 p-6 lg:p-7">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Project essentials</p>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">What the buyer should know first</h2>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Key details</h2>
                   </div>
                   <div className="space-y-1">
                     <DetailRow label="Price from" value={formatPrice(project.priceFrom)} />
@@ -341,7 +341,7 @@ export default function ProjectDetail() {
                 <CardContent className="space-y-5 p-6">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Payment plan</p>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Commercial structure</h2>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Payment plan</h2>
                   </div>
                   <p className="text-sm leading-7 text-slate-600">
                     {project.paymentPlanSummary || "Request the brochure for live pricing structure, launch incentives, and staged payment-plan detail."}
@@ -365,7 +365,7 @@ export default function ProjectDetail() {
                     </div>
                   ) : (
                     <p className="text-sm leading-7 text-slate-600">
-                      Add launch-specific amenity highlights in the project page manager to keep this section concrete.
+                      Add a few clear amenities here so buyers can quickly understand the lifestyle on offer.
                     </p>
                   )}
                 </CardContent>
@@ -377,7 +377,7 @@ export default function ProjectDetail() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Available stock</p>
-                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Properties currently linked to this project</h2>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Homes currently shown for this project</h2>
                   </div>
                   <Button asChild variant="outline" className="rounded-full px-5">
                     <Link to={projectSearchPath}>Open project stock</Link>
@@ -396,7 +396,7 @@ export default function ProjectDetail() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">More by the same developer</p>
-                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Continue through the developer portfolio</h2>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">More projects from the same developer</h2>
                   </div>
                   {project.developerSlug ? (
                     <Button asChild variant="outline" className="rounded-full px-5">
@@ -435,7 +435,7 @@ export default function ProjectDetail() {
             <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
               <CardContent className="space-y-5 p-6">
                 <div className="space-y-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Project advisory</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Project summary</p>
                   <p className="text-3xl font-semibold tracking-tight text-slate-950">{formatPrice(project.priceFrom)}</p>
                   <div className="space-y-2 text-sm text-slate-600">
                     <p className="font-medium text-slate-950">{project.name}</p>
@@ -495,7 +495,7 @@ export default function ProjectDetail() {
                 </div>
 
                 <div className="space-y-2 border-t border-slate-200 pt-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Connected public routes</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Related pages</p>
                   <div className="grid gap-2">
                     {project.developerSlug ? (
                       <Button asChild variant="outline" className="justify-between rounded-full px-4">

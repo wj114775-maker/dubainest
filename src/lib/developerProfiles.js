@@ -15,6 +15,10 @@ function normalizeProfile(profile) {
   };
 }
 
+function isPublicDeveloperProfile(profile) {
+  return profile?.partnership_status === "partnered" && profile?.page_status === "published";
+}
+
 export async function listDeveloperProfiles() {
   const profiles = await listEntitySafe("DeveloperProfile", "-updated_date", 200);
   return Array.isArray(profiles) ? profiles.map(normalizeProfile) : [];
@@ -22,18 +26,25 @@ export async function listDeveloperProfiles() {
 
 export async function getDeveloperProfileBySlug(slug) {
   const profiles = await filterEntitySafe("DeveloperProfile", { slug });
-  if (profiles[0]) return normalizeProfile(profiles[0]);
+  const normalizedProfiles = Array.isArray(profiles) ? profiles.map(normalizeProfile) : [];
+  const publishedProfile = normalizedProfiles.find(isPublicDeveloperProfile);
+  if (publishedProfile) return publishedProfile;
   return getShowcaseDeveloperProfileBySlug(slug);
 }
 
 function mergeShowcaseProfiles(profiles = []) {
   const normalizedProfiles = Array.isArray(profiles) ? profiles.map(normalizeProfile) : [];
-  const publicProfiles = normalizedProfiles.filter((profile) => (
-    profile.partnership_status === "partnered" && profile.page_status === "published"
-  ));
+  const mergedProfiles = new Map(
+    showcaseDeveloperProfiles.map(normalizeProfile).map((profile) => [profile.slug, profile])
+  );
 
-  if (publicProfiles.length) return normalizedProfiles;
-  return showcaseDeveloperProfiles.map(normalizeProfile);
+  normalizedProfiles
+    .filter(isPublicDeveloperProfile)
+    .forEach((profile) => {
+      mergedProfiles.set(profile.slug, profile);
+    });
+
+  return Array.from(mergedProfiles.values());
 }
 
 export function getShowcaseDeveloperProfileBySlug(slug) {
@@ -43,9 +54,7 @@ export function getShowcaseDeveloperProfileBySlug(slug) {
 }
 
 export function getPublicDeveloperProfiles(profiles = []) {
-  return mergeShowcaseProfiles(profiles).filter((profile) => (
-    profile.partnership_status === "partnered" && profile.page_status === "published"
-  ));
+  return mergeShowcaseProfiles(profiles).filter(isPublicDeveloperProfile);
 }
 
 export function getHomepageDeveloperProfiles(profiles = []) {

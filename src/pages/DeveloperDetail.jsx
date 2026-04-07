@@ -113,16 +113,16 @@ export default function DeveloperDetail() {
   const portfolioNotes = useMemo(() => {
     if (!developer) return [];
     return [
-      `${developer.name} currently routes into ${developer.listingCount} active public sale opportunities.`,
+      `${developer.name} currently has ${developer.listingCount} homes available on the public site.`,
       developer.offPlanCount
-        ? `${developer.offPlanCount} off-plan opportunities are connected to the developer route for launch-stage buyers.`
-        : "The active public route is currently weighted more toward ready or immediately reviewable stock.",
+        ? `${developer.offPlanCount} off-plan home${developer.offPlanCount === 1 ? "" : "s"} is currently linked to this page.`
+        : "Most of the homes shown here are ready or easier to review straight away.",
       developer.privateInventoryCount
-        ? `${developer.privateInventoryCount} private inventory opportunity${developer.privateInventoryCount === 1 ? " is" : "ies are"} attached to this developer profile.`
-        : "Private inventory is currently handled through separate buyer-advisory routing rather than broad public publication.",
+        ? `${developer.privateInventoryCount} private listing${developer.privateInventoryCount === 1 ? " is" : "s are"} also linked to this page.`
+        : "Private listings can also be handled separately when needed.",
       featuredAreas.length
-        ? `The strongest public location tie-ins for this developer are ${featuredAreas.join(", ")}.`
-        : "Area-led routes can be attached here once more community context is published.",
+        ? `The main areas linked to this developer are ${featuredAreas.join(", ")}.`
+        : "Area highlights can be added here as more content is published.",
     ];
   }, [developer, featuredAreas]);
 
@@ -137,7 +137,7 @@ export default function DeveloperDetail() {
         />
         <div className="space-y-4 pb-28">
           <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Developer profile not found</h1>
-          <p className="text-sm text-slate-600">This developer page is not available yet.</p>
+          <p className="text-sm text-slate-600">This developer page is not live yet.</p>
           <Button asChild className="rounded-full px-5">
             <Link to="/developers">Back to developers</Link>
           </Button>
@@ -152,7 +152,7 @@ export default function DeveloperDetail() {
         title={`${developer.name} Dubai Properties and Projects`}
         description={truncateSeoDescription(
           developer.summary
-          || `${developer.name} has ${developer.listingCount} active Dubai sale opportunities${featuredAreas.length ? ` across ${featuredAreas.join(", ")}` : ""}, including linked projects and off-plan routes.`
+          || `${developer.name} has ${developer.listingCount} homes currently available${featuredAreas.length ? ` across ${featuredAreas.join(", ")}` : ""}, with linked projects and property pages.`
         )}
         canonicalPath={`/developers/${slug}`}
         robots="index,follow"
@@ -195,7 +195,7 @@ export default function DeveloperDetail() {
                     <div className="absolute bottom-4 left-4 right-4">
                       <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">{developer.name}</h1>
                       <p className="mt-3 max-w-3xl text-sm leading-7 text-white/78">
-                        {developer.summary || "A governed developer page should move from brand trust into project context and then into relevant stock, without exposing the entire operational layer."}
+                        {developer.summary || "Browse the developer, explore their featured projects, and then view the homes currently available."}
                       </p>
                     </div>
                   </div>
@@ -206,7 +206,7 @@ export default function DeveloperDetail() {
                       <div>
                         <p className="text-3xl font-semibold tracking-tight text-slate-950">{buildPriceBand(developer)}</p>
                         <p className="mt-2 text-sm leading-6 text-slate-600">
-                          {developer.primaryCity || "Dubai"} public route with projects, active stock, and controlled advisory paths.
+                          {developer.primaryCity || "Dubai"} developer page with projects and homes for sale.
                         </p>
                       </div>
                       <div className="space-y-3">
@@ -217,9 +217,9 @@ export default function DeveloperDetail() {
                     </div>
 
                     <div className="rounded-[1.4rem] border border-slate-200 bg-white p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Route logic</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">What this page does</p>
                       <p className="mt-2 text-sm leading-6 text-slate-600">
-                        Buyers should move from brand trust into a smaller set of project pages and then into the most relevant live units.
+                        It helps buyers understand the developer first, then move into the right projects and available homes.
                       </p>
                     </div>
                   </div>
@@ -255,10 +255,10 @@ export default function DeveloperDetail() {
                 <CardContent className="space-y-5 p-6 lg:p-7">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Brand story</p>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Why this developer page matters</h2>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">About this developer</h2>
                   </div>
                   <p className="text-sm leading-7 text-slate-600">
-                    {developer.body || developer.summary || "Use the developer layer to carry the brand narrative, area focus, and linked project pages before the buyer drills into individual units."}
+                    {developer.body || developer.summary || "This section introduces the developer, the kind of homes they build, and where buyers are most likely to find them."}
                   </p>
                 </CardContent>
               </Card>
@@ -267,7 +267,7 @@ export default function DeveloperDetail() {
                 <CardContent className="space-y-5 p-6 lg:p-7">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Portfolio snapshot</p>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">How the public route is structured</h2>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">At a glance</h2>
                   </div>
                   <div className="space-y-1">
                     <DetailRow label="Brand name" value={developer.officialName || developer.name} />
@@ -283,7 +283,7 @@ export default function DeveloperDetail() {
               <CardContent className="space-y-5 p-6 lg:p-7">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Buyer perspective</p>
-                  <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">What this public route tells the buyer</h2>
+                  <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">What buyers can expect here</h2>
                 </div>
                 <div className="space-y-3">
                   {portfolioNotes.map((note) => (
@@ -300,7 +300,7 @@ export default function DeveloperDetail() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Top areas</p>
-                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Where this developer is most visible</h2>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Popular areas for this developer</h2>
                   </div>
                   <Button asChild variant="outline" className="rounded-full px-5">
                     <Link to={`/properties?developer=${encodeURIComponent(developer.officialName || developer.name)}`}>
@@ -347,7 +347,7 @@ export default function DeveloperDetail() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Linked sale stock</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Properties attached to this developer route</h2>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Homes currently shown for this developer</h2>
                 </div>
                 <Button asChild variant="outline" className="rounded-full px-5">
                   <Link to={`/properties?developer=${encodeURIComponent(developer.officialName || developer.name)}`}>
@@ -372,11 +372,11 @@ export default function DeveloperDetail() {
             <Card className="rounded-[2rem] border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
               <CardContent className="space-y-5 p-6">
                 <div className="space-y-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Developer advisory</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Developer summary</p>
                   <p className="text-3xl font-semibold tracking-tight text-slate-950">{buildPriceBand(developer)}</p>
                   <div className="space-y-2 text-sm text-slate-600">
                     <p className="font-medium text-slate-950">{developer.name}</p>
-                    <p>{developer.primaryCity || "Dubai"} developer route with projects and live sale stock.</p>
+                    <p>{developer.primaryCity || "Dubai"} developer page with featured projects and homes.</p>
                   </div>
                 </div>
 
@@ -387,7 +387,7 @@ export default function DeveloperDetail() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />
-                    {developer.offPlanCount} off-plan route{developer.offPlanCount === 1 ? "" : "s"}
+                    {developer.offPlanCount} off-plan home{developer.offPlanCount === 1 ? "" : "s"}
                   </div>
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4" />
@@ -416,7 +416,7 @@ export default function DeveloperDetail() {
                 </div>
 
                 <div className="space-y-2 border-t border-slate-200 pt-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Connected public routes</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Related pages</p>
                   <div className="grid gap-2">
                     <Button asChild variant="outline" className="justify-between rounded-full px-4">
                       <Link to={`/properties?developer=${encodeURIComponent(developer.officialName || developer.name)}`}>
@@ -432,7 +432,7 @@ export default function DeveloperDetail() {
                     </Button>
                     <Button asChild variant="outline" className="justify-between rounded-full px-4">
                       <Link to="/contact">
-                        Contact route
+                        Contact us
                         <ArrowUpRight className="h-4 w-4" />
                       </Link>
                     </Button>
