@@ -1,5 +1,6 @@
 import { filterEntitySafe, listEntitySafe } from "@/lib/base44Safeguards";
 import { showcaseProjectProfiles } from "@/data/showcaseProfiles";
+import { getListingRecordId } from "@/lib/buyerListings";
 import { findMatchingDeveloperProfile } from "@/lib/developerProfiles";
 import { slugifyText } from "@/lib/developerDirectory";
 
@@ -47,7 +48,7 @@ function deriveProjectStatus(profile, project, listings) {
 function orderFeaturedListings(listings = [], featuredListingIds = []) {
   const order = new Map(featuredListingIds.map((id, index) => [id, index]));
   return [...listings].sort((left, right) => (
-    (order.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(right.id) ?? Number.MAX_SAFE_INTEGER)
+    (order.get(getListingRecordId(left) || left.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(getListingRecordId(right) || right.id) ?? Number.MAX_SAFE_INTEGER)
     || Number(left.price || 0) - Number(right.price || 0)
   ));
 }
@@ -91,7 +92,7 @@ export function findProjectProfileForListing(listing, profiles = []) {
   const sourceProfiles = mergeShowcaseProjectProfiles(profiles);
 
   return sourceProfiles.find((profile) => (
-    profile.featured_listing_ids?.includes(listing?.id)
+    profile.featured_listing_ids?.includes(getListingRecordId(listing) || listing?.id)
     || (listingProjectId && String(profile.project_id || "").trim() === listingProjectId)
     || (listingProjectName && normalizeCompareValue(profile.project_name) === listingProjectName)
   )) || null;
@@ -105,7 +106,7 @@ export function hydrateProjectProfile(profile, projects = [], listings = [], dev
   )) || null;
 
   const relatedListings = listings.filter((listing) => (
-    profile.featured_listing_ids.includes(listing.id)
+    profile.featured_listing_ids.includes(getListingRecordId(listing) || listing.id)
     || (profile.project_id && listing.project_id === profile.project_id)
     || (profile.project_name && normalizeCompareValue(listing.project_name) === normalizeCompareValue(profile.project_name))
   ));

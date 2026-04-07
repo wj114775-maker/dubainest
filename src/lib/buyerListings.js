@@ -365,6 +365,18 @@ function slugify(value) {
     || "property";
 }
 
+export function getListingRecordId(listing) {
+  return String(listing?.record_id || listing?.id || listing?._id || "").trim();
+}
+
+function getListingRouteSlug(listing) {
+  return slugify(listing?.slug || listing?.title || listing?.property_type || "property");
+}
+
+function getListingClientId(listing) {
+  return getListingRecordId(listing) || getListingRouteSlug(listing);
+}
+
 function isSaleOnlyListing(listing) {
   if (!listing) return false;
   return String(listing.listing_type || "sale").toLowerCase() !== "rent";
@@ -373,6 +385,9 @@ function isSaleOnlyListing(listing) {
 function normalizeBuyerListing(listing) {
   if (!listing) return null;
 
+  const recordId = getListingRecordId(listing);
+  const clientId = getListingClientId(listing);
+  const listingSlug = getListingRouteSlug(listing);
   const bedrooms = Number(listing.bedrooms || 0);
   const bathrooms = Number(listing.bathrooms || bedrooms || 0);
   const parkingSpaces = listing.parking_spaces ?? listing.car_spaces ?? Math.max(Math.min(bedrooms || 1, 4), 1);
@@ -382,7 +397,7 @@ function normalizeBuyerListing(listing) {
     .concat(listing.gallery_image_urls || [])
     .concat(listing.image_urls || [])
     .concat((listing.photos || []).map((item) => item?.url || item?.image_url || item))
-    .concat(demoGalleryImages[listing.id] || [])
+    .concat(demoGalleryImages[recordId] || demoGalleryImages[clientId] || [])
     .filter(Boolean);
   const galleryImageUrls = Array.from(new Set([listing.hero_image_url, ...rawGalleryImages].filter(Boolean)));
 
@@ -396,6 +411,9 @@ function normalizeBuyerListing(listing) {
     handover_label: completionStatus === "off_plan" ? "Future handover" : "",
     developer_name: "",
     ...listing,
+    id: clientId,
+    record_id: recordId,
+    slug: listingSlug,
     description,
     gallery_image_urls: galleryImageUrls,
     bedrooms,
@@ -426,8 +444,8 @@ function topUpWithShowcaseListings(liveListings = [], limit = 24) {
     return demoListings.slice(0, limit);
   }
 
-  const liveIds = new Set(liveListings.map((listing) => listing.id));
-  const showcaseFill = demoListings.filter((listing) => !liveIds.has(listing.id)).slice(0, Math.max(0, limit - liveListings.length));
+  const liveIds = new Set(liveListings.map((listing) => getListingClientId(listing)));
+  const showcaseFill = demoListings.filter((listing) => !liveIds.has(getListingClientId(listing))).slice(0, Math.max(0, limit - liveListings.length));
   return [...liveListings, ...showcaseFill].slice(0, limit);
 }
 
@@ -440,15 +458,44 @@ export async function loadBuyerListings({ limit = 24, includeShowcase = true } =
 }
 
 export async function loadBuyerListingById(id) {
-  if (demoListingsById[id]) {
-    return normalizeBuyerListing(demoListingsById[id]);
+  const lookupValue = String(id || "").trim();
+  if (!lookupValue) {
+    return null;
+  }
+
+  if (demoListingsById[lookupValue]) {
+    return normalizeBuyerListing(demoListingsById[lookupValue]);
   }
 
   try {
-    const listing = await base44.entities.Listing.get(id);
+    const listing = await base44.entities.Listing.get(lookupValue);
     return isSaleOnlyListing(listing) ? normalizeBuyerListing(listing) : null;
   } catch {
-    return normalizeBuyerListing(demoListingsById[id] || null);
+    const lookupSlug = extractListingSlug(lookupValue);
+    const demoMatch = demoListings.find((listing) => getListingRouteSlug(listing) === lookupSlug);
+
+    if (demoMatch) {
+      return normalizeBuyerListing(demoMatch);
+    }
+
+    try {
+      const matches = await base44.entities.Listing.filter({ slug: lookupSlug }, "-updated_date", 1);
+      const listing = Array.isArray(matches) ? matches[0] : null;
+      if (isSaleOnlyListing(listing)) {
+        return normalizeBuyerListing(listing);
+      }
+    } catch {
+      // Fall through to a broader published-stock lookup.
+    }
+
+    const publishedListings = await fetchLivePublishedListings(200);
+    const matchedListing = publishedListings.find((listing) => (
+      getListingRecordId(listing) === lookupValue
+      || getListingRouteSlug(listing) === lookupSlug
+      || String(listing.slug || "").trim() === lookupSlug
+    ));
+
+    return normalizeBuyerListing(matchedListing || null);
   }
 }
 
@@ -461,8 +508,9 @@ export function isShowcaseListing(listing) {
 }
 
 export function buildListingPath(listing) {
-  const slug = slugify(listing?.title || listing?.property_type || "property");
-  return `/properties/${slug}--${listing?.id || ""}`;
+  const slug = getListingRouteSlug(listing);
+  const recordId = getListingRecordId(listing);
+  return recordId ? `/properties/${slug}--${recordId}` : `/properties/${slug}`;
 }
 
 export function extractListingId(slugOrId = "") {
@@ -470,4 +518,11 @@ export function extractListingId(slugOrId = "") {
   if (!raw) return "";
   const separatorIndex = raw.lastIndexOf("--");
   return separatorIndex >= 0 ? raw.slice(separatorIndex + 2) : raw;
+}
+
+export function extractListingSlug(slugOrId = "") {
+  const raw = String(slugOrId || "").trim();
+  if (!raw) return "";
+  const separatorIndex = raw.lastIndexOf("--");
+  return separatorIndex >= 0 ? raw.slice(0, separatorIndex) : raw;
 }

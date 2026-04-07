@@ -28,6 +28,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   buildListingPath,
   extractListingId,
+  extractListingSlug,
   isShowcaseListing,
   loadBuyerListingById,
   loadBuyerListings,
@@ -123,16 +124,18 @@ function DetailRow({ label, value, action }) {
 
 export default function ListingDetail() {
   const { id, listingSlugId } = useParams();
-  const listingId = extractListingId(listingSlugId || id);
+  const routeToken = String(listingSlugId || id || "").trim();
+  const listingId = extractListingId(routeToken);
+  const listingLookup = listingId || extractListingSlug(routeToken);
   const [intentType, setIntentType] = useState("request_callback");
   const [open, setOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const { data: appConfig } = useAppConfig();
 
   const { data: listing, isLoading } = useQuery({
-    queryKey: ["listing", listingId],
-    queryFn: async () => loadBuyerListingById(listingId),
-    enabled: !!listingId,
+    queryKey: ["listing", routeToken],
+    queryFn: async () => loadBuyerListingById(listingLookup),
+    enabled: !!listingLookup,
     initialData: null,
   });
   const { data: listings = [] } = useQuery({
@@ -201,7 +204,11 @@ export default function ListingDetail() {
     .filter((item) => item.id !== listing?.id && item.area_name && item.area_name === listing?.area_name)
     .slice(0, 3);
   const galleryCount = galleryImages.length;
-  const listingPath = listing ? buildListingPath(listing) : `/properties/property--${listingId || ""}`;
+  const listingPath = listing
+    ? buildListingPath(listing)
+    : listingSlugId
+      ? `/properties/${routeToken || "property"}`
+      : `/listing/${routeToken || ""}`;
   const projectSearchPath = hydratedProject?.name ? `/properties?q=${encodeURIComponent(hydratedProject.name)}` : "/projects";
   const developerSearchPath = listing?.developer_name ? `/properties?developer=${encodeURIComponent(listing.developer_name)}` : "/properties";
   const areaSearchPath = listing?.area_name ? `/properties?q=${encodeURIComponent(listing.area_name)}` : "/properties";
@@ -762,7 +769,7 @@ export default function ListingDetail() {
         open={open}
         onOpenChange={setOpen}
         intentType={intentType}
-        listingId={showcase ? "" : listing.id}
+        listingId={showcase ? "" : (listing.record_id || listing.id)}
         projectId={hydratedProject?.projectId || ""}
         title={listing.title}
       />
