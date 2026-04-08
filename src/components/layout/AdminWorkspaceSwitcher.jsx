@@ -24,7 +24,7 @@ export default function AdminWorkspaceSwitcher({ items = [], label = "Back Offic
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         {Object.entries(sections).map(([section, sectionItems], index) => (
-          <React.Fragment key={section}>
+          <div key={section} className="contents">
             {index ? <DropdownMenuSeparator /> : null}
             <DropdownMenuLabel>{section}</DropdownMenuLabel>
             {sectionItems.map((item) => (
@@ -40,7 +40,7 @@ export default function AdminWorkspaceSwitcher({ items = [], label = "Back Offic
                 </Link>
               </DropdownMenuItem>
             ))}
-          </React.Fragment>
+          </div>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>

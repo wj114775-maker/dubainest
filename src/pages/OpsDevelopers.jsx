@@ -24,7 +24,7 @@ import {
   hasOperationalStarterWorkspace,
   listDeveloperOpsWorkspace
 } from "@/lib/developerLifecycle";
-import { createEntitySafe, getMissingEntitySchemas, updateEntitySafe } from "@/lib/base44Safeguards";
+import { createEntitySafe, getBase44ErrorText, getMissingEntitySchemas, updateEntitySafe } from "@/lib/base44Safeguards";
 
 const initialProspectForm = {
   company_name: "",
@@ -58,6 +58,16 @@ const emptyWorkspace = {
   auditLog: [],
 };
 
+const developerLifecycleSchemaNames = [
+  "DeveloperOrganisation",
+  "DeveloperProspect",
+  "DeveloperActivity",
+  "DeveloperAgreement",
+  "DeveloperDeal",
+  "DeveloperListingRevision",
+  "DeveloperProjectRevision",
+];
+
 export default function OpsDevelopers() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -75,7 +85,10 @@ export default function OpsDevelopers() {
   const hasOperationalStarter = hasOperationalStarterWorkspace(workspace);
   const starterOrganisation = workspace.organisations.find((item) => item.slug === DEMO_OPERATIONAL_DEVELOPER_SLUG) || null;
   const starterDeal = workspace.deals.find((item) => item.deal_code === DEMO_OPERATIONAL_DEAL_CODE) || null;
-  const missingSchemas = getMissingEntitySchemas(["DeveloperOrganisation", "DeveloperProspect", "DeveloperActivity", "DeveloperAgreement", "DeveloperDeal", "DeveloperListingRevision", "DeveloperProjectRevision"]);
+  const missingSchemas = getMissingEntitySchemas(developerLifecycleSchemaNames);
+  const publishRequiredReason = missingSchemas.length
+    ? `Developer lifecycle schemas are not published in this Base44 app yet. Open Base44.com and click Publish. Missing: ${missingSchemas.join(", ")}.`
+    : "";
   const summary = [
     { label: "Prospects", value: String(workspace.prospects.filter((item) => item.stage !== "archived").length) },
     { label: "Signed developers", value: String(workspace.organisations.filter((item) => item.status !== "archived").length) },
@@ -83,8 +96,22 @@ export default function OpsDevelopers() {
     { label: "Pending reviews", value: String(workspace.listingRevisions.filter((item) => ["submitted", "under_review"].includes(item.review_status)).length + workspace.projectRevisions.filter((item) => ["submitted", "under_review"].includes(item.review_status)).length) },
   ];
 
-  const ensureWrite = (result, fallbackMessage) => {
+  const getSchemaAwareErrorDescription = (error, fallbackMessage) => {
+    const liveMissingSchemas = getMissingEntitySchemas(developerLifecycleSchemaNames);
+    const message = String(error?.message || "");
+
+    if (message.startsWith("SchemaMissing:") || liveMissingSchemas.length) {
+      return `Developer lifecycle schemas are not published in this Base44 app yet. Open Base44.com and click Publish. Missing: ${liveMissingSchemas.join(", ")}.`;
+    }
+
+    return getBase44ErrorText(error) || fallbackMessage;
+  };
+
+  const ensureWrite = (result, fallbackMessage, entityName = "") => {
     if (!result?.ok) {
+      if (result?.missingSchema) {
+        throw new Error(`SchemaMissing:${entityName || "DeveloperLifecycle"}`);
+      }
       throw result?.error || new Error(fallbackMessage);
     }
     return result.data;
@@ -93,7 +120,10 @@ export default function OpsDevelopers() {
   const saveProspect = useMutation({
     mutationFn: async () => {
       const result = await createEntitySafe("DeveloperProspect", { ...form, owner_user_id: form.owner_user_id || current?.user?.id, next_follow_up_at: form.next_follow_up_at || undefined });
-      if (!result.ok) throw result.error || new Error("Prospect save failed");
+      if (!result.ok) {
+        if (result.missingSchema) throw new Error("SchemaMissing:DeveloperProspect");
+        throw result.error || new Error("Prospect save failed");
+      }
       return result.data;
     },
     onSuccess: () => {
@@ -101,40 +131,48 @@ export default function OpsDevelopers() {
       setForm(initialProspectForm);
       toast({ title: "Prospect saved" });
     },
-    onError: () => toast({ title: "Prospect save failed", variant: "destructive" }),
+    onError: (error) => toast({
+      title: "Prospect save failed",
+      description: getSchemaAwareErrorDescription(error, "The prospect could not be saved."),
+      variant: "destructive",
+    }),
   });
 
   const prospectAction = useMutation({
     mutationFn: async ({ prospect, action, value }) => {
       const now = new Date().toISOString();
-      if (action === "stage") return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: value }), "Stage update failed");
-      if (action === "own") return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { owner_user_id: current?.user?.id }), "Owner update failed");
+      if (action === "stage") return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: value }), "Stage update failed", "DeveloperProspect");
+      if (action === "own") return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { owner_user_id: current?.user?.id }), "Owner update failed", "DeveloperProspect");
       if (["call", "email", "meeting"].includes(action)) {
-        ensureWrite(await createDeveloperActivity({ developer_prospect_id: prospect.id, activity_type: action, direction: "outbound", actor_user_id: current?.user?.id, occurred_at: now, summary: `${prospect.company_name} ${action}` }), "Prospect activity log failed");
-        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { last_contact_at: now }), "Prospect activity update failed");
+        ensureWrite(await createDeveloperActivity({ developer_prospect_id: prospect.id, activity_type: action, direction: "outbound", actor_user_id: current?.user?.id, occurred_at: now, summary: `${prospect.company_name} ${action}` }), "Prospect activity log failed", "DeveloperActivity");
+        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { last_contact_at: now }), "Prospect activity update failed", "DeveloperProspect");
       }
       if (action === "send_agreement") {
-        ensureWrite(await createEntitySafe("DeveloperAgreement", { developer_prospect_id: prospect.id, agreement_type: "developer_partnership", agreement_status: "sent", signature_status: "pending", sent_at: now }), "Agreement creation failed");
-        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "agreement_sent", agreement_status: "sent", signature_status: "pending", last_contact_at: now }), "Prospect agreement state update failed");
+        ensureWrite(await createEntitySafe("DeveloperAgreement", { developer_prospect_id: prospect.id, agreement_type: "developer_partnership", agreement_status: "sent", signature_status: "pending", sent_at: now }), "Agreement creation failed", "DeveloperAgreement");
+        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "agreement_sent", agreement_status: "sent", signature_status: "pending", last_contact_at: now }), "Prospect agreement state update failed", "DeveloperProspect");
       }
       if (action === "send_reminder") {
-        ensureWrite(await createDeveloperActivity({ developer_prospect_id: prospect.id, activity_type: "reminder", direction: "system", actor_user_id: current?.user?.id, occurred_at: now, summary: `Reminder sent to ${prospect.company_name}` }), "Reminder log failed");
-        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "awaiting_signature", agreement_status: "awaiting_signature", signature_status: "pending", last_contact_at: now }), "Prospect reminder update failed");
+        ensureWrite(await createDeveloperActivity({ developer_prospect_id: prospect.id, activity_type: "reminder", direction: "system", actor_user_id: current?.user?.id, occurred_at: now, summary: `Reminder sent to ${prospect.company_name}` }), "Reminder log failed", "DeveloperActivity");
+        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "awaiting_signature", agreement_status: "awaiting_signature", signature_status: "pending", last_contact_at: now }), "Prospect reminder update failed", "DeveloperProspect");
       }
       if (action === "not_interested") {
-        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "not_interested" }), "Prospect status update failed");
+        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "not_interested" }), "Prospect status update failed", "DeveloperProspect");
       }
       if (action === "archive") {
-        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "archived", archived_at: now }), "Prospect archive failed");
+        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "archived", archived_at: now }), "Prospect archive failed", "DeveloperProspect");
       }
-      if (action === "convert") return ensureWrite(await convertProspectToOrganisation({ prospect, currentUserId: current?.user?.id }), "Prospect conversion failed");
+      if (action === "convert") return ensureWrite(await convertProspectToOrganisation({ prospect, currentUserId: current?.user?.id }), "Prospect conversion failed", "DeveloperOrganisation");
       throw new Error("Unsupported action");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ops-developer-workspace"] });
       toast({ title: "Developer workflow updated" });
     },
-    onError: () => toast({ title: "Developer workflow update failed", variant: "destructive" }),
+    onError: (error) => toast({
+      title: "Developer workflow update failed",
+      description: getSchemaAwareErrorDescription(error, "The developer workflow could not be updated."),
+      variant: "destructive",
+    }),
   });
 
   const createOperationalStarter = useMutation({
@@ -150,7 +188,7 @@ export default function OpsDevelopers() {
     onError: (error) => {
       toast({
         title: "Operational starter failed",
-        description: String(error?.message || "The starter records could not be created."),
+        description: getSchemaAwareErrorDescription(error, "The starter records could not be created."),
         variant: "destructive",
       });
     },
@@ -173,7 +211,7 @@ export default function OpsDevelopers() {
           <CardContent className="space-y-2 p-6">
             <p className="text-xs uppercase tracking-[0.28em] text-amber-700">Publish required</p>
             <h2 className="text-2xl font-semibold tracking-tight text-slate-950">Developer lifecycle records need live Base44 schemas</h2>
-            <p className="text-sm leading-6 text-slate-700">Missing live schemas: {missingSchemas.join(", ")}.</p>
+            <p className="text-sm leading-6 text-slate-700">{publishRequiredReason}</p>
           </CardContent>
         </Card>
       ) : null}
@@ -211,7 +249,7 @@ export default function OpsDevelopers() {
           <TabsTrigger value="deals">Deals</TabsTrigger>
           <TabsTrigger value="publishing">Public publishing</TabsTrigger>
         </TabsList>
-        <TabsContent value="prospects"><DeveloperProspectsTab prospects={workspace.prospects} form={form} setForm={setForm} onSubmit={() => saveProspect.mutate()} onAction={(prospect, action, value) => prospectAction.mutate({ prospect, action, value })} loading={saveProspect.isPending || prospectAction.isPending} currentUserId={current?.user?.id || ""} /></TabsContent>
+        <TabsContent value="prospects"><DeveloperProspectsTab prospects={workspace.prospects} form={form} setForm={setForm} onSubmit={() => saveProspect.mutate()} onAction={(prospect, action, value) => prospectAction.mutate({ prospect, action, value })} loading={saveProspect.isPending || prospectAction.isPending} currentUserId={current?.user?.id || ""} disabledReason={publishRequiredReason} /></TabsContent>
         <TabsContent value="registry"><DeveloperRegistryTab organisations={workspace.organisations} projects={workspace.projects} listings={workspace.listings} deals={workspace.deals} /></TabsContent>
         <TabsContent value="agreements"><DeveloperAgreementsTab agreements={workspace.agreements} organisations={workspace.organisations} prospects={workspace.prospects} /></TabsContent>
         <TabsContent value="inventory"><DeveloperInventoryTab inventory={inventory} /></TabsContent>
