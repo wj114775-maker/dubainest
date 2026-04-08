@@ -19,17 +19,38 @@ function isPublicDeveloperProfile(profile) {
   return profile?.partnership_status === "partnered" && profile?.page_status === "published";
 }
 
+function normalizeSlugIdentifier(value) {
+  return slugifyText(value);
+}
+
+function matchesDeveloperIdentifier(profile, value) {
+  const normalizedName = normalizeDeveloperQueryValue(value);
+  const normalizedSlug = normalizeSlugIdentifier(value);
+
+  return (
+    profile?.slug === normalizedSlug
+    || normalizeSlugIdentifier(profile?.slug) === normalizedSlug
+    || normalizeDeveloperQueryValue(profile?.developer_name) === normalizedName
+    || normalizeDeveloperQueryValue(profile?.approved_developer_name) === normalizedName
+  );
+}
+
 export async function listDeveloperProfiles() {
   const profiles = await listEntitySafe("DeveloperProfile", "-updated_date", 200);
   return Array.isArray(profiles) ? profiles.map(normalizeProfile) : [];
 }
 
 export async function getDeveloperProfileBySlug(slug) {
-  const profiles = await filterEntitySafe("DeveloperProfile", { slug });
+  const normalizedSlug = normalizeSlugIdentifier(slug);
+  const profiles = await filterEntitySafe("DeveloperProfile", { slug: normalizedSlug });
   const normalizedProfiles = Array.isArray(profiles) ? profiles.map(normalizeProfile) : [];
-  const publishedProfile = normalizedProfiles.find(isPublicDeveloperProfile);
+  const publishedProfile = normalizedProfiles.find((profile) => (
+    isPublicDeveloperProfile(profile) && matchesDeveloperIdentifier(profile, slug)
+  ));
   if (publishedProfile) return publishedProfile;
-  return getShowcaseDeveloperProfileBySlug(slug);
+
+  const publicProfiles = getPublicDeveloperProfiles(await listDeveloperProfiles());
+  return publicProfiles.find((profile) => matchesDeveloperIdentifier(profile, slug)) || null;
 }
 
 function mergeShowcaseProfiles(profiles = []) {
@@ -48,9 +69,10 @@ function mergeShowcaseProfiles(profiles = []) {
 }
 
 export function getShowcaseDeveloperProfileBySlug(slug) {
+  const normalizedSlug = normalizeSlugIdentifier(slug);
   return showcaseDeveloperProfiles
     .map(normalizeProfile)
-    .find((profile) => profile.slug === slug) || null;
+    .find((profile) => matchesDeveloperIdentifier(profile, normalizedSlug)) || null;
 }
 
 export function getPublicDeveloperProfiles(profiles = []) {
@@ -62,15 +84,9 @@ export function getHomepageDeveloperProfiles(profiles = []) {
 }
 
 export function findMatchingDeveloperProfile(profiles = [], developerName = "") {
-  const normalizedName = normalizeDeveloperQueryValue(developerName);
-  const slug = slugifyText(developerName);
   const sourceProfiles = mergeShowcaseProfiles(profiles);
 
-  return sourceProfiles.find((profile) => (
-    profile.slug === slug
-    || normalizeDeveloperQueryValue(profile.developer_name) === normalizedName
-    || normalizeDeveloperQueryValue(profile.approved_developer_name) === normalizedName
-  )) || null;
+  return sourceProfiles.find((profile) => matchesDeveloperIdentifier(profile, developerName)) || null;
 }
 
 export function hydrateDeveloperProfile(profile, approvedDevelopers = [], listings = []) {

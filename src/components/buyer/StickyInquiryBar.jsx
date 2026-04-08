@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowRight,
+  Mail,
   MessageCircleMore,
   PhoneCall,
   ShieldCheck,
@@ -18,18 +18,27 @@ function buildWhatsAppUrl(phone) {
   return `https://wa.me/${sanitized}?text=${text}`;
 }
 
-function ActionLink({ href, to, children, variant = "secondary", external = false, onClick }) {
+function ActionTile({ href, to, icon: Icon, label, accent = "default", external = false, onClick }) {
   const sharedClassName = cn(
-    "inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-[1rem] px-4 text-sm font-medium transition duration-200",
-    variant === "primary" && "border border-slate-950 bg-slate-950 text-white shadow-[0_14px_28px_rgba(15,23,42,0.22)] hover:-translate-y-0.5 hover:bg-slate-800",
-    variant === "secondary" && "border border-slate-200 bg-white text-slate-900 shadow-[0_12px_24px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:border-slate-300",
-    variant === "whatsapp" && "border border-emerald-500 bg-emerald-500 text-white shadow-[0_14px_28px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 hover:bg-emerald-600"
+    "group flex min-h-[6.5rem] flex-col items-center justify-center gap-3 rounded-[1.25rem] border px-3 py-4 text-center transition duration-200 hover:-translate-y-0.5",
+    accent === "primary" && "border-slate-950 bg-slate-950 text-white shadow-[0_14px_28px_rgba(15,23,42,0.18)] hover:bg-slate-900",
+    accent === "whatsapp" && "border-emerald-500 bg-emerald-500 text-white shadow-[0_14px_28px_rgba(16,185,129,0.18)] hover:bg-emerald-600",
+    accent === "default" && "border-slate-200 bg-white text-slate-900 shadow-[0_12px_24px_rgba(15,23,42,0.07)] hover:border-slate-300"
+  );
+  const iconWrapClassName = cn(
+    "inline-flex h-11 w-11 items-center justify-center rounded-full transition duration-200",
+    accent === "primary" && "bg-white/12 text-white group-hover:bg-white/16",
+    accent === "whatsapp" && "bg-white/14 text-white group-hover:bg-white/18",
+    accent === "default" && "bg-slate-100 text-slate-950 group-hover:bg-slate-200"
   );
 
   if (external) {
     return (
       <a href={href} target="_blank" rel="noreferrer" className={sharedClassName}>
-        {children}
+        <span className={iconWrapClassName}>
+          <Icon className="h-[18px] w-[18px]" />
+        </span>
+        <span className="text-xs font-semibold uppercase tracking-[0.18em]">{label}</span>
       </a>
     );
   }
@@ -37,14 +46,20 @@ function ActionLink({ href, to, children, variant = "secondary", external = fals
   if (to) {
     return (
       <Link to={to} onClick={onClick} className={sharedClassName}>
-        {children}
+        <span className={iconWrapClassName}>
+          <Icon className="h-[18px] w-[18px]" />
+        </span>
+        <span className="text-xs font-semibold uppercase tracking-[0.18em]">{label}</span>
       </Link>
     );
   }
 
   return (
     <button type="button" onClick={onClick} className={sharedClassName}>
-      {children}
+      <span className={iconWrapClassName}>
+        <Icon className="h-[18px] w-[18px]" />
+      </span>
+      <span className="text-xs font-semibold uppercase tracking-[0.18em]">{label}</span>
     </button>
   );
 }
@@ -162,33 +177,35 @@ export default function StickyInquiryBar() {
                   ) : null}
                 </div>
 
-                <div className={cn("grid gap-2.5", isMobile ? "grid-cols-1" : "grid-cols-3")}>
-                  <ActionLink
+                <div className="grid grid-cols-3 gap-2.5">
+                  <ActionTile
+                    icon={PhoneCall}
+                    label="Callback"
                     onClick={() => {
                       setIntentType("request_callback");
                       setIntentOpen(true);
                       setPanelOpen(false);
                     }}
-                  >
-                    <PhoneCall className="h-4 w-4" />
-                    Callback
-                  </ActionLink>
+                  />
 
-                  <ActionLink to="/contact" variant="primary" onClick={() => setPanelOpen(false)}>
-                    <ArrowRight className="h-4 w-4" />
-                    Contact us
-                  </ActionLink>
+                  <ActionTile
+                    to="/contact"
+                    icon={Mail}
+                    label="Contact"
+                    accent="primary"
+                    onClick={() => setPanelOpen(false)}
+                  />
 
                   {hasDirectWhatsApp ? (
-                    <ActionLink href={whatsappUrl} variant="whatsapp" external>
-                      <MessageCircleMore className="h-4 w-4" />
-                      WhatsApp
-                    </ActionLink>
+                    <ActionTile href={whatsappUrl} icon={MessageCircleMore} label="WhatsApp" accent="whatsapp" external />
                   ) : (
-                    <ActionLink to="/contact" variant="whatsapp" onClick={() => setPanelOpen(false)}>
-                      <MessageCircleMore className="h-4 w-4" />
-                      Contact us
-                    </ActionLink>
+                    <ActionTile
+                      to="/contact"
+                      icon={MessageCircleMore}
+                      label="WhatsApp"
+                      accent="whatsapp"
+                      onClick={() => setPanelOpen(false)}
+                    />
                   )}
                 </div>
 

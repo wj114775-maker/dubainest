@@ -129,9 +129,10 @@ export function hydrateProjectProfile(profile, projects = [], listings = [], dev
   const minPrice = profile.starting_price_override
     ?? matchedProject?.price_from
     ?? (orderedListings.length ? Math.min(...orderedListings.map((item) => Number(item.price || 0)).filter(Boolean)) : null);
-  const developerProfile = profile.developer_profile_slug
-    ? developerProfiles.find((item) => item.slug === profile.developer_profile_slug) || null
-    : findMatchingDeveloperProfile(developerProfiles, profile.developer_name || orderedListings[0]?.developer_name || "");
+  const developerProfile = findMatchingDeveloperProfile(
+    developerProfiles,
+    profile.developer_profile_slug || profile.developer_name || orderedListings[0]?.developer_name || ""
+  );
   const publicDeveloperProfile = developerProfile
     && developerProfile.partnership_status === "partnered"
     && developerProfile.page_status === "published"
