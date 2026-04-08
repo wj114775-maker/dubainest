@@ -10,10 +10,20 @@ import DeveloperAgreementsTab from "@/components/ops/DeveloperAgreementsTab";
 import DeveloperInventoryTab from "@/components/ops/DeveloperInventoryTab";
 import DeveloperDealsTab from "@/components/ops/DeveloperDealsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
-import { buildDeveloperInventoryTree, convertProspectToOrganisation, createDeveloperActivity, listDeveloperOpsWorkspace } from "@/lib/developerLifecycle";
+import {
+  buildDeveloperInventoryTree,
+  createDeveloperActivity,
+  createDeveloperOperationalStarterSet,
+  DEMO_OPERATIONAL_DEAL_CODE,
+  DEMO_OPERATIONAL_DEVELOPER_SLUG,
+  convertProspectToOrganisation,
+  hasOperationalStarterWorkspace,
+  listDeveloperOpsWorkspace
+} from "@/lib/developerLifecycle";
 import { createEntitySafe, getMissingEntitySchemas, updateEntitySafe } from "@/lib/base44Safeguards";
 
 const initialProspectForm = {
@@ -53,6 +63,7 @@ export default function OpsDevelopers() {
   const { toast } = useToast();
   const { data: current } = useCurrentUserRole();
   const [form, setForm] = useState(initialProspectForm);
+  const [activeTab, setActiveTab] = useState("prospects");
 
   const { data: workspace = emptyWorkspace } = useQuery({
     queryKey: ["ops-developer-workspace"],
@@ -61,6 +72,9 @@ export default function OpsDevelopers() {
   });
 
   const inventory = useMemo(() => buildDeveloperInventoryTree(workspace.organisations, workspace.projects, workspace.listings), [workspace.organisations, workspace.projects, workspace.listings]);
+  const hasOperationalStarter = hasOperationalStarterWorkspace(workspace);
+  const starterOrganisation = workspace.organisations.find((item) => item.slug === DEMO_OPERATIONAL_DEVELOPER_SLUG) || null;
+  const starterDeal = workspace.deals.find((item) => item.deal_code === DEMO_OPERATIONAL_DEAL_CODE) || null;
   const missingSchemas = getMissingEntitySchemas(["DeveloperOrganisation", "DeveloperProspect", "DeveloperActivity", "DeveloperAgreement", "DeveloperDeal", "DeveloperListingRevision", "DeveloperProjectRevision"]);
   const summary = [
     { label: "Prospects", value: String(workspace.prospects.filter((item) => item.stage !== "archived").length) },
@@ -123,6 +137,25 @@ export default function OpsDevelopers() {
     onError: () => toast({ title: "Developer workflow update failed", variant: "destructive" }),
   });
 
+  const createOperationalStarter = useMutation({
+    mutationFn: () => createDeveloperOperationalStarterSet({ currentUserId: current?.user?.id, workspace }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ops-developer-workspace"] });
+      setActiveTab("registry");
+      toast({
+        title: "Operational starter created",
+        description: "Prospects, signed developer, inventory, deal, documents, and finance starter records are ready to review.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Operational starter failed",
+        description: String(error?.message || "The starter records could not be created."),
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <div className="space-y-6">
       <SectionHeading
@@ -145,7 +178,31 @@ export default function OpsDevelopers() {
         </Card>
       ) : null}
 
-      <Tabs defaultValue="prospects" className="space-y-6">
+      <AccessGuard permission="settings.manage">
+        <Card className="rounded-[2rem] border-white/10 bg-card/80">
+          <CardContent className="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-3xl space-y-2">
+              <p className="text-xs uppercase tracking-[0.28em] text-primary">Operational starter</p>
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">Create a complete developer lifecycle starter set</h2>
+              <p className="text-sm leading-6 text-muted-foreground">
+                Seed one strategic prospect plus one signed developer with agreements, inventory, review requests, a live deal, documents, and finance records so the full lifecycle can be reviewed immediately.
+              </p>
+              {hasOperationalStarter ? (
+                <p className="text-sm text-muted-foreground">
+                  Starter already present: {starterOrganisation?.trading_name || starterOrganisation?.legal_name || "Developer"} and {starterDeal?.deal_code || DEMO_OPERATIONAL_DEAL_CODE}.
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => createOperationalStarter.mutate()} disabled={createOperationalStarter.isPending || missingSchemas.length > 0 || hasOperationalStarter}>
+                {hasOperationalStarter ? "Operational starter already created" : createOperationalStarter.isPending ? "Creating..." : "Create operational starter"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </AccessGuard>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="h-auto flex-wrap rounded-2xl bg-muted/50 p-1">
           <TabsTrigger value="prospects">Prospects</TabsTrigger>
           <TabsTrigger value="registry">Signed developers</TabsTrigger>
