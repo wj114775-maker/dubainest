@@ -42,15 +42,21 @@ export async function listDeveloperProfiles() {
 
 export async function getDeveloperProfileBySlug(slug) {
   const normalizedSlug = normalizeSlugIdentifier(slug);
-  const profiles = await filterEntitySafe("DeveloperProfile", { slug: normalizedSlug });
-  const normalizedProfiles = Array.isArray(profiles) ? profiles.map(normalizeProfile) : [];
-  const publishedProfile = normalizedProfiles.find((profile) => (
-    isPublicDeveloperProfile(profile) && matchesDeveloperIdentifier(profile, slug)
-  ));
-  if (publishedProfile) return publishedProfile;
+  const showcaseProfile = getShowcaseDeveloperProfileBySlug(normalizedSlug);
 
-  const publicProfiles = getPublicDeveloperProfiles(await listDeveloperProfiles());
-  return publicProfiles.find((profile) => matchesDeveloperIdentifier(profile, slug)) || null;
+  try {
+    const profiles = await filterEntitySafe("DeveloperProfile", { slug: normalizedSlug });
+    const normalizedProfiles = Array.isArray(profiles) ? profiles.map(normalizeProfile) : [];
+    const publishedProfile = normalizedProfiles.find((profile) => (
+      isPublicDeveloperProfile(profile) && matchesDeveloperIdentifier(profile, slug)
+    ));
+    if (publishedProfile) return publishedProfile;
+
+    const publicProfiles = getPublicDeveloperProfiles(await listDeveloperProfiles());
+    return publicProfiles.find((profile) => matchesDeveloperIdentifier(profile, slug)) || showcaseProfile || null;
+  } catch {
+    return showcaseProfile;
+  }
 }
 
 function mergeShowcaseProfiles(profiles = []) {
