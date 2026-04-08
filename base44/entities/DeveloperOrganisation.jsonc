@@ -1,0 +1,97 @@
+{
+  "name": "DeveloperOrganisation",
+  "type": "object",
+  "properties": {
+    "legal_name": {
+      "type": "string"
+    },
+    "trading_name": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "signed",
+        "onboarding",
+        "active",
+        "paused",
+        "archived"
+      ],
+      "default": "signed"
+    },
+    "agreement_type": {
+      "type": "string"
+    },
+    "mandate_scope": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "owner_user_id": {
+      "type": "string"
+    },
+    "portal_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "primary_contact_name": {
+      "type": "string"
+    },
+    "primary_contact_email": {
+      "type": "string"
+    },
+    "primary_contact_phone": {
+      "type": "string"
+    },
+    "developer_profile_id": {
+      "type": "string"
+    },
+    "approved_developer_name": {
+      "type": "string"
+    },
+    "agreement_status": {
+      "type": "string",
+      "enum": [
+        "not_sent",
+        "draft",
+        "sent",
+        "awaiting_signature",
+        "signed",
+        "expired"
+      ],
+      "default": "not_sent"
+    },
+    "signature_status": {
+      "type": "string",
+      "enum": [
+        "not_sent",
+        "pending",
+        "signed",
+        "declined"
+      ],
+      "default": "not_sent"
+    },
+    "primary_city": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "last_activity_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_portal_login_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "legal_name",
+    "status"
+  ]
+}

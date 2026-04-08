@@ -11,6 +11,7 @@ const initialForm = {
   title: "",
   description: "",
   listing_type: "sale",
+  project_id: "",
   property_type: "",
   price: "",
   bedrooms: "",
@@ -29,7 +30,7 @@ const slugify = (value) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-export default function PartnerListingEditorDialog({ open, onOpenChange, listing, loading, onSubmit }) {
+export default function PartnerListingEditorDialog({ open, onOpenChange, listing, loading, onSubmit, projects = [] }) {
   const [form, setForm] = useState(initialForm);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function PartnerListingEditorDialog({ open, onOpenChange, listing
       title: listing.title || "",
       description: listing.description || "",
       listing_type: listing.listing_type === "private_inventory" ? "private_inventory" : "sale",
+      project_id: listing.project_id || "",
       property_type: listing.property_type || "",
       price: listing.price ?? "",
       bedrooms: listing.bedrooms ?? "",
@@ -54,6 +56,7 @@ export default function PartnerListingEditorDialog({ open, onOpenChange, listing
       slug: slugify(form.title),
       description: form.description.trim(),
       listing_type: form.listing_type,
+      project_id: form.project_id || undefined,
       property_type: form.property_type.trim(),
       price: Number(form.price || 0),
       bedrooms: toNumberOrUndefined(form.bedrooms),
@@ -83,6 +86,18 @@ export default function PartnerListingEditorDialog({ open, onOpenChange, listing
               <SelectContent>
                 <SelectItem value="sale">Sale</SelectItem>
                 <SelectItem value="private_inventory">Private inventory</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Project</Label>
+            <Select value={form.project_id || "__none__"} onValueChange={(value) => setForm((current) => ({ ...current, project_id: value === "__none__" ? "" : value }))}>
+              <SelectTrigger><SelectValue placeholder="Standalone listing" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Standalone listing</SelectItem>
+                {projects.map((project) => (
+                  <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

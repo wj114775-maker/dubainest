@@ -18,8 +18,12 @@ export default function AppHeader({
   mode = "buyer",
   sticky = true
 }) {
+  const workspaceTitle = mode === "internal" ? "Back Office" : mode === "partner" ? "Partner Workspace" : mode === "developer" ? "Developer Portal" : "Workspace";
+  const workspacePathPrefix = mode === "internal" ? "/ops" : mode === "partner" ? "/partner" : mode === "developer" ? "/developer" : "/ops";
+  const showWorkspaceNavigation = mode !== "buyer" || showInternalAccess;
+
   return (
-    <header className="bg-[#ff6666] z-40 border-b border-slate-200/80 shadow-[0_10px_28px_rgba(15,23,42,0.04)] backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 sticky top-0">
+    <header className={`bg-[#ff6666] z-40 border-b border-slate-200/80 shadow-[0_10px_28px_rgba(15,23,42,0.04)] backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 ${sticky ? "sticky top-0" : ""}`}>
 
 
       
@@ -78,8 +82,8 @@ export default function AppHeader({
         }
 
         <div className="flex items-center gap-2">
-          {showInternalAccess ? <MobileWorkspaceDrawer items={internalItems} /> : null}
-          {showInternalAccess ? <AdminWorkspaceSwitcher items={internalItems} /> : null}
+          {showWorkspaceNavigation ? <MobileWorkspaceDrawer items={internalItems} title={workspaceTitle} buttonLabel={workspaceTitle} /> : null}
+          {showWorkspaceNavigation ? <AdminWorkspaceSwitcher items={internalItems} label={workspaceTitle} activeMatchPrefix={workspacePathPrefix} /> : null}
           {showInternalAccess && mode === "buyer" ?
           <Button asChild className="hidden rounded-full px-5 md:inline-flex">
               <Link to="/workspace">Workspace</Link>

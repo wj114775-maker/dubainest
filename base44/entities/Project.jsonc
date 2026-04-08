@@ -5,6 +5,9 @@
     "developer_id": {
       "type": "string"
     },
+    "developer_organisation_id": {
+      "type": "string"
+    },
     "area_id": {
       "type": "string"
     },
@@ -66,6 +69,41 @@
     },
     "price_from": {
       "type": "number"
+    },
+    "brochure_url": {
+      "type": "string"
+    },
+    "floor_plan_url": {
+      "type": "string"
+    },
+    "amenities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "payment_plan_summary": {
+      "type": "string"
+    },
+    "publication_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "under_review",
+        "published",
+        "hidden"
+      ],
+      "default": "draft"
+    },
+    "request_review_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "requested",
+        "changes_requested",
+        "approved"
+      ],
+      "default": "none"
     }
   },
   "required": [

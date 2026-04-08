@@ -34,6 +34,12 @@ import PartnerListings from '@/pages/PartnerListings';
 import PartnerConcierge from '@/pages/PartnerConcierge';
 import PartnerPayouts from '@/pages/PartnerPayouts';
 import PartnerDisputes from '@/pages/PartnerDisputes';
+import DeveloperOverview from '@/pages/DeveloperOverview';
+import DeveloperProjects from '@/pages/DeveloperProjects';
+import DeveloperListings from '@/pages/DeveloperListings';
+import DeveloperDeals from '@/pages/DeveloperDeals';
+import DeveloperDocuments from '@/pages/DeveloperDocuments';
+import DeveloperAccount from '@/pages/DeveloperAccount';
 import OpsDashboard from '@/pages/OpsDashboard';
 import OpsLeads from '@/pages/OpsLeads';
 import OpsLeadDetail from '@/pages/OpsLeadDetail';
@@ -41,6 +47,7 @@ import OpsCompliance from '@/pages/OpsCompliance';
 import OpsListings from '@/pages/OpsListings';
 import OpsProjects from '@/pages/OpsProjects';
 import OpsDevelopers from '@/pages/OpsDevelopers';
+import OpsDeveloperDetail from '@/pages/OpsDeveloperDetail';
 import OpsListingDetail from '@/pages/OpsListingDetail';
 import OpsConcierge from '@/pages/OpsConcierge';
 import OpsConciergeDetail from '@/pages/OpsConciergeDetail';
@@ -76,14 +83,14 @@ const AppFrame = ({ children, mode = 'buyer', title, showInternalAccess = false,
     ? navItems.buyer.map((item) => item.path === "/account" ? { label: "Workspace", path: "/workspace" } : item)
     : navItems[mode];
   const displayRailTitle = mode === "internal" ? "Back Office" : title;
-  const homePath = mode === "internal" ? "/ops" : mode === "partner" ? "/partner" : "/";
+  const homePath = mode === "internal" ? "/ops" : mode === "partner" ? "/partner" : mode === "developer" ? "/developer" : "/";
 
   return (
     <div className="min-h-screen bg-background">
       {mode !== 'buyer' ? (
         <SeoMeta
-          title={mode === "internal" ? `${appConfig.app_name} Internal Workspace` : `${appConfig.app_name} Partner Workspace`}
-          description={mode === "internal" ? "Internal operations workspace." : "Partner workspace."}
+          title={mode === "internal" ? `${appConfig.app_name} Internal Workspace` : mode === "partner" ? `${appConfig.app_name} Partner Workspace` : `${appConfig.app_name} Developer Portal`}
+          description={mode === "internal" ? "Internal operations workspace." : mode === "partner" ? "Partner workspace." : "Developer portal."}
           canonicalPath={location.pathname}
           robots="noindex,nofollow"
         />
@@ -91,7 +98,7 @@ const AppFrame = ({ children, mode = 'buyer', title, showInternalAccess = false,
       <AppHeader
         appName={appConfig.app_name}
         tagline={appConfig.tagline}
-        internalItems={navItems.internal}
+        internalItems={mode === "buyer" ? navItems.internal : items}
         buyerItems={navItems.buyer}
         showInternalAccess={showInternalAccess}
         homePath={homePath}
@@ -126,11 +133,11 @@ const AuthenticatedApp = () => {
   }
 
   const role = current?.role || 'buyer';
-  const permissions = current?.permissions || [];
   const isInternal = Boolean(current?.isInternal || current?.hasFullAccess || roleGroups.internal.includes(role));
   const isPartner = Boolean(current?.isPartner || roleGroups.partner.includes(role));
+  const isDeveloper = Boolean(current?.isDeveloper || roleGroups.developer.includes(role));
   const headerInternalAccess = isInternal;
-  const workspaceTarget = isInternal ? "/ops" : isPartner ? "/partner" : "/account";
+  const workspaceTarget = isInternal ? "/ops" : isDeveloper ? "/developer" : isPartner ? "/partner" : "/account";
 
   return (
     <Routes>
@@ -167,6 +174,12 @@ const AuthenticatedApp = () => {
       <Route path="/partner/concierge" element={isPartner ? <AppFrame mode="partner" title="Partner Workspace"><PartnerConcierge /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/partner/payouts" element={isPartner ? <AppFrame mode="partner" title="Partner Workspace"><PartnerPayouts /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/partner/disputes" element={isPartner ? <AppFrame mode="partner" title="Partner Workspace"><PartnerDisputes /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/developer" element={isDeveloper ? <AppFrame mode="developer" title="Developer Portal"><DeveloperOverview /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/developer/projects" element={isDeveloper ? <AppFrame mode="developer" title="Developer Portal"><DeveloperProjects /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/developer/listings" element={isDeveloper ? <AppFrame mode="developer" title="Developer Portal"><DeveloperListings /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/developer/deals" element={isDeveloper ? <AppFrame mode="developer" title="Developer Portal"><DeveloperDeals /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/developer/documents" element={isDeveloper ? <AppFrame mode="developer" title="Developer Portal"><DeveloperDocuments /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/developer/account" element={isDeveloper ? <AppFrame mode="developer" title="Developer Portal"><DeveloperAccount /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDashboard /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/leads" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsLeads /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/leads/:id" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsLeadDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
@@ -183,6 +196,7 @@ const AuthenticatedApp = () => {
       <Route path="/ops/listings" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsListings /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/projects" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsProjects /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/developers" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDevelopers /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/developers/:id" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDeveloperDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/listings/:id" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsListingDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/concierge" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsConcierge /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/concierge/:id" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsConciergeDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />

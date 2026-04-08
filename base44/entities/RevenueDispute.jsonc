@@ -11,6 +11,12 @@
     "entitlement_id": {
       "type": "string"
     },
+    "developer_organisation_id": {
+      "type": "string"
+    },
+    "developer_deal_id": {
+      "type": "string"
+    },
     "invoice_id": {
       "type": "string"
     },

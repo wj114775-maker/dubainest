@@ -1,0 +1,85 @@
+{
+  "name": "DeveloperProjectRevision",
+  "type": "object",
+  "properties": {
+    "developer_organisation_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "requested_by_user_id": {
+      "type": "string"
+    },
+    "change_type": {
+      "type": "string",
+      "enum": [
+        "new_project",
+        "live_update",
+        "publication_request"
+      ],
+      "default": "live_update"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "under_review",
+        "approved",
+        "rejected",
+        "merged"
+      ],
+      "default": "draft"
+    },
+    "name": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "handover_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "price_from": {
+      "type": "number"
+    },
+    "brochure_url": {
+      "type": "string"
+    },
+    "floor_plan_url": {
+      "type": "string"
+    },
+    "amenities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "payment_plan_summary": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "review_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "change_type",
+    "review_status"
+  ]
+}

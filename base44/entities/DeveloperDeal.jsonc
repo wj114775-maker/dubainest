@@ -1,0 +1,120 @@
+{
+  "name": "DeveloperDeal",
+  "type": "object",
+  "properties": {
+    "deal_code": {
+      "type": "string"
+    },
+    "lead_id": {
+      "type": "string"
+    },
+    "buyer_id": {
+      "type": "string"
+    },
+    "buyer_name": {
+      "type": "string"
+    },
+    "listing_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "developer_organisation_id": {
+      "type": "string"
+    },
+    "assigned_partner_id": {
+      "type": "string"
+    },
+    "assigned_broker_id": {
+      "type": "string"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "active",
+        "reservation_pending",
+        "contract_pending",
+        "payment_milestones",
+        "handover_pending",
+        "closed",
+        "cancelled"
+      ],
+      "default": "active"
+    },
+    "reservation_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "received",
+        "confirmed",
+        "expired",
+        "cancelled"
+      ],
+      "default": "not_started"
+    },
+    "contract_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "spa_sent",
+        "spa_signed",
+        "cancelled"
+      ],
+      "default": "not_started"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "partial",
+        "received",
+        "overdue",
+        "disputed"
+      ],
+      "default": "not_started"
+    },
+    "handover_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "scheduled",
+        "completed",
+        "delayed",
+        "cancelled"
+      ],
+      "default": "not_started"
+    },
+    "sale_price": {
+      "type": "number"
+    },
+    "expected_platform_fee": {
+      "type": "number"
+    },
+    "expected_commission": {
+      "type": "number"
+    },
+    "dispute_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "open",
+        "resolved"
+      ],
+      "default": "none"
+    },
+    "expected_handover_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "deal_code",
+    "stage"
+  ]
+}

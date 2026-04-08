@@ -1,0 +1,60 @@
+{
+  "name": "DeveloperActivity",
+  "type": "object",
+  "properties": {
+    "developer_prospect_id": {
+      "type": "string"
+    },
+    "developer_organisation_id": {
+      "type": "string"
+    },
+    "activity_type": {
+      "type": "string",
+      "enum": [
+        "call",
+        "email",
+        "meeting",
+        "note",
+        "agreement_sent",
+        "reminder",
+        "conversion",
+        "portal_access",
+        "document_shared"
+      ]
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "outbound",
+        "inbound",
+        "system"
+      ],
+      "default": "internal"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "detail": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string"
+    },
+    "actor_user_id": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "next_follow_up_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "activity_type",
+    "summary"
+  ]
+}

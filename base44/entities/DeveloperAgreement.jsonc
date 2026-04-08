@@ -1,0 +1,77 @@
+{
+  "name": "DeveloperAgreement",
+  "type": "object",
+  "properties": {
+    "developer_prospect_id": {
+      "type": "string"
+    },
+    "developer_organisation_id": {
+      "type": "string"
+    },
+    "agreement_code": {
+      "type": "string"
+    },
+    "agreement_type": {
+      "type": "string"
+    },
+    "mandate_scope": {
+      "type": "string"
+    },
+    "agreement_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "awaiting_signature",
+        "signed",
+        "expired",
+        "replaced",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "signature_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "signed",
+        "declined"
+      ],
+      "default": "not_started"
+    },
+    "document_url": {
+      "type": "string"
+    },
+    "signed_document_url": {
+      "type": "string"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_reminder_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "agreement_status",
+    "signature_status"
+  ]
+}

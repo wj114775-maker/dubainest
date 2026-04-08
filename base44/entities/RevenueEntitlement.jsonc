@@ -8,6 +8,12 @@
     "deal_id": {
       "type": "string"
     },
+    "developer_organisation_id": {
+      "type": "string"
+    },
+    "developer_deal_id": {
+      "type": "string"
+    },
     "partner_id": {
       "type": "string"
     },

@@ -1,141 +1,126 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import SectionHeading from "@/components/common/SectionHeading";
 import AccessGuard from "@/components/admin/AccessGuard";
-import EmptyStateCard from "@/components/common/EmptyStateCard";
 import AdminSummaryStrip from "@/components/admin/AdminSummaryStrip";
-import AdminDeveloperProfileFormCard from "@/components/admin/AdminDeveloperProfileFormCard";
-import DeveloperProfileRegistryTableCard from "@/components/admin/DeveloperProfileRegistryTableCard";
-import { Button } from "@/components/ui/button";
+import DeveloperPublicPublishingTab from "@/components/ops/DeveloperPublicPublishingTab";
+import DeveloperProspectsTab from "@/components/ops/DeveloperProspectsTab";
+import DeveloperRegistryTab from "@/components/ops/DeveloperRegistryTab";
+import DeveloperAgreementsTab from "@/components/ops/DeveloperAgreementsTab";
+import DeveloperInventoryTab from "@/components/ops/DeveloperInventoryTab";
+import DeveloperDealsTab from "@/components/ops/DeveloperDealsTab";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import useApprovedDevelopers from "@/hooks/useApprovedDevelopers";
-import {
-  createEntitySafe,
-  getBase44ErrorText,
-  getMissingEntitySchemas,
-  isEntitySchemaKnownMissing,
-  updateEntitySafe,
-} from "@/lib/base44Safeguards";
-import { listDeveloperProfiles } from "@/lib/developerProfiles";
-import { listProjectProfiles } from "@/lib/projectProfiles";
-import {
-  buildDemoDeveloperProfileTemplate,
-  buildDemoProjectProfileTemplate,
-  DEMO_DEVELOPER_SLUG,
-  DEMO_PROJECT_SLUG,
-} from "@/lib/contentTemplates";
+import useCurrentUserRole from "@/hooks/useCurrentUserRole";
+import { buildDeveloperInventoryTree, convertProspectToOrganisation, createDeveloperActivity, listDeveloperOpsWorkspace } from "@/lib/developerLifecycle";
+import { createEntitySafe, getMissingEntitySchemas, updateEntitySafe } from "@/lib/base44Safeguards";
+
+const initialProspectForm = {
+  company_name: "",
+  main_contact_name: "",
+  email: "",
+  phone: "",
+  source: "",
+  owner_user_id: "",
+  stage: "uncontacted",
+  interest: "medium",
+  next_follow_up_at: "",
+  notes: "",
+};
+
+const emptyWorkspace = {
+  organisations: [],
+  prospects: [],
+  activities: [],
+  agreements: [],
+  deals: [],
+  listingRevisions: [],
+  projectRevisions: [],
+  memberships: [],
+  projects: [],
+  listings: [],
+  documents: [],
+  disputes: [],
+  entitlements: [],
+  developerProfiles: [],
+  projectProfiles: [],
+  auditLog: [],
+};
 
 export default function OpsDevelopers() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [editingDeveloperProfile, setEditingDeveloperProfile] = useState(null);
-  const { data: approvedDevelopers = [] } = useApprovedDevelopers();
-  const { data: developerProfiles = [] } = useQuery({
-    queryKey: ["ops-developers-profiles"],
-    queryFn: () => listDeveloperProfiles(),
-    initialData: [],
-  });
-  const { data: projectProfiles = [] } = useQuery({
-    queryKey: ["ops-developers-project-profiles"],
-    queryFn: () => listProjectProfiles(),
-    initialData: [],
+  const { data: current } = useCurrentUserRole();
+  const [form, setForm] = useState(initialProspectForm);
+
+  const { data: workspace = emptyWorkspace } = useQuery({
+    queryKey: ["ops-developer-workspace"],
+    queryFn: () => listDeveloperOpsWorkspace(),
+    initialData: emptyWorkspace,
   });
 
-  const starterDeveloper = developerProfiles.find((profile) => profile.slug === DEMO_DEVELOPER_SLUG) || null;
-  const starterProject = projectProfiles.find((profile) => profile.slug === DEMO_PROJECT_SLUG) || null;
-  const missingSchemas = getMissingEntitySchemas(["DeveloperProfile", "ProjectProfile"]);
-  const developerSchemaMissing = isEntitySchemaKnownMissing("DeveloperProfile");
-
+  const inventory = useMemo(() => buildDeveloperInventoryTree(workspace.organisations, workspace.projects, workspace.listings), [workspace.organisations, workspace.projects, workspace.listings]);
+  const missingSchemas = getMissingEntitySchemas(["DeveloperOrganisation", "DeveloperProspect", "DeveloperActivity", "DeveloperAgreement", "DeveloperDeal", "DeveloperListingRevision", "DeveloperProjectRevision"]);
   const summary = [
-    { label: "Developers", value: String(developerProfiles.length) },
-    { label: "Partnered", value: String(developerProfiles.filter((profile) => profile.partnership_status === "partnered").length) },
-    { label: "Published", value: String(developerProfiles.filter((profile) => profile.page_status === "published").length) },
-    { label: "Homepage", value: String(developerProfiles.filter((profile) => profile.show_on_homepage).length) },
+    { label: "Prospects", value: String(workspace.prospects.filter((item) => item.stage !== "archived").length) },
+    { label: "Signed developers", value: String(workspace.organisations.filter((item) => item.status !== "archived").length) },
+    { label: "Live deals", value: String(workspace.deals.filter((item) => !["closed", "cancelled"].includes(item.stage)).length) },
+    { label: "Pending reviews", value: String(workspace.listingRevisions.filter((item) => ["submitted", "under_review"].includes(item.review_status)).length + workspace.projectRevisions.filter((item) => ["submitted", "under_review"].includes(item.review_status)).length) },
   ];
 
-  const saveDeveloperProfile = useMutation({
-    mutationFn: async (form) => {
-      const result = editingDeveloperProfile?.id
-        ? await updateEntitySafe("DeveloperProfile", editingDeveloperProfile.id, form)
-        : await createEntitySafe("DeveloperProfile", form);
+  const ensureWrite = (result, fallbackMessage) => {
+    if (!result?.ok) {
+      throw result?.error || new Error(fallbackMessage);
+    }
+    return result.data;
+  };
 
-      if (!result.ok && result.missingSchema) {
-        throw new Error("SchemaMissing:DeveloperProfile");
-      }
-
+  const saveProspect = useMutation({
+    mutationFn: async () => {
+      const result = await createEntitySafe("DeveloperProspect", { ...form, owner_user_id: form.owner_user_id || current?.user?.id, next_follow_up_at: form.next_follow_up_at || undefined });
+      if (!result.ok) throw result.error || new Error("Prospect save failed");
       return result.data;
     },
     onSuccess: () => {
-      setEditingDeveloperProfile(null);
-      queryClient.invalidateQueries({ queryKey: ["ops-developers-profiles"] });
-      queryClient.invalidateQueries({ queryKey: ["developer-profiles-public"] });
-      queryClient.invalidateQueries({ queryKey: ["developer-profile"] });
-      queryClient.invalidateQueries({ queryKey: ["home-developer-profiles"] });
-      toast({ title: "Developer saved" });
+      queryClient.invalidateQueries({ queryKey: ["ops-developer-workspace"] });
+      setForm(initialProspectForm);
+      toast({ title: "Prospect saved" });
     },
-    onError: (error) => {
-      const message = String(error?.message || "");
-      toast({
-        title: "Developer save failed",
-        description: message.startsWith("SchemaMissing:")
-          ? "DeveloperProfile is not published in the live Base44 app yet."
-          : getBase44ErrorText(error) || "The developer record could not be saved.",
-        variant: "destructive",
-      });
-    },
+    onError: () => toast({ title: "Prospect save failed", variant: "destructive" }),
   });
 
-  const createStarterSet = useMutation({
-    mutationFn: async () => {
-      let developerRecord = starterDeveloper;
-      if (!developerRecord) {
-        const developerResult = await createEntitySafe(
-          "DeveloperProfile",
-          buildDemoDeveloperProfileTemplate(approvedDevelopers)
-        );
-        if (!developerResult.ok && developerResult.missingSchema) {
-          throw new Error("SchemaMissing:DeveloperProfile");
-        }
-        developerRecord = developerResult.data;
+  const prospectAction = useMutation({
+    mutationFn: async ({ prospect, action, value }) => {
+      const now = new Date().toISOString();
+      if (action === "stage") return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: value }), "Stage update failed");
+      if (action === "own") return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { owner_user_id: current?.user?.id }), "Owner update failed");
+      if (["call", "email", "meeting"].includes(action)) {
+        ensureWrite(await createDeveloperActivity({ developer_prospect_id: prospect.id, activity_type: action, direction: "outbound", actor_user_id: current?.user?.id, occurred_at: now, summary: `${prospect.company_name} ${action}` }), "Prospect activity log failed");
+        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { last_contact_at: now }), "Prospect activity update failed");
       }
-
-      if (!starterProject) {
-        const projectResult = await createEntitySafe("ProjectProfile", {
-          ...buildDemoProjectProfileTemplate(),
-          developer_profile_slug: developerRecord.slug || DEMO_DEVELOPER_SLUG,
-          developer_name: developerRecord.developer_name || "Meraas",
-        });
-
-        if (!projectResult.ok && projectResult.missingSchema) {
-          throw new Error("SchemaMissing:ProjectProfile");
-        }
+      if (action === "send_agreement") {
+        ensureWrite(await createEntitySafe("DeveloperAgreement", { developer_prospect_id: prospect.id, agreement_type: "developer_partnership", agreement_status: "sent", signature_status: "pending", sent_at: now }), "Agreement creation failed");
+        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "agreement_sent", agreement_status: "sent", signature_status: "pending", last_contact_at: now }), "Prospect agreement state update failed");
       }
-
-      return developerRecord;
+      if (action === "send_reminder") {
+        ensureWrite(await createDeveloperActivity({ developer_prospect_id: prospect.id, activity_type: "reminder", direction: "system", actor_user_id: current?.user?.id, occurred_at: now, summary: `Reminder sent to ${prospect.company_name}` }), "Reminder log failed");
+        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "awaiting_signature", agreement_status: "awaiting_signature", signature_status: "pending", last_contact_at: now }), "Prospect reminder update failed");
+      }
+      if (action === "not_interested") {
+        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "not_interested" }), "Prospect status update failed");
+      }
+      if (action === "archive") {
+        return ensureWrite(await updateEntitySafe("DeveloperProspect", prospect.id, { stage: "archived", archived_at: now }), "Prospect archive failed");
+      }
+      if (action === "convert") return ensureWrite(await convertProspectToOrganisation({ prospect, currentUserId: current?.user?.id }), "Prospect conversion failed");
+      throw new Error("Unsupported action");
     },
-    onSuccess: (developerRecord) => {
-      queryClient.invalidateQueries({ queryKey: ["ops-developers-profiles"] });
-      queryClient.invalidateQueries({ queryKey: ["developer-profiles-public"] });
-      queryClient.invalidateQueries({ queryKey: ["developer-profile"] });
-      queryClient.invalidateQueries({ queryKey: ["home-developer-profiles"] });
-      queryClient.invalidateQueries({ queryKey: ["ops-developers-project-profiles"] });
-      queryClient.invalidateQueries({ queryKey: ["ops-projects-profiles"] });
-      setEditingDeveloperProfile(developerRecord);
-      toast({
-        title: "Starter set created",
-        description: "The demo developer and linked demo project are ready to review.",
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ops-developer-workspace"] });
+      toast({ title: "Developer workflow updated" });
     },
-    onError: () => {
-      toast({
-        title: "Starter set failed",
-        description: missingSchemas.length
-          ? `Missing live schemas: ${missingSchemas.join(", ")}.`
-          : "The starter records could not be created.",
-        variant: "destructive",
-      });
-    },
+    onError: () => toast({ title: "Developer workflow update failed", variant: "destructive" }),
   });
 
   return (
@@ -143,8 +128,9 @@ export default function OpsDevelopers() {
       <SectionHeading
         eyebrow="Back office"
         title="Developers"
-        description="This is the developer table. Use it to add, edit, and publish developer profiles without going through abstract page-manager terminology."
+        description="Run developer prospecting, agreements, conversion, inventory ownership, and deal progression here. Public developer pages stay in a separate publishing tab."
       />
+
       <AccessGuard permission="settings.read">
         <AdminSummaryStrip items={summary} />
       </AccessGuard>
@@ -153,51 +139,28 @@ export default function OpsDevelopers() {
         <Card className="rounded-[2rem] border-amber-300/60 bg-amber-50">
           <CardContent className="space-y-2 p-6">
             <p className="text-xs uppercase tracking-[0.28em] text-amber-700">Publish required</p>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-950">The developer table cannot save until Base44 has the missing schemas</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-950">Developer lifecycle records need live Base44 schemas</h2>
             <p className="text-sm leading-6 text-slate-700">Missing live schemas: {missingSchemas.join(", ")}.</p>
           </CardContent>
         </Card>
       ) : null}
 
-      <AccessGuard permission="settings.manage">
-        <Card className="rounded-[2rem] border-white/10 bg-card/80">
-          <CardContent className="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-3xl space-y-2">
-              <p className="text-xs uppercase tracking-[0.28em] text-primary">Quick start</p>
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground">Create one polished developer and project starter record</h2>
-              <p className="text-sm leading-6 text-muted-foreground">
-                This creates a Meraas developer record and a linked City Walk Crestlane project record so you have a clean template to edit.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                onClick={() => createStarterSet.mutate()}
-                disabled={createStarterSet.isPending || developerSchemaMissing || (Boolean(starterDeveloper) && Boolean(starterProject))}
-              >
-                {starterDeveloper && starterProject ? "Starter set already created" : createStarterSet.isPending ? "Creating..." : "Create starter set"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </AccessGuard>
-
-      <AccessGuard permission="settings.read">
-        {developerProfiles.length ? (
-          <DeveloperProfileRegistryTableCard profiles={developerProfiles} onEdit={setEditingDeveloperProfile} />
-        ) : (
-          <EmptyStateCard title="No developers yet" description="Add your first developer when you are ready." />
-        )}
-      </AccessGuard>
-
-      <AccessGuard permission="settings.manage">
-        <AdminDeveloperProfileFormCard
-          profile={editingDeveloperProfile}
-          approvedDevelopers={approvedDevelopers}
-          onSubmit={(form) => saveDeveloperProfile.mutate(form)}
-          onCancel={() => setEditingDeveloperProfile(null)}
-          disabled={developerSchemaMissing}
-        />
-      </AccessGuard>
+      <Tabs defaultValue="prospects" className="space-y-6">
+        <TabsList className="h-auto flex-wrap rounded-2xl bg-muted/50 p-1">
+          <TabsTrigger value="prospects">Prospects</TabsTrigger>
+          <TabsTrigger value="registry">Signed developers</TabsTrigger>
+          <TabsTrigger value="agreements">Agreements</TabsTrigger>
+          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsTrigger value="deals">Deals</TabsTrigger>
+          <TabsTrigger value="publishing">Public publishing</TabsTrigger>
+        </TabsList>
+        <TabsContent value="prospects"><DeveloperProspectsTab prospects={workspace.prospects} form={form} setForm={setForm} onSubmit={() => saveProspect.mutate()} onAction={(prospect, action, value) => prospectAction.mutate({ prospect, action, value })} loading={saveProspect.isPending || prospectAction.isPending} currentUserId={current?.user?.id || ""} /></TabsContent>
+        <TabsContent value="registry"><DeveloperRegistryTab organisations={workspace.organisations} projects={workspace.projects} listings={workspace.listings} deals={workspace.deals} /></TabsContent>
+        <TabsContent value="agreements"><DeveloperAgreementsTab agreements={workspace.agreements} organisations={workspace.organisations} prospects={workspace.prospects} /></TabsContent>
+        <TabsContent value="inventory"><DeveloperInventoryTab inventory={inventory} /></TabsContent>
+        <TabsContent value="deals"><DeveloperDealsTab deals={workspace.deals} organisations={workspace.organisations} projects={workspace.projects} listings={workspace.listings} /></TabsContent>
+        <TabsContent value="publishing"><DeveloperPublicPublishingTab /></TabsContent>
+      </Tabs>
     </div>
   );
 }

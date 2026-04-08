@@ -4,9 +4,9 @@ import { ShieldCheck, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-export default function AdminWorkspaceSwitcher({ items = [] }) {
+export default function AdminWorkspaceSwitcher({ items = [], label = "Back Office", activeMatchPrefix = "/ops" }) {
   const location = useLocation();
-  const inInternal = location.pathname.startsWith("/ops");
+  const inWorkspace = location.pathname.startsWith(activeMatchPrefix);
   const sections = items.reduce((acc, item) => {
     const key = item.section || "Workspace";
     acc[key] = acc[key] || [];
@@ -17,9 +17,9 @@ export default function AdminWorkspaceSwitcher({ items = [] }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={inInternal ? "default" : "outline"} className="hidden rounded-full px-4 md:inline-flex">
+        <Button variant={inWorkspace ? "default" : "outline"} className="hidden rounded-full px-4 md:inline-flex">
           <ShieldCheck className="h-4 w-4" />
-          Back Office
+          {label}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">

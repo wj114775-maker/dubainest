@@ -8,6 +8,18 @@
     "nda_id": {
       "type": "string"
     },
+    "developer_organisation_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "listing_id": {
+      "type": "string"
+    },
+    "deal_id": {
+      "type": "string"
+    },
     "document_type": {
       "type": "string"
     },

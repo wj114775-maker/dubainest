@@ -1,0 +1,86 @@
+{
+  "name": "DeveloperListingRevision",
+  "type": "object",
+  "properties": {
+    "developer_organisation_id": {
+      "type": "string"
+    },
+    "listing_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "requested_by_user_id": {
+      "type": "string"
+    },
+    "change_type": {
+      "type": "string",
+      "enum": [
+        "new_listing",
+        "live_update",
+        "archive_request",
+        "price_refresh",
+        "publication_request"
+      ],
+      "default": "live_update"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "under_review",
+        "approved",
+        "rejected",
+        "merged"
+      ],
+      "default": "draft"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "listing_type": {
+      "type": "string"
+    },
+    "property_type": {
+      "type": "string"
+    },
+    "price": {
+      "type": "number"
+    },
+    "bedrooms": {
+      "type": "number"
+    },
+    "bathrooms": {
+      "type": "number"
+    },
+    "built_up_area_sqft": {
+      "type": "number"
+    },
+    "hero_image_url": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "review_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "change_type",
+    "review_status"
+  ]
+}

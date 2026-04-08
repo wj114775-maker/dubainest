@@ -111,6 +111,24 @@ export const permissionBundles = {
     "partner_invoice.read",
     "partner_dispute.create",
     "partner_payment_evidence.upload"
+  ],
+  developerAdminAccess: [
+    "developer_portal.access",
+    "developer_projects.manage",
+    "developer_listings.manage",
+    "developer_deals.read",
+    "developer_deals.manage",
+    "developer_documents.upload",
+    "developer_documents.read",
+    "developer_account.manage"
+  ],
+  developerStaffAccess: [
+    "developer_portal.access",
+    "developer_projects.manage",
+    "developer_listings.manage",
+    "developer_deals.read",
+    "developer_documents.upload",
+    "developer_documents.read"
   ]
 };
 
@@ -123,6 +141,8 @@ export const legacyRolePermissions = {
   content: [...permissionBundles.contentGovernance],
   partner_admin: [...permissionBundles.partnerAdminAccess],
   partner_broker: [...permissionBundles.partnerBrokerAccess],
+  developer_admin: [...permissionBundles.developerAdminAccess],
+  developer_staff: [...permissionBundles.developerStaffAccess],
   buyer: []
 };
 

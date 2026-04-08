@@ -1,5 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+function splitScopeTokens(value = '') {
+  return String(value || '')
+    .split(/[,\n|]/g)
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -12,12 +19,35 @@ Deno.serve(async (req) => {
     const assignments = await base44.entities.UserRoleAssignment.filter({ user_id: user.id, status: 'active' });
     const activeAssignments = assignments.filter((assignment) => !assignment.end_date || new Date(assignment.end_date) >= new Date());
     const permissionCodes = new Set(activeAssignments.flatMap((assignment) => [...(assignment.permission_codes || []), ...(assignment.bundle_codes || [])]));
+    const memberships = await base44.entities.OrganisationMembership.filter({ user_id: user.id });
+    const activeMemberships = memberships.filter((membership) => !membership.end_date || new Date(membership.end_date) >= new Date());
+    const managedDeveloperOrgIds = new Set(
+      activeMemberships
+        .filter((membership) => (
+          membership.organisation_type === 'developer_organisation'
+          && ['active', 'pending', 'invited', 'verified'].includes(String(membership.status || 'active').toLowerCase())
+          && (
+            ['developer_admin', 'organisation_admin', 'company_admin'].includes(String(membership.membership_type || '').toLowerCase())
+            || splitScopeTokens(membership.assignment_scope || '').includes('account')
+            || splitScopeTokens(membership.assignment_scope || '').includes('account.manage')
+          )
+        ))
+        .map((membership) => membership.organisation_id)
+        .filter(Boolean)
+    );
 
-    if (user.role !== 'admin' && !permissionCodes.has('users.invite') && !permissionCodes.has('assignments.manage') && !permissionCodes.has('partners.manage')) {
+    const { action, email, inviteRole, assignmentId, assignmentPayload, membershipId, membershipPayload, organisationType, organisationId } = await req.json();
+    const internalManager = user.role === 'admin' || permissionCodes.has('users.invite') || permissionCodes.has('assignments.manage') || permissionCodes.has('partners.manage');
+    const developerScopedOrgId = membershipPayload?.organisation_id || organisationId || '';
+    const developerScopedAction = (
+      (action === 'invite_user' && organisationType === 'developer_organisation')
+      || ((action === 'create_membership' || action === 'update_membership') && membershipPayload?.organisation_type === 'developer_organisation')
+    );
+    const developerManager = developerScopedAction && developerScopedOrgId && managedDeveloperOrgIds.has(developerScopedOrgId);
+
+    if (!internalManager && !developerManager) {
       return Response.json({ error: 'Forbidden: Access denied' }, { status: 403 });
     }
-
-    const { action, email, inviteRole, assignmentId, assignmentPayload, membershipId, membershipPayload } = await req.json();
 
     if (action === 'invite_user') {
       const invited = await base44.users.inviteUser(email, inviteRole || 'user');
@@ -29,7 +59,7 @@ Deno.serve(async (req) => {
         actor_id: user.id,
         actor_user_id: user.id,
         immutable: true,
-        metadata: { email, inviteRole: inviteRole || 'user' }
+        metadata: { email, inviteRole: inviteRole || 'user', organisationType, organisationId }
       });
       return Response.json({ invited });
     }

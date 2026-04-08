@@ -53,6 +53,17 @@ const PARTNER_PERMISSION_HINTS = [
   "partner_payment_evidence.upload",
 ];
 
+const DEVELOPER_PERMISSION_HINTS = [
+  "developer_portal.access",
+  "developer_projects.manage",
+  "developer_listings.manage",
+  "developer_deals.read",
+  "developer_deals.manage",
+  "developer_documents.read",
+  "developer_documents.upload",
+  "developer_account.manage",
+];
+
 function normalizeRoleValue(value) {
   return String(value || "")
     .trim()
@@ -116,6 +127,7 @@ export async function getCurrentAccessState() {
   }
 
   let activeAssignments = [];
+  let memberships = [];
 
   try {
     const assignments = await base44.entities.UserRoleAssignment.filter({ user_id: user.id, status: "active" });
@@ -124,27 +136,41 @@ export async function getCurrentAccessState() {
     activeAssignments = [];
   }
 
+  try {
+    memberships = await base44.entities.OrganisationMembership.filter({ user_id: user.id });
+  } catch {
+    memberships = [];
+  }
+
   const role = resolveAppRole(user);
   const permissions = getPermissionSet(activeAssignments.map((assignment) => ({
     permission_codes: assignment.permission_codes || [],
     bundle_codes: assignment.bundle_codes || [],
   })), role);
+  const activeMemberships = memberships.filter((membership) => !membership.end_date || new Date(membership.end_date) >= new Date());
+  const developerMemberships = activeMemberships.filter((membership) => membership.organisation_type === "developer_organisation");
   const hasFullAccess = hasPrivilegedAppAccess(user) || role === "admin";
   const isInternal = hasFullAccess
     || roleGroups.internal.includes(role)
     || INTERNAL_PERMISSION_HINTS.some((permission) => permissions.includes(permission));
   const isPartner = roleGroups.partner.includes(role)
     || PARTNER_PERMISSION_HINTS.some((permission) => permissions.includes(permission));
+  const isDeveloper = roleGroups.developer.includes(role)
+    || developerMemberships.length > 0
+    || DEVELOPER_PERMISSION_HINTS.some((permission) => permissions.includes(permission));
 
   return {
     isAuthenticated: true,
     user,
     role,
     assignments: activeAssignments,
+    memberships: activeMemberships,
+    developerMemberships,
     permissions,
     hasFullAccess,
     isInternal,
     isPartner,
+    isDeveloper,
     can: (permission) => hasFullAccess || isInternal || hasPermission(permissions, permission),
   };
 }

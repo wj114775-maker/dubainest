@@ -4,7 +4,7 @@ import { ShieldCheck } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
-export default function MobileWorkspaceDrawer({ items = [] }) {
+export default function MobileWorkspaceDrawer({ items = [], title = "Back Office", buttonLabel = "Back Office" }) {
   const location = useLocation();
   const sections = items.reduce((acc, item) => {
     const key = item.section || "Workspace";
@@ -19,12 +19,12 @@ export default function MobileWorkspaceDrawer({ items = [] }) {
       <SheetTrigger asChild>
         <Button variant="outline" className="rounded-full px-3 md:hidden">
           <ShieldCheck className="h-4 w-4" />
-          Back Office
+          {buttonLabel}
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-80 border-white/10 bg-background/95">
         <SheetHeader>
-          <SheetTitle>Back Office</SheetTitle>
+          <SheetTitle>{title}</SheetTitle>
         </SheetHeader>
         <div className="mt-6 space-y-5">
           {Object.entries(sections).map(([section, sectionItems]) => (

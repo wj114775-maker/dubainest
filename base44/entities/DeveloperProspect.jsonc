@@ -1,0 +1,103 @@
+{
+  "name": "DeveloperProspect",
+  "type": "object",
+  "properties": {
+    "company_name": {
+      "type": "string"
+    },
+    "legal_name": {
+      "type": "string"
+    },
+    "trading_name": {
+      "type": "string"
+    },
+    "main_contact_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "owner_user_id": {
+      "type": "string"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "uncontacted",
+        "contacted",
+        "replied",
+        "meeting_booked",
+        "negotiating",
+        "agreement_sent",
+        "awaiting_signature",
+        "signed",
+        "onboarding",
+        "active",
+        "paused",
+        "not_interested",
+        "archived"
+      ],
+      "default": "uncontacted"
+    },
+    "interest": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "strategic"
+      ],
+      "default": "medium"
+    },
+    "last_contact_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "next_follow_up_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "agreement_status": {
+      "type": "string",
+      "enum": [
+        "not_sent",
+        "draft",
+        "sent",
+        "awaiting_signature",
+        "signed",
+        "expired"
+      ],
+      "default": "not_sent"
+    },
+    "signature_status": {
+      "type": "string",
+      "enum": [
+        "not_sent",
+        "pending",
+        "signed",
+        "declined"
+      ],
+      "default": "not_sent"
+    },
+    "developer_organisation_id": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "archived_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "company_name",
+    "stage"
+  ]
+}

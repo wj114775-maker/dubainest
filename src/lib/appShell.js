@@ -1,4 +1,4 @@
-import { Briefcase, Building2, Gem, LayoutDashboard, ShieldCheck, WalletCards } from "lucide-react";
+import { Briefcase, Building2, FileText, FolderKanban, Gem, Handshake, LayoutDashboard, ShieldCheck, WalletCards } from "lucide-react";
 
 export const defaultAppConfig = {
   app_name: "DubaiSphere",
@@ -12,6 +12,7 @@ export const defaultAppConfig = {
 export const roleGroups = {
   buyer: ["buyer"],
   partner: ["partner_admin", "partner_broker"],
+  developer: ["developer_admin", "developer_staff"],
   internal: ["admin", "ops", "concierge", "compliance", "finance", "content"]
 };
 
@@ -31,6 +32,50 @@ export const navItems = {
     { label: "Concierge", path: "/partner/concierge" },
     { label: "Payouts", path: "/partner/payouts" },
     { label: "Disputes", path: "/partner/disputes" }
+  ],
+  developer: [
+    {
+      label: "Overview",
+      path: "/developer",
+      section: "Developer Portal",
+      description: "See projects, listings, deals, and pending actions.",
+      icon: LayoutDashboard
+    },
+    {
+      label: "Projects",
+      path: "/developer/projects",
+      section: "Developer Portal",
+      description: "Create and manage operational project records.",
+      icon: FolderKanban
+    },
+    {
+      label: "Listings",
+      path: "/developer/listings",
+      section: "Developer Portal",
+      description: "Draft new listings and submit governed updates.",
+      icon: Building2
+    },
+    {
+      label: "Deals",
+      path: "/developer/deals",
+      section: "Developer Portal",
+      description: "Track reservation, contract, payment, and handover progress.",
+      icon: Handshake
+    },
+    {
+      label: "Documents",
+      path: "/developer/documents",
+      section: "Developer Portal",
+      description: "Upload and review agreements and deal documents.",
+      icon: FileText
+    },
+    {
+      label: "Account",
+      path: "/developer/account",
+      section: "Developer Portal",
+      description: "Review organisation access and workspace rights.",
+      icon: ShieldCheck
+    }
   ],
   internal: [
     {
