@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import SectionHeading from "@/components/common/SectionHeading";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ export default function DeveloperDocuments() {
   }, [workspace]);
 
   const currentScopeOptions = scopeOptions.find((item) => item.value === form.linked_scope)?.options || [];
+  const latestAgreement = workspace.agreements[0] || null;
 
   const uploadDocument = useMutation({
     mutationFn: async () => {
@@ -94,6 +96,34 @@ export default function DeveloperDocuments() {
         title="Documents"
         description="Keep agreement PDFs, brochures, floor plans, reservation forms, SPA files, payment evidence, and handover documents in one controlled workspace."
       />
+
+      <Card className="rounded-[2rem] border-white/10 bg-card/80">
+        <CardHeader><CardTitle>Agreement handoff</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          {latestAgreement ? (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline">{compactLabel(latestAgreement.agreement_status)}</Badge>
+                <Badge variant="outline">{compactLabel(latestAgreement.signature_status)}</Badge>
+                {latestAgreement.signature_provider ? <Badge variant="outline">{compactLabel(latestAgreement.signature_provider)}</Badge> : null}
+              </div>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>Agreement: {latestAgreement.agreement_code || latestAgreement.agreement_type || "Developer agreement"}</p>
+                <p>Signer: {latestAgreement.counterparty_name || workspace.organisation.primary_contact_name || "Not set"}</p>
+                <p>Signer email: {latestAgreement.counterparty_email || workspace.organisation.primary_contact_email || "Not set"}</p>
+                <p>Last reminder: {latestAgreement.last_reminder_at ? new Date(latestAgreement.last_reminder_at).toLocaleString() : "No reminder logged"}</p>
+              </div>
+              {latestAgreement.signature_request_url ? (
+                <a href={latestAgreement.signature_request_url} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+                  Open signature request
+                </a>
+              ) : <p className="text-sm text-muted-foreground">The internal team has not shared a live signature request URL yet.</p>}
+            </>
+          ) : (
+            <EmptyStateCard title="No agreement handoff yet" description="Internal agreement records will surface here once the developer signature workflow has been prepared." />
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="rounded-[2rem] border-white/10 bg-card/80">
         <CardHeader><CardTitle>Shared document registry</CardTitle></CardHeader>

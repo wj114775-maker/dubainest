@@ -16,6 +16,7 @@ const emptyWorkspace = {
   organisation: null,
   projects: [],
   listings: [],
+  agreements: [],
   deals: [],
   listingRevisions: [],
   projectRevisions: [],

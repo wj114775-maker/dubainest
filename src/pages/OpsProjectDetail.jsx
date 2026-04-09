@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
+import BuyerMatchingPanel from "@/components/ops/BuyerMatchingPanel";
 import SectionHeading from "@/components/common/SectionHeading";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
 import OpsProjectEditorDialog from "@/components/ops/OpsProjectEditorDialog";
@@ -14,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
+import { buildBuyerMatchSummary, listBuyerMatchingWorkspace } from "@/lib/buyerMatching";
 import { listDeveloperProfiles } from "@/lib/developerProfiles";
 import { listDeveloperOpsWorkspace } from "@/lib/developerLifecycle";
 import { listProjectProfiles } from "@/lib/projectProfiles";
@@ -39,6 +41,14 @@ const emptyWorkspace = {
   auditLog: [],
 };
 
+const emptyMatchingWorkspace = {
+  leads: [],
+  leadIdentities: [],
+  viewings: [],
+  leadAssignments: [],
+  conciergeCases: [],
+};
+
 function formatDateTime(value = "") {
   return value ? new Date(value).toLocaleString() : "—";
 }
@@ -51,21 +61,23 @@ export default function OpsProjectDetail() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [documentForm, setDocumentForm] = useState({ title: "", document_type: "brochure", file_url: "", notes: "" });
 
-  const { data = { workspace: emptyWorkspace, projectProfiles: [], developerProfiles: [] } } = useQuery({
+  const { data = { workspace: emptyWorkspace, matchingWorkspace: emptyMatchingWorkspace, projectProfiles: [], developerProfiles: [] } } = useQuery({
     queryKey: ["ops-project-workspace", id],
     enabled: Boolean(id),
     queryFn: async () => {
-      const [workspace, projectProfiles, developerProfiles] = await Promise.all([
+      const [workspace, matchingWorkspace, projectProfiles, developerProfiles] = await Promise.all([
         listDeveloperOpsWorkspace(),
+        listBuyerMatchingWorkspace(),
         listProjectProfiles(),
         listDeveloperProfiles(),
       ]);
-      return { workspace, projectProfiles, developerProfiles };
+      return { workspace, matchingWorkspace, projectProfiles, developerProfiles };
     },
-    initialData: { workspace: emptyWorkspace, projectProfiles: [], developerProfiles: [] },
+    initialData: { workspace: emptyWorkspace, matchingWorkspace: emptyMatchingWorkspace, projectProfiles: [], developerProfiles: [] },
   });
 
   const workspace = data.workspace || emptyWorkspace;
+  const matchingWorkspace = data.matchingWorkspace || emptyMatchingWorkspace;
   const project = workspace.projects.find((item) => item.id === id) || null;
   const organisation = workspace.organisations.find((item) => item.id === project?.developer_organisation_id || item.id === project?.developer_id) || null;
   const listings = workspace.listings.filter((item) => item.project_id === id);
@@ -102,6 +114,17 @@ export default function OpsProjectDetail() {
     documents: documents.length,
     revisions: revisions.length,
   }), [deals.length, documents.length, listings.length, revisions.length]);
+  const matchingSummary = useMemo(() => buildBuyerMatchSummary({
+    leads: matchingWorkspace.leads,
+    leadIdentities: matchingWorkspace.leadIdentities,
+    viewings: matchingWorkspace.viewings,
+    leadAssignments: matchingWorkspace.leadAssignments,
+    conciergeCases: matchingWorkspace.conciergeCases,
+    deals,
+    listingIds: listings.map((item) => item.id),
+    projectIds: [id],
+    leadIds: deals.map((item) => item.lead_id).filter(Boolean),
+  }), [deals, id, listings, matchingWorkspace]);
 
   const saveProject = useMutation({
     mutationFn: async (payload) => {
@@ -182,6 +205,7 @@ export default function OpsProjectDetail() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="inventory">Listings</TabsTrigger>
           <TabsTrigger value="deals">Deals</TabsTrigger>
+          <TabsTrigger value="matching">Matching</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="revisions">Revisions</TabsTrigger>
           <TabsTrigger value="publishing">Publishing</TabsTrigger>
@@ -267,6 +291,7 @@ export default function OpsProjectDetail() {
                       <TableHead>Payment</TableHead>
                       <TableHead>Handover</TableHead>
                       <TableHead>Value</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -278,6 +303,7 @@ export default function OpsProjectDetail() {
                         <TableCell>{compactLabel(deal.payment_status)}</TableCell>
                         <TableCell>{compactLabel(deal.handover_status)}</TableCell>
                         <TableCell>{formatCurrency(deal.sale_price || 0)}</TableCell>
+                        <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/ops/deals/${deal.id}`}>Open</Link></Button></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -287,6 +313,14 @@ export default function OpsProjectDetail() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="matching">
+          <BuyerMatchingPanel
+            title="Buyer-to-listing matching"
+            description="Track the buyer records already touching this project through direct project interest, linked listings, booked viewings, and live deals."
+            summary={matchingSummary}
+          />
         </TabsContent>
 
         <TabsContent value="documents">

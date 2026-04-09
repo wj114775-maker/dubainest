@@ -40,6 +40,7 @@ export default function DeveloperOverview() {
   const unreadNotifications = workspace.notifications.filter((item) => item.status !== "read");
   const pendingListingRevisions = workspace.listingRevisions.filter((item) => ["submitted", "under_review"].includes(item.review_status));
   const pendingProjectRevisions = workspace.projectRevisions.filter((item) => ["submitted", "under_review"].includes(item.review_status));
+  const latestAgreement = workspace.agreements[0] || null;
 
   return (
     <div className="space-y-6">
@@ -106,6 +107,33 @@ export default function DeveloperOverview() {
                 <p>Phone: {workspace.organisation.primary_contact_phone || "Not set"}</p>
                 <p>Mandate: {workspace.organisation.mandate_scope || "Not set"}</p>
               </div>
+            </CardContent>
+          </Card>
+          <Card className="rounded-[2rem] border-white/10 bg-card/80">
+            <CardHeader><CardTitle>Agreement handoff</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              {latestAgreement ? (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline">{compactLabel(latestAgreement.agreement_status)}</Badge>
+                    <Badge variant="outline">{compactLabel(latestAgreement.signature_status)}</Badge>
+                    {latestAgreement.signature_provider ? <Badge variant="outline">{compactLabel(latestAgreement.signature_provider)}</Badge> : null}
+                  </div>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>Agreement: {latestAgreement.agreement_code || latestAgreement.agreement_type || "Developer agreement"}</p>
+                    <p>Signer: {latestAgreement.counterparty_name || workspace.organisation.primary_contact_name || "Not set"}</p>
+                    <p>Signer email: {latestAgreement.counterparty_email || workspace.organisation.primary_contact_email || "Not set"}</p>
+                    <p>Last handoff: {latestAgreement.last_handoff_at ? new Date(latestAgreement.last_handoff_at).toLocaleString() : "Not recorded"}</p>
+                  </div>
+                  {latestAgreement.signature_request_url ? (
+                    <a href={latestAgreement.signature_request_url} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+                      Open signature request
+                    </a>
+                  ) : <p className="text-sm text-muted-foreground">The internal team has not shared a signature request link yet.</p>}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No agreement handoff is linked to this portal yet.</p>
+              )}
             </CardContent>
           </Card>
           <Card className="rounded-[2rem] border-white/10 bg-card/80">

@@ -40,6 +40,24 @@
       ],
       "default": "not_started"
     },
+    "signature_provider": {
+      "type": "string"
+    },
+    "signature_request_url": {
+      "type": "string"
+    },
+    "signature_request_id": {
+      "type": "string"
+    },
+    "counterparty_name": {
+      "type": "string"
+    },
+    "counterparty_email": {
+      "type": "string"
+    },
+    "handoff_notes": {
+      "type": "string"
+    },
     "document_url": {
       "type": "string"
     },
@@ -58,6 +76,14 @@
       "type": "string",
       "format": "date-time"
     },
+    "declined_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_handoff_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "effective_date": {
       "type": "string",
       "format": "date"
@@ -65,6 +91,9 @@
     "expiry_date": {
       "type": "string",
       "format": "date"
+    },
+    "decline_reason": {
+      "type": "string"
     },
     "notes": {
       "type": "string"

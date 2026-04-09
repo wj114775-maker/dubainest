@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ export default function DeveloperDealsTab({
   listings = [],
   loading = false,
   onAction,
+  detailBasePath = "",
 }) {
   const [activeFilter, setActiveFilter] = useState("all");
 
@@ -105,14 +107,23 @@ export default function DeveloperDealsTab({
                     <TableCell>{formatCurrency(deal.expected_commission || 0)}</TableCell>
                     <TableCell>{formatDateTime(deal.updated_date || deal.created_date)}</TableCell>
                     <TableCell>
-                      {onAction ? (
+                      {onAction || detailBasePath ? (
                         <div className="flex flex-wrap gap-2">
-                          <Button variant="outline" size="sm" onClick={() => onAction(deal, "reservation_received")} disabled={loading}>Reservation</Button>
-                          <Button variant="outline" size="sm" onClick={() => onAction(deal, "spa_sent")} disabled={loading}>SPA sent</Button>
-                          <Button variant="outline" size="sm" onClick={() => onAction(deal, "spa_signed")} disabled={loading}>SPA signed</Button>
-                          <Button variant="outline" size="sm" onClick={() => onAction(deal, "milestone_received")} disabled={loading}>Milestone</Button>
-                          <Button variant="outline" size="sm" onClick={() => onAction(deal, "handover_scheduled")} disabled={loading}>Schedule handover</Button>
-                          <Button variant="outline" size="sm" onClick={() => onAction(deal, "handover_completed")} disabled={loading}>Complete handover</Button>
+                          {detailBasePath ? (
+                            <Button asChild variant="outline" size="sm">
+                              <Link to={`${detailBasePath}/${deal.id}`}>Open</Link>
+                            </Button>
+                          ) : null}
+                          {onAction ? (
+                            <>
+                              <Button variant="outline" size="sm" onClick={() => onAction(deal, "reservation_received")} disabled={loading}>Reservation</Button>
+                              <Button variant="outline" size="sm" onClick={() => onAction(deal, "spa_sent")} disabled={loading}>SPA sent</Button>
+                              <Button variant="outline" size="sm" onClick={() => onAction(deal, "spa_signed")} disabled={loading}>SPA signed</Button>
+                              <Button variant="outline" size="sm" onClick={() => onAction(deal, "milestone_received")} disabled={loading}>Milestone</Button>
+                              <Button variant="outline" size="sm" onClick={() => onAction(deal, "handover_scheduled")} disabled={loading}>Schedule handover</Button>
+                              <Button variant="outline" size="sm" onClick={() => onAction(deal, "handover_completed")} disabled={loading}>Complete handover</Button>
+                            </>
+                          ) : null}
                         </div>
                       ) : "—"}
                     </TableCell>

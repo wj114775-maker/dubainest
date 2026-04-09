@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
 import {
+  buildDeveloperDealWorkflowPayload,
   buildDeveloperInventoryTree,
   createDeveloperActivity,
   createDeveloperOperationalStarterSet,
@@ -24,6 +25,7 @@ import {
   convertProspectToOrganisation,
   hasOperationalStarterWorkspace,
   listDeveloperOpsWorkspace,
+  manageDeveloperAgreementSignatureHandoff,
 } from "@/lib/developerLifecycle";
 import { createEntitySafe, getBase44ErrorText, getMissingEntitySchemas, updateEntitySafe } from "@/lib/base44Safeguards";
 
@@ -74,31 +76,6 @@ function normalizeImportDateTime(value = "") {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return undefined;
   return parsed.toISOString();
-}
-
-function buildDealWorkflowPayload(action, now) {
-  if (action === "reservation_received") {
-    return { stage: "reservation_pending", reservation_status: "confirmed" };
-  }
-  if (action === "spa_sent") {
-    return { stage: "contract_pending", contract_status: "spa_sent" };
-  }
-  if (action === "spa_signed") {
-    return { stage: "payment_milestones", contract_status: "spa_signed" };
-  }
-  if (action === "milestone_received") {
-    return { stage: "handover_pending", payment_status: "received" };
-  }
-  if (action === "handover_scheduled") {
-    return { stage: "handover_pending", handover_status: "scheduled", expected_handover_at: now };
-  }
-  if (action === "handover_completed") {
-    return { stage: "closed", handover_status: "completed" };
-  }
-  if (action === "cancel") {
-    return { stage: "cancelled", handover_status: "cancelled", payment_status: "disputed" };
-  }
-  return {};
 }
 
 export default function OpsDevelopers({ desk = "prospects" }) {
@@ -401,10 +378,31 @@ export default function OpsDevelopers({ desk = "prospects" }) {
     onError: () => toast({ title: "Bulk reassignment failed", variant: "destructive" }),
   });
 
+  const manageAgreement = useMutation({
+    mutationFn: async ({ agreement, action, payload }) => {
+      const result = await manageDeveloperAgreementSignatureHandoff({
+        agreement,
+        action,
+        payload,
+        currentUserId: current?.user?.id,
+      });
+      return ensureWrite(result, "Agreement handoff update failed", "DeveloperAgreement");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ops-developer-workspace"] });
+      toast({ title: "Agreement handoff updated" });
+    },
+    onError: (error) => toast({
+      title: "Agreement handoff failed",
+      description: getSchemaAwareErrorDescription(error, "The agreement handoff could not be updated."),
+      variant: "destructive",
+    }),
+  });
+
   const progressDeal = useMutation({
     mutationFn: async ({ deal, action }) => {
       const now = new Date().toISOString();
-      const payload = buildDealWorkflowPayload(action, now);
+      const payload = buildDeveloperDealWorkflowPayload(action, now);
       return ensureWrite(await updateEntitySafe("DeveloperDeal", deal.id, payload), "Developer deal update failed", "DeveloperDeal");
     },
     onSuccess: () => {
@@ -432,6 +430,9 @@ export default function OpsDevelopers({ desk = "prospects" }) {
           agreements={workspace.agreements}
           organisations={workspace.organisations}
           prospects={workspace.prospects}
+          documents={workspace.documents}
+          loading={manageAgreement.isPending}
+          onManageAgreement={(agreement, action, payload) => manageAgreement.mutate({ agreement, action, payload })}
         />
       );
     }
@@ -460,6 +461,7 @@ export default function OpsDevelopers({ desk = "prospects" }) {
           listings={workspace.listings}
           loading={progressDeal.isPending}
           onAction={(deal, action) => progressDeal.mutate({ deal, action })}
+          detailBasePath="/ops/deals"
         />
       );
     }

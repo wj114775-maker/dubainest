@@ -1,14 +1,19 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import BuyerMatchingPanel from "@/components/ops/BuyerMatchingPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import ListingPublicationActions from "@/components/ops/ListingPublicationActions";
 import SectionHeading from "@/components/common/SectionHeading";
 import ListingEvidenceReviewPanel from "@/components/ops/ListingEvidenceReviewPanel";
 import ListingDuplicateReviewPanel from "@/components/ops/ListingDuplicateReviewPanel";
+import { buildBuyerMatchSummary, listBuyerMatchingWorkspace } from "@/lib/buyerMatching";
+import { listDeveloperOpsWorkspace } from "@/lib/developerLifecycle";
+import { compactLabel, formatCurrency } from "@/lib/revenue";
 
 function DataListCard({ title, items = [], render }) {
   return (
@@ -30,7 +35,7 @@ export default function OpsListingDetail() {
     enabled: !!id,
     queryFn: async () => {
       const listing = await base44.entities.Listing.get(id);
-      const [verification, permits, authority, cases, evidence, decisions, audit, allListings, duplicateReviewRecords] = await Promise.all([
+      const [verification, permits, authority, cases, evidence, decisions, audit, allListings, duplicateReviewRecords, opsWorkspace, matchingWorkspace] = await Promise.all([
         base44.entities.ListingVerification.filter({ listing_id: id }),
         base44.entities.ListingPermit.filter({ listing_id: id }),
         base44.entities.ListingAuthorityRecord.filter({ listing_id: id }),
@@ -39,14 +44,16 @@ export default function OpsListingDetail() {
         base44.entities.ListingPublicationDecision.filter({ listing_id: id }),
         base44.entities.AuditLog.filter({ entity_id: id }),
         base44.entities.Listing.list("-updated_date", 200),
-        base44.entities.ListingDuplicateReview.list("-updated_date", 500)
+        base44.entities.ListingDuplicateReview.list("-updated_date", 500),
+        listDeveloperOpsWorkspace(),
+        listBuyerMatchingWorkspace(),
       ]);
       const duplicateReviews = duplicateReviewRecords.filter((item) => item.listing_id === id || item.matched_listing_id === id);
       const relatedListingIds = Array.from(new Set([id, ...duplicateReviews.flatMap((item) => [item.listing_id, item.matched_listing_id, item.primary_listing_id]).filter(Boolean)]));
       const relatedListings = allListings
         .filter((item) => relatedListingIds.includes(item.id))
         .reduce((accumulator, item) => ({ ...accumulator, [item.id]: item }), {});
-      return { listing, verification, permits, authority, cases, evidence, decisions, audit, duplicateReviews, relatedListings };
+      return { listing, verification, permits, authority, cases, evidence, decisions, audit, duplicateReviews, relatedListings, opsWorkspace, matchingWorkspace };
     },
     initialData: null
   });
@@ -113,11 +120,25 @@ export default function OpsListingDetail() {
     return <div className="text-sm text-muted-foreground">Loading listing workspace...</div>;
   }
 
-  const { listing, verification, permits, authority, cases, evidence, decisions, audit, duplicateReviews, relatedListings } = data;
+  const { listing, verification, permits, authority, cases, evidence, decisions, audit, duplicateReviews, relatedListings, opsWorkspace, matchingWorkspace } = data;
+  const project = opsWorkspace.projects.find((item) => item.id === listing.project_id) || null;
+  const organisation = opsWorkspace.organisations.find((item) => item.id === listing.developer_organisation_id || item.id === project?.developer_organisation_id || item.id === project?.developer_id) || null;
+  const relatedDeals = opsWorkspace.deals.filter((item) => item.listing_id === id);
+  const matchingSummary = buildBuyerMatchSummary({
+    leads: matchingWorkspace.leads,
+    leadIdentities: matchingWorkspace.leadIdentities,
+    viewings: matchingWorkspace.viewings,
+    leadAssignments: matchingWorkspace.leadAssignments,
+    conciergeCases: matchingWorkspace.conciergeCases,
+    deals: relatedDeals,
+    listingIds: [id],
+    projectIds: listing.project_id ? [listing.project_id] : [],
+    leadIds: relatedDeals.map((item) => item.lead_id).filter(Boolean),
+  });
 
   return (
     <div className="space-y-6">
-      <SectionHeading eyebrow="Supply review detail" title={listing.title} description="Review verification, trust, freshness, authority, evidence, and publication history from one place." />
+      <SectionHeading eyebrow="Supply review detail" title={listing.title} description="Review governance, operational linkage, buyer matching, and publication history from one place." />
 
       <Card className="rounded-[2rem] border-white/10 bg-card/80">
         <CardContent className="flex flex-wrap items-center gap-3 p-5">
@@ -132,6 +153,8 @@ export default function OpsListingDetail() {
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList className="h-auto flex-wrap justify-start gap-2 rounded-2xl bg-muted/60 p-2">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="operations">Operations</TabsTrigger>
+            <TabsTrigger value="matching">Matching</TabsTrigger>
             <TabsTrigger value="verification">Verification</TabsTrigger>
             <TabsTrigger value="permit">Permit</TabsTrigger>
             <TabsTrigger value="authority">Authority</TabsTrigger>
@@ -145,6 +168,38 @@ export default function OpsListingDetail() {
           </TabsList>
 
           <TabsContent value="overview"><Card className="rounded-[2rem] border-white/10 bg-card/80"><CardContent className="space-y-2 p-5 text-sm text-muted-foreground"><p>{listing.description || 'No description yet.'}</p><p>Missing requirements: {listing.missing_requirements?.join(', ') || 'None'}</p><p>Open issues: {listing.open_issue_codes?.join(', ') || 'None'}</p></CardContent></Card></TabsContent>
+          <TabsContent value="operations">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card className="rounded-[2rem] border-white/10 bg-card/80">
+                <CardHeader><CardTitle>Operational context</CardTitle></CardHeader>
+                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                  <p>Developer: <span className="text-foreground">{organisation?.trading_name || organisation?.legal_name || "Unassigned"}</span></p>
+                  <p>Project: <span className="text-foreground">{project?.name || "Standalone listing"}</span></p>
+                  <p>Status: <span className="text-foreground">{compactLabel(listing.status)}</span></p>
+                  <p>Publication: <span className="text-foreground">{compactLabel(listing.publication_status || "draft")}</span></p>
+                  <p>Price: <span className="text-foreground">{formatCurrency(listing.price || 0)}</span></p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-[2rem] border-white/10 bg-card/80">
+                <CardHeader><CardTitle>Linked records</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {organisation ? <Button asChild variant="outline" size="sm"><Link to={`/ops/developers/${organisation.id}`}>Open developer</Link></Button> : null}
+                  {project ? <Button asChild variant="outline" size="sm"><Link to={`/ops/projects/${project.id}`}>Open project</Link></Button> : null}
+                  {relatedDeals.map((deal) => (
+                    <Button key={deal.id} asChild variant="outline" size="sm"><Link to={`/ops/deals/${deal.id}`}>Open {deal.deal_code || deal.id}</Link></Button>
+                  ))}
+                  {!organisation && !project && !relatedDeals.length ? <p className="text-sm text-muted-foreground">No operational developer, project, or deal links are attached yet.</p> : null}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          <TabsContent value="matching">
+            <BuyerMatchingPanel
+              title="Buyer-to-listing matching"
+              description="Review the buyer records touching this listing through enquiries, project interest, booked viewings, or live deal linkage."
+              summary={matchingSummary}
+            />
+          </TabsContent>
           <TabsContent value="verification"><DataListCard title="Verification checks" items={verification} render={(item) => <div key={item.id} className="rounded-2xl border border-white/10 p-3"><p className="font-medium">{item.verification_type}</p><p className="text-sm text-muted-foreground">{item.status} · {item.decision_reason || item.notes || 'No notes'}</p></div>} /></TabsContent>
           <TabsContent value="permit"><DataListCard title="Permit records" items={permits} render={(item) => <div key={item.id} className="rounded-2xl border border-white/10 p-3"><p className="font-medium">{item.permit_number}</p><p className="text-sm text-muted-foreground">{item.status} · Expires {item.expiry_date || '—'}</p></div>} /></TabsContent>
           <TabsContent value="authority"><DataListCard title="Authority records" items={authority} render={(item) => <div key={item.id} className="rounded-2xl border border-white/10 p-3"><p className="font-medium">{item.authority_name}</p><p className="text-sm text-muted-foreground">{item.record_type} · {item.status}</p></div>} /></TabsContent>

@@ -2,8 +2,10 @@ import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import BuyerMatchingPanel from "@/components/ops/BuyerMatchingPanel";
 import SectionHeading from "@/components/common/SectionHeading";
 import EmptyStateCard from "@/components/common/EmptyStateCard";
+import DeveloperAgreementsTab from "@/components/ops/DeveloperAgreementsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import useCurrentUserRole from "@/hooks/useCurrentUserRole";
-import { buildDeveloperFinanceSummary, createDeveloperActivity, listDeveloperOpsWorkspace } from "@/lib/developerLifecycle";
+import { buildBuyerMatchSummary, listBuyerMatchingWorkspace } from "@/lib/buyerMatching";
+import { buildDeveloperFinanceSummary, createDeveloperActivity, listDeveloperOpsWorkspace, manageDeveloperAgreementSignatureHandoff } from "@/lib/developerLifecycle";
 import { createEntitySafe } from "@/lib/base44Safeguards";
 import { compactLabel, formatCurrency } from "@/lib/revenue";
 
@@ -33,6 +36,14 @@ const emptyWorkspace = {
   auditLog: [],
 };
 
+const emptyMatchingWorkspace = {
+  leads: [],
+  leadIdentities: [],
+  viewings: [],
+  leadAssignments: [],
+  conciergeCases: [],
+};
+
 function formatDateTime(value = "") {
   return value ? new Date(value).toLocaleString() : "—";
 }
@@ -46,11 +57,19 @@ export default function OpsDeveloperDetail() {
   const [documentForm, setDocumentForm] = useState({ title: "", document_type: "shared_request_doc", file_url: "", notes: "" });
   const [membershipForm, setMembershipForm] = useState({ user_id: "", membership_type: "developer_staff", status: "active", assignment_scope: "projects,listings,deals,documents" });
 
-  const { data: workspace = emptyWorkspace } = useQuery({
+  const { data = { workspace: emptyWorkspace, matchingWorkspace: emptyMatchingWorkspace } } = useQuery({
     queryKey: ["ops-developer-workspace", id],
-    queryFn: () => listDeveloperOpsWorkspace(),
-    initialData: emptyWorkspace,
+    queryFn: async () => {
+      const [workspace, matchingWorkspace] = await Promise.all([
+        listDeveloperOpsWorkspace(),
+        listBuyerMatchingWorkspace(),
+      ]);
+      return { workspace, matchingWorkspace };
+    },
+    initialData: { workspace: emptyWorkspace, matchingWorkspace: emptyMatchingWorkspace },
   });
+  const workspace = data.workspace || emptyWorkspace;
+  const matchingWorkspace = data.matchingWorkspace || emptyMatchingWorkspace;
 
   const organisation = workspace.organisations.find((item) => item.id === id) || null;
   const relatedProspects = workspace.prospects.filter((item) => item.developer_organisation_id === id);
@@ -83,6 +102,17 @@ export default function OpsDeveloperDetail() {
     || entry.metadata?.membershipPayload?.organisation_id === id
   ));
   const finance = useMemo(() => buildDeveloperFinanceSummary({ organisationId: id, deals, entitlements: workspace.entitlements, disputes: workspace.disputes }), [deals, id, workspace.disputes, workspace.entitlements]);
+  const matchingSummary = useMemo(() => buildBuyerMatchSummary({
+    leads: matchingWorkspace.leads,
+    leadIdentities: matchingWorkspace.leadIdentities,
+    viewings: matchingWorkspace.viewings,
+    leadAssignments: matchingWorkspace.leadAssignments,
+    conciergeCases: matchingWorkspace.conciergeCases,
+    deals,
+    listingIds: listings.map((item) => item.id),
+    projectIds: projects.map((item) => item.id),
+    leadIds: deals.map((item) => item.lead_id).filter(Boolean),
+  }), [deals, listings, matchingWorkspace, projects]);
 
   const addActivity = useMutation({
     mutationFn: async () => {
@@ -151,6 +181,25 @@ export default function OpsDeveloperDetail() {
     onError: () => toast({ title: "Membership creation failed", variant: "destructive" }),
   });
 
+  const manageAgreement = useMutation({
+    mutationFn: async ({ agreement, action, payload }) => {
+      const result = await manageDeveloperAgreementSignatureHandoff({
+        agreement,
+        action,
+        payload,
+        currentUserId: current?.user?.id,
+      });
+      if (!result.ok) throw result.error || new Error("Agreement handoff failed");
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ops-developer-workspace", id] });
+      queryClient.invalidateQueries({ queryKey: ["ops-developer-workspace"] });
+      toast({ title: "Agreement handoff updated" });
+    },
+    onError: () => toast({ title: "Agreement handoff failed", variant: "destructive" }),
+  });
+
   if (!organisation) {
     return (
       <div className="space-y-6">
@@ -187,6 +236,7 @@ export default function OpsDeveloperDetail() {
           <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="listings">Listings</TabsTrigger>
           <TabsTrigger value="deals">Deals</TabsTrigger>
+          <TabsTrigger value="matching">Matching</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="access">Access</TabsTrigger>
           <TabsTrigger value="finance">Finance summary</TabsTrigger>
@@ -267,17 +317,14 @@ export default function OpsDeveloperDetail() {
         </TabsContent>
 
         <TabsContent value="agreements">
-          <Card className="rounded-[2rem] border-white/10 bg-card/80">
-            <CardHeader><CardTitle>Agreements</CardTitle></CardHeader>
-            <CardContent>
-              {agreements.length ? (
-                <Table>
-                  <TableHeader><TableRow><TableHead>Agreement</TableHead><TableHead>Status</TableHead><TableHead>Signature</TableHead><TableHead>Sent</TableHead><TableHead>Signed</TableHead></TableRow></TableHeader>
-                  <TableBody>{agreements.map((agreement) => <TableRow key={agreement.id}><TableCell>{agreement.agreement_code || agreement.agreement_type || "Developer agreement"}</TableCell><TableCell>{compactLabel(agreement.agreement_status)}</TableCell><TableCell>{compactLabel(agreement.signature_status)}</TableCell><TableCell>{formatDateTime(agreement.sent_at)}</TableCell><TableCell>{formatDateTime(agreement.signed_at)}</TableCell></TableRow>)}</TableBody>
-                </Table>
-              ) : <EmptyStateCard title="No agreements" description="Agreement records for this developer will appear here." />}
-            </CardContent>
-          </Card>
+          <DeveloperAgreementsTab
+            agreements={agreements}
+            organisations={[organisation].filter(Boolean)}
+            prospects={relatedProspects}
+            documents={documents}
+            loading={manageAgreement.isPending}
+            onManageAgreement={(agreement, action, payload) => manageAgreement.mutate({ agreement, action, payload })}
+          />
         </TabsContent>
 
         <TabsContent value="projects">
@@ -314,12 +361,20 @@ export default function OpsDeveloperDetail() {
             <CardContent>
               {deals.length ? (
                 <Table>
-                  <TableHeader><TableRow><TableHead>Deal</TableHead><TableHead>Buyer</TableHead><TableHead>Stage</TableHead><TableHead>Payment</TableHead><TableHead>Handover</TableHead><TableHead>Value</TableHead></TableRow></TableHeader>
-                  <TableBody>{deals.map((deal) => <TableRow key={deal.id}><TableCell>{deal.deal_code || deal.id}</TableCell><TableCell>{deal.buyer_name || "Buyer"}</TableCell><TableCell>{compactLabel(deal.stage)}</TableCell><TableCell>{compactLabel(deal.payment_status)}</TableCell><TableCell>{compactLabel(deal.handover_status)}</TableCell><TableCell>{formatCurrency(deal.sale_price || 0)}</TableCell></TableRow>)}</TableBody>
+                  <TableHeader><TableRow><TableHead>Deal</TableHead><TableHead>Buyer</TableHead><TableHead>Stage</TableHead><TableHead>Payment</TableHead><TableHead>Handover</TableHead><TableHead>Value</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                  <TableBody>{deals.map((deal) => <TableRow key={deal.id}><TableCell>{deal.deal_code || deal.id}</TableCell><TableCell>{deal.buyer_name || "Buyer"}</TableCell><TableCell>{compactLabel(deal.stage)}</TableCell><TableCell>{compactLabel(deal.payment_status)}</TableCell><TableCell>{compactLabel(deal.handover_status)}</TableCell><TableCell>{formatCurrency(deal.sale_price || 0)}</TableCell><TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/ops/deals/${deal.id}`}>Open</Link></Button></TableCell></TableRow>)}</TableBody>
                 </Table>
               ) : <EmptyStateCard title="No deals" description="Deals linked to this developer will appear here." />}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="matching">
+          <BuyerMatchingPanel
+            title="Buyer-to-listing matching"
+            description="See which buyer records are already touching this developer through listing enquiries, project interest, booked viewings, or live deals."
+            summary={matchingSummary}
+          />
         </TabsContent>
 
         <TabsContent value="documents">

@@ -30,6 +30,7 @@ export const developerInterestOptions = ["low", "medium", "high", "strategic"];
 export const developerOrganisationStatusOptions = ["signed", "onboarding", "active", "paused", "archived"];
 export const developerAgreementStatusOptions = ["not_sent", "draft", "sent", "awaiting_signature", "signed", "expired"];
 export const developerSignatureStatusOptions = ["not_sent", "pending", "signed", "declined"];
+export const developerSignatureProviderOptions = ["manual", "email_handoff", "docusign", "adobe_sign", "portal_link"];
 export const developerDealStageOptions = ["active", "reservation_pending", "contract_pending", "payment_milestones", "handover_pending", "closed", "cancelled"];
 export const developerDocumentTypeOptions = ["agreement_pdf", "signed_agreement", "brochure", "floor_plan", "reservation_form", "spa_document", "payment_evidence", "handover_doc", "shared_request_doc", "other"];
 export const developerActivityTypeOptions = ["call", "email", "meeting", "note", "agreement_sent", "reminder", "conversion", "portal_access", "document_shared"];
@@ -265,6 +266,7 @@ export async function listDeveloperPortalWorkspace(userId = "") {
     organisations,
     projects,
     listings,
+    agreements,
     deals,
     listingRevisions,
     projectRevisions,
@@ -277,6 +279,7 @@ export async function listDeveloperPortalWorkspace(userId = "") {
     listEntitySafe("DeveloperOrganisation", "-updated_date", 100),
     listEntitySafe("Project", "-updated_date", 200),
     listEntitySafe("Listing", "-updated_date", 300),
+    listEntitySafe("DeveloperAgreement", "-updated_date", 200),
     listEntitySafe("DeveloperDeal", "-updated_date", 200),
     listEntitySafe("DeveloperListingRevision", "-updated_date", 300),
     listEntitySafe("DeveloperProjectRevision", "-updated_date", 300),
@@ -307,6 +310,7 @@ export async function listDeveloperPortalWorkspace(userId = "") {
     organisation,
     projects: scopedProjects,
     listings: scopedListings,
+    agreements: agreements.filter((item) => item.developer_organisation_id === organisationId),
     deals: scopedDeals,
     listingRevisions: listingRevisions.filter((item) => item.developer_organisation_id === organisationId || listingIds.includes(item.listing_id)),
     projectRevisions: projectRevisions.filter((item) => item.developer_organisation_id === organisationId || projectIds.includes(item.project_id)),
@@ -347,6 +351,160 @@ export async function createDeveloperAgreement(payload) {
 
 export async function updateDeveloperEntity(entityName, id, payload) {
   return updateEntitySafe(entityName, id, payload);
+}
+
+export function buildDeveloperDealWorkflowPayload(action, now = new Date().toISOString()) {
+  if (action === "reservation_received") {
+    return { stage: "reservation_pending", reservation_status: "confirmed" };
+  }
+  if (action === "spa_sent") {
+    return { stage: "contract_pending", contract_status: "spa_sent" };
+  }
+  if (action === "spa_signed") {
+    return { stage: "payment_milestones", contract_status: "spa_signed" };
+  }
+  if (action === "milestone_received") {
+    return { stage: "handover_pending", payment_status: "received" };
+  }
+  if (action === "handover_scheduled") {
+    return { stage: "handover_pending", handover_status: "scheduled", expected_handover_at: now };
+  }
+  if (action === "handover_completed") {
+    return { stage: "closed", handover_status: "completed" };
+  }
+  if (action === "cancel") {
+    return { stage: "cancelled", handover_status: "cancelled", payment_status: "disputed" };
+  }
+  return {};
+}
+
+function getAgreementActivityContext(agreement = {}) {
+  return {
+    developer_organisation_id: agreement.developer_organisation_id || undefined,
+    developer_prospect_id: agreement.developer_prospect_id || undefined,
+  };
+}
+
+export async function manageDeveloperAgreementSignatureHandoff({
+  agreement,
+  action,
+  currentUserId = "",
+  payload = {},
+}) {
+  if (!agreement?.id) {
+    return { ok: false, missingSchema: false, data: null, error: new Error("Agreement not found") };
+  }
+
+  const nowIso = new Date().toISOString();
+  const trimmedNotes = String(payload.handoff_notes || payload.notes || "").trim();
+  const updatePayload = {
+    document_url: payload.document_url || agreement.document_url || undefined,
+    signed_document_url: payload.signed_document_url || agreement.signed_document_url || undefined,
+    signature_provider: payload.signature_provider || agreement.signature_provider || "manual",
+    signature_request_url: payload.signature_request_url || agreement.signature_request_url || undefined,
+    signature_request_id: payload.signature_request_id || agreement.signature_request_id || undefined,
+    counterparty_name: payload.counterparty_name || agreement.counterparty_name || undefined,
+    counterparty_email: payload.counterparty_email || agreement.counterparty_email || undefined,
+    handoff_notes: trimmedNotes || agreement.handoff_notes || undefined,
+  };
+
+  let activityType = "note";
+  let activitySummary = `Agreement handoff updated for ${agreement.agreement_code || agreement.id}`;
+
+  if (action === "prepare_handoff") {
+    updatePayload.last_handoff_at = nowIso;
+    updatePayload.agreement_status = agreement.agreement_status || "draft";
+    updatePayload.signature_status = agreement.signature_status || "not_started";
+    activitySummary = `Signature handoff prepared for ${agreement.agreement_code || agreement.id}`;
+  }
+
+  if (action === "send_for_signature") {
+    updatePayload.last_handoff_at = nowIso;
+    updatePayload.sent_at = agreement.sent_at || nowIso;
+    updatePayload.agreement_status = "awaiting_signature";
+    updatePayload.signature_status = "pending";
+    activityType = "agreement_sent";
+    activitySummary = `Agreement sent for signature: ${agreement.agreement_code || agreement.id}`;
+  }
+
+  if (action === "send_reminder") {
+    updatePayload.last_handoff_at = nowIso;
+    updatePayload.last_reminder_at = nowIso;
+    updatePayload.agreement_status = agreement.agreement_status === "signed" ? "signed" : "awaiting_signature";
+    updatePayload.signature_status = agreement.signature_status === "signed" ? "signed" : "pending";
+    activityType = "reminder";
+    activitySummary = `Signature reminder sent for ${agreement.agreement_code || agreement.id}`;
+  }
+
+  if (action === "mark_signed") {
+    updatePayload.last_handoff_at = nowIso;
+    updatePayload.signed_at = payload.signed_at || nowIso;
+    updatePayload.agreement_status = "signed";
+    updatePayload.signature_status = "signed";
+    updatePayload.decline_reason = undefined;
+    updatePayload.declined_at = undefined;
+    activitySummary = `Agreement signed: ${agreement.agreement_code || agreement.id}`;
+  }
+
+  if (action === "mark_declined") {
+    updatePayload.last_handoff_at = nowIso;
+    updatePayload.declined_at = nowIso;
+    updatePayload.decline_reason = payload.decline_reason || agreement.decline_reason || undefined;
+    updatePayload.agreement_status = "awaiting_signature";
+    updatePayload.signature_status = "declined";
+    activitySummary = `Agreement declined: ${agreement.agreement_code || agreement.id}`;
+  }
+
+  const updateResult = await updateEntitySafe("DeveloperAgreement", agreement.id, updatePayload);
+  if (!updateResult.ok) return updateResult;
+
+  const statusPayload = {
+    agreement_status: updatePayload.agreement_status,
+    signature_status: updatePayload.signature_status,
+    last_activity_at: nowIso,
+  };
+
+  if (agreement.developer_organisation_id) {
+    await updateEntitySafe("DeveloperOrganisation", agreement.developer_organisation_id, statusPayload);
+  }
+
+  if (agreement.developer_prospect_id) {
+    await updateEntitySafe("DeveloperProspect", agreement.developer_prospect_id, {
+      ...statusPayload,
+      last_contact_at: nowIso,
+      stage: updatePayload.signature_status === "signed"
+        ? "signed"
+        : updatePayload.signature_status === "declined"
+          ? "negotiating"
+          : "awaiting_signature",
+    });
+  }
+
+  if (action === "mark_signed" && updatePayload.signed_document_url) {
+    await createEntitySafe("SecureDocument", {
+      case_id: agreement.developer_organisation_id || agreement.developer_prospect_id || agreement.id,
+      developer_organisation_id: agreement.developer_organisation_id || "",
+      document_type: "signed_agreement",
+      title: payload.signed_document_title || `${agreement.agreement_code || agreement.agreement_type || "Developer agreement"} signed copy`,
+      file_url: updatePayload.signed_document_url,
+      visibility: "partner_visible",
+      uploaded_by: currentUserId,
+      uploaded_at: nowIso,
+      notes: trimmedNotes || "Signed agreement uploaded during signature handoff.",
+    });
+  }
+
+  await createDeveloperActivity({
+    ...getAgreementActivityContext(agreement),
+    activity_type: activityType,
+    direction: action === "mark_signed" ? "inbound" : "outbound",
+    actor_user_id: currentUserId,
+    occurred_at: nowIso,
+    summary: activitySummary,
+    detail: trimmedNotes || payload.decline_reason || payload.signature_request_url || "",
+  });
+
+  return updateResult;
 }
 
 export async function convertProspectToOrganisation({ prospect, currentUserId = "" }) {
@@ -490,10 +648,16 @@ export async function createDeveloperOperationalStarterSet({ currentUserId = "",
       mandate_scope: "projects,listings,deals,documents",
       agreement_status: "signed",
       signature_status: "signed",
+      signature_provider: "portal_link",
+      signature_request_url: "https://example.com/signatures/meraas-mandate",
+      signature_request_id: "sig-meraas-mandate-2026",
+      counterparty_name: "Karim Al Mansoori",
+      counterparty_email: "developer.admin@dubainest.local",
       document_url: "https://example.com/documents/meraas-mandate.pdf",
       signed_document_url: "https://example.com/documents/meraas-mandate-signed.pdf",
       sent_at: nowIso,
       signed_at: nowIso,
+      last_handoff_at: nowIso,
       effective_date: "2026-01-01",
       expiry_date: "2026-12-31",
       notes: "Operational starter agreement for demo purposes.",

@@ -100,6 +100,13 @@ export const navItems = {
       icon: Building2
     },
     {
+      label: "Deals",
+      path: "/ops/deals",
+      section: "Core Tables",
+      description: "Progress reservations, SPA, payments, and handover.",
+      icon: Handshake
+    },
+    {
       label: "Projects",
       path: "/ops/projects",
       section: "Core Tables",

@@ -45,10 +45,12 @@ import OpsLeads from '@/pages/OpsLeads';
 import OpsLeadDetail from '@/pages/OpsLeadDetail';
 import OpsCompliance from '@/pages/OpsCompliance';
 import OpsListings from '@/pages/OpsListings';
+import OpsDeals from '@/pages/OpsDeals';
 import OpsProjects from '@/pages/OpsProjects';
 import OpsProjectDetail from '@/pages/OpsProjectDetail';
 import OpsDevelopers from '@/pages/OpsDevelopers';
 import OpsDeveloperDetail from '@/pages/OpsDeveloperDetail';
+import OpsDealDetail from '@/pages/OpsDealDetail';
 import OpsListingDetail from '@/pages/OpsListingDetail';
 import OpsConcierge from '@/pages/OpsConcierge';
 import OpsConciergeDetail from '@/pages/OpsConciergeDetail';
@@ -195,6 +197,8 @@ const AuthenticatedApp = () => {
       <Route path="/ops/compliance-rules" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsComplianceRules /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/compliance" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsCompliance /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/listings" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsListings /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/deals" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDeals /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/deals/:id" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDealDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/projects" element={isInternal ? <Navigate to="/ops/projects/registry" replace /> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/projects/registry" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsProjects desk="registry" /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/projects/publishing" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsProjects desk="publishing" /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
