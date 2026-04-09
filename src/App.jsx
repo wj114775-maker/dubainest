@@ -46,6 +46,7 @@ import OpsLeadDetail from '@/pages/OpsLeadDetail';
 import OpsCompliance from '@/pages/OpsCompliance';
 import OpsListings from '@/pages/OpsListings';
 import OpsProjects from '@/pages/OpsProjects';
+import OpsProjectDetail from '@/pages/OpsProjectDetail';
 import OpsDevelopers from '@/pages/OpsDevelopers';
 import OpsDeveloperDetail from '@/pages/OpsDeveloperDetail';
 import OpsListingDetail from '@/pages/OpsListingDetail';
@@ -194,8 +195,17 @@ const AuthenticatedApp = () => {
       <Route path="/ops/compliance-rules" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsComplianceRules /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/compliance" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsCompliance /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/listings" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsListings /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
-      <Route path="/ops/projects" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsProjects /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
-      <Route path="/ops/developers" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDevelopers /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/projects" element={isInternal ? <Navigate to="/ops/projects/registry" replace /> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/projects/registry" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsProjects desk="registry" /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/projects/publishing" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsProjects desk="publishing" /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/projects/:id" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsProjectDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/developers" element={isInternal ? <Navigate to="/ops/developers/prospects" replace /> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/developers/prospects" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDevelopers desk="prospects" /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/developers/registry" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDevelopers desk="registry" /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/developers/agreements" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDevelopers desk="agreements" /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/developers/inventory" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDevelopers desk="inventory" /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/developers/deals" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDevelopers desk="deals" /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
+      <Route path="/ops/developers/publishing" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDevelopers desk="publishing" /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/developers/:id" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsDeveloperDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/listings/:id" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsListingDetail /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />
       <Route path="/ops/concierge" element={isInternal ? <AppFrame mode="internal" title="Back Office"><OpsConcierge /></AppFrame> : <AppFrame mode="buyer"><Account /></AppFrame>} />

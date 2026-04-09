@@ -286,8 +286,8 @@ export default function OpsDeveloperDetail() {
             <CardContent>
               {projects.length ? (
                 <Table>
-                  <TableHeader><TableRow><TableHead>Project</TableHead><TableHead>Status</TableHead><TableHead>Publication</TableHead><TableHead>Handover</TableHead></TableRow></TableHeader>
-                  <TableBody>{projects.map((project) => <TableRow key={project.id}><TableCell>{project.name}</TableCell><TableCell>{compactLabel(project.status)}</TableCell><TableCell>{compactLabel(project.publication_status || "draft")}</TableCell><TableCell>{project.handover_date || "—"}</TableCell></TableRow>)}</TableBody>
+                  <TableHeader><TableRow><TableHead>Project</TableHead><TableHead>Status</TableHead><TableHead>Publication</TableHead><TableHead>Handover</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                  <TableBody>{projects.map((project) => <TableRow key={project.id}><TableCell>{project.name}</TableCell><TableCell>{compactLabel(project.status)}</TableCell><TableCell>{compactLabel(project.publication_status || "draft")}</TableCell><TableCell>{project.handover_date || "—"}</TableCell><TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/ops/projects/${project.id}`}>Open</Link></Button></TableCell></TableRow>)}</TableBody>
                 </Table>
               ) : <EmptyStateCard title="No projects" description="Projects linked to this developer will appear here." />}
             </CardContent>
@@ -300,8 +300,8 @@ export default function OpsDeveloperDetail() {
             <CardContent>
               {listings.length ? (
                 <Table>
-                  <TableHeader><TableRow><TableHead>Listing</TableHead><TableHead>Project</TableHead><TableHead>Status</TableHead><TableHead>Publication</TableHead><TableHead>Price</TableHead></TableRow></TableHeader>
-                  <TableBody>{listings.map((listing) => <TableRow key={listing.id}><TableCell>{listing.title}</TableCell><TableCell>{projects.find((project) => project.id === listing.project_id)?.name || "Standalone"}</TableCell><TableCell>{compactLabel(listing.status)}</TableCell><TableCell>{compactLabel(listing.publication_status || "draft")}</TableCell><TableCell>{formatCurrency(listing.price || 0)}</TableCell></TableRow>)}</TableBody>
+                  <TableHeader><TableRow><TableHead>Listing</TableHead><TableHead>Project</TableHead><TableHead>Status</TableHead><TableHead>Publication</TableHead><TableHead>Price</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                  <TableBody>{listings.map((listing) => <TableRow key={listing.id}><TableCell>{listing.title}</TableCell><TableCell>{projects.find((project) => project.id === listing.project_id)?.name || "Standalone"}</TableCell><TableCell>{compactLabel(listing.status)}</TableCell><TableCell>{compactLabel(listing.publication_status || "draft")}</TableCell><TableCell>{formatCurrency(listing.price || 0)}</TableCell><TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link to={`/ops/listings/${listing.id}`}>Open</Link></Button></TableCell></TableRow>)}</TableBody>
                 </Table>
               ) : <EmptyStateCard title="No listings" description="Listings linked to this developer will appear here." />}
             </CardContent>

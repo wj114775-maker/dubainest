@@ -19,13 +19,15 @@ export default function DeveloperRegistryTab({ organisations = [], projects = []
         {organisations.length ? (
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Legal name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Agreement</TableHead>
-                <TableHead>Projects</TableHead>
-                <TableHead>Listings</TableHead>
-                <TableHead>Deals</TableHead>
+                <TableRow>
+                  <TableHead>Legal name</TableHead>
+                  <TableHead>Trading name</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Agreement</TableHead>
+                  <TableHead>Mandate scope</TableHead>
+                  <TableHead>Projects</TableHead>
+                  <TableHead>Listings</TableHead>
+                  <TableHead>Deals</TableHead>
                 <TableHead>Portal</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Last activity</TableHead>
@@ -36,13 +38,12 @@ export default function DeveloperRegistryTab({ organisations = [], projects = []
               {organisations.map((organisation) => (
                 <TableRow key={organisation.id}>
                   <TableCell>
-                    <div>
-                      <p className="font-medium">{organisation.legal_name}</p>
-                      <p className="text-xs text-muted-foreground">{organisation.trading_name || "No trading name"}</p>
-                    </div>
+                    <p className="font-medium">{organisation.legal_name}</p>
                   </TableCell>
+                  <TableCell>{organisation.trading_name || "—"}</TableCell>
                   <TableCell><Badge variant="outline">{compactLabel(organisation.status)}</Badge></TableCell>
                   <TableCell>{organisation.agreement_type || "—"}</TableCell>
+                  <TableCell>{organisation.mandate_scope || "—"}</TableCell>
                   <TableCell>{projects.filter((project) => project.developer_organisation_id === organisation.id || project.developer_id === organisation.id).length}</TableCell>
                   <TableCell>{listings.filter((listing) => listing.developer_organisation_id === organisation.id || listing.developer_id === organisation.id).length}</TableCell>
                   <TableCell>{deals.filter((deal) => deal.developer_organisation_id === organisation.id).length}</TableCell>
